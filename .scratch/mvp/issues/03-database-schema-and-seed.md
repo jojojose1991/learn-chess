@@ -11,7 +11,7 @@ column defined now should have to change type.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] `puzzle` table: id, coach_id referencing the user, name, fen, goal_kind, goal_n, created_at, updated_at
 - [x] `puzzle_link` table: 8-char slug as primary key, puzzle_id, board_theme, created_at, nullable revoked_at
