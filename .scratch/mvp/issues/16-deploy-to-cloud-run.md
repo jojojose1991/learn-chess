@@ -30,4 +30,5 @@ the loser crash-loops.
 - [ ] Two concurrent instances of a new revision cannot both run the same DDL
 - [ ] Secrets are passed at deploy time, never as build args, and no non-`VITE_` value is read at module scope
 - [ ] A Puzzle Link opened on a phone with no session lands on Play
+- [ ] The `/credits` notice page is live on the deployed service, and `/pieces/LICENSE` is served
 - [ ] `pnpm typecheck` and `pnpm lint` pass in CI
