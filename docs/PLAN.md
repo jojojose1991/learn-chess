@@ -124,11 +124,69 @@ Drizzle (pin `drizzle-orm` 0.45.2 and `drizzle-kit` 0.31.10 — 1.0 is still RC)
 BetterAuth 1.7.2 with `@better-auth/drizzle-adapter` and `tanstackStartCookies()`
 last in the plugins array. Docker on Cloud Run.
 
-Note: TanStack Start is at Release Candidate, not GA. Nitro is no longer its
-default server and is opt-in for a Node server target, which is on the path to a
-Dockerfile. `pnpm-workspace.yaml`'s `allowBuilds` needs `onnxruntime-node` added.
-Migrations run as a CI step before a revision takes traffic, never at boot —
-Cloud Run starts instances concurrently and they would race.
+### Deployment
+
+Verified against the shipped packages, not inferred:
+
+- **Nitro is still required for the Node server target.** It is no longer
+  bundled by default, so `nitro()` from `nitro/vite` joins the plugin array
+  after `tanstackStart()` and `viteReact()`. Its production default preset is
+  already `node_server`. Build output is a self-contained `.output/` —
+  `.output/server/index.mjs` plus `.output/public/` — so the runtime image
+  needs no `node_modules`. It reads `NITRO_PORT || PORT` and binds `0.0.0.0`,
+  which is exactly Cloud Run's contract, so no port wiring is needed.
+- **Nitro has no stable release.** Every published version is a date-stamped
+  beta and the plugin is documented as under active development. Combined with
+  TanStack Start itself being at Release Candidate, that is two pre-GA
+  dependencies under the deployment path. Worth knowing before a breaking minor
+  surprises us.
+- **The container needs ≥1 GiB of memory, not Cloud Run's default 512 MiB.**
+  Stockfish 18 peaks at ~377 MiB resident at startup on its own; 512 MiB would
+  be OOM-killed with Node alongside it. Each additional engine process is only
+  ~55 MiB, because SF 18 shares the net weights across processes.
+- **Install Stockfish from the official tarball, not apt.** Debian ships a
+  generic SSE2 build with no AVX2, and NNUE evaluation is exactly where the
+  move-time budget goes. Cloud Run guarantees AVX2 on every CPU platform, so
+  take `stockfish-ubuntu-x86-64-avx2`. The NNUE nets are compiled into the
+  binary — nothing ships separately — which is why it is ~113 MB (~72 MiB
+  gzipped as a layer). It runs on Debian glibc and **not** on Alpine/musl.
+- **Base image is Debian slim** (`node:24-slim` — 24 is Active LTS), for the
+  same musl reason: `onnxruntime-node` publishes no musl build.
+- **Set `ONNXRUNTIME_NODE_INSTALL=skip` in the build.** Left alone, its
+  postinstall fetches CUDA and TensorRT providers from nuget.org — hundreds of
+  MB of GPU code this service will never run. CPU inference works with the
+  script fully skipped, since the CPU library is in the tarball. This corrects
+  an earlier note here: `onnxruntime-node` must **not** go in
+  `pnpm-workspace.yaml`'s `allowBuilds` — we want that script blocked. Also
+  prune the non-Linux prebuilts; the package unpacks to ~296 MB because it
+  bundles every platform, of which linux/x64 needs ~43 MB.
+- **Native modules are the one thing to test early.** Nitro bundles most
+  dependencies into `.output/server`, but externalises what it cannot bundle
+  into `.output/server/node_modules/`. A runtime stage that copies only
+  `.output` can therefore be missing `onnxruntime-node`'s `.so`. Nitro's
+  `traceDeps` is the knob. This is why the Dockerfile stays honest from phase 5.
+- **Migrations run as a CI step or a Cloud Run Job before a revision takes
+  traffic, never at boot.** Drizzle's migrator has no advisory lock — it reads
+  the last applied migration, then writes, with no mutual exclusion — and Cloud
+  Run starts instances of a new revision concurrently. Both would run the same
+  DDL; one transaction wins and the loser crash-loops. Migrations use the
+  unpooled URL.
+- **Connection pool:** plain `pg` with `drizzle-orm/node-postgres`, `max: 5`,
+  30s idle timeout, 10s connection timeout, and an `error` listener on the pool
+  — an idle client erroring with no listener takes the process down. Neon
+  scales its compute to zero after 5 minutes idle and resumes in a few hundred
+  ms, so one retry on connection-level errors covers the first query after a
+  quiet spell. Cloud Run's `min-instances` does not help with that; it keeps our
+  container warm, not Neon's compute.
+- **Keep one Stockfish process warm.** Spawn to `readyok` measured ~490 ms, so
+  spawning per request would dominate a 200 ms think time. Skip the npm UCI
+  wrappers — the popular one was last published in 2020 — and drive it with
+  `child_process.spawn` plus `readline`, which is about 30 lines and leaves us
+  owning the timeout and restart behaviour.
+- **Env vars:** only `VITE_`-prefixed values are inlined into the client bundle
+  and baked permanently into the image layer. Everything else is read from
+  `process.env` at request time, never at module scope. Secrets are passed at
+  deploy time, never as build args.
 
 ## Build order
 
