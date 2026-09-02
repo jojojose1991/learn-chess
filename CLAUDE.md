@@ -82,6 +82,13 @@ no React and no framework imports, and it is the layer that carries tests. The
 board component renders a Position and emits taps; it knows nothing about Goals,
 engines or games.
 
+**Cut before you review.** When the work is written and the checks pass, run
+`/ponytail:ponytail-review` over the diff before `/code-review`. It hunts one
+thing — over-engineering — and it is cheaper to delete a speculative
+abstraction, a vendored component nothing imports or a dependency a stdlib call
+covers while the diff is still yours than to argue about it afterwards. Then run
+`/code-review` on what survives.
+
 **Commit to `main`. Do not create branches.**
 
 **Commit after each meaningful step** — a working module, a passing test suite, a
