@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm is the package manager (`.cta.json`, `pnpm-workspace.yaml`).
 
 ```bash
-pnpm dev         # vite dev server on port 3000
+pnpm dev         # vite dev server on PORT from .env (3012)
 pnpm build       # production build
 pnpm test        # vitest run
 pnpm test <file> # single file, e.g. pnpm test src/foo.test.ts
