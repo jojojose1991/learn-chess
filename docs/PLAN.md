@@ -49,8 +49,10 @@ column has to change type and no table has to split.
 This is where the test suite goes.
 
 - `validatePosition(fen)` → `ok` or a list of reasons. Wraps `chess.js`'s
-  `validateFen` and adds what it does not check: exactly two kings, no pawn on
-  rank 1 or 8, the side *not* to move is not in check, at most 8 pawns a side.
+  `validateFen`, which already rejects wrong king counts and pawns on rank 1
+  or 8, and adds the two it misses: at most 8 pawns a side, and the side *not*
+  to move is not in check. Measured against 1.4.0 — see
+  [learnings](learnings/chess-libraries.md).
 - `legalTargets(fen, square)` → squares. Drives Guidance and nothing else.
 - `applyMove(fen, from, to, promotion?)` → `{ fen, san }` or a rejection.
 - `explainIllegal(fen, from, to)` → a sentence a six-year-old can read

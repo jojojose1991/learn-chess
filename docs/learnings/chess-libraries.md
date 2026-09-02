@@ -32,9 +32,33 @@ What we need is all present:
   `ascii()`, `squareColor()`, `findPiece()`, `hash()`, `history({ verbose })`,
   PGN load/emit.
 
-`validateFen` does **not** check everything a playable Position needs. Add:
-exactly two kings, no pawn on rank 1 or 8, the side *not* to move is not in
-check, at most 8 pawns a side.
+`validateFen` does **not** check everything a playable Position needs, but it
+checks more than we first thought. Measured against 1.4.0 while building
+`src/lib/chess/rules.ts`:
+
+| Invariant | `validateFen` 1.4.0 |
+|---|---|
+| exactly one king a side | **rejects** — `missing white king`, `too many black kings` |
+| no pawn on rank 1 or 8 | **rejects** — `some pawns are on the edge rows` |
+| at most 8 pawns a side | passes 9 pawns as `ok` — **ours to add** |
+| side *not* to move is not in check | passes as `ok` — **ours to add** |
+
+So only the last two are ours. `findPiece({ type: "p", color })` counts pawns,
+and `isAttacked(king, turn)` answers the check question without having to flip
+the side to move.
+
+Two more measured behaviours:
+
+- `fen()` **drops the en-passant square when no capture can actually be made**,
+  so the position after `1. e4` serialises as `... b KQkq - 0 1`, not `e3 0 1`.
+  `fen({ forceEnpassantSquare: true })` brings it back **only for a FEN that
+  was loaded carrying it** — after a `move()` there is nothing left to force,
+  because `move()` clears `_epSquare` outright when no enemy pawn is adjacent.
+  Positions with castling rights, or with an en-passant square a pawn can
+  really use, do round-trip byte for byte.
+- `move({ from, to })` **throws** on a promoting move with no `promotion`
+  field, rather than defaulting to a queen. Good: a silent queen would defeat
+  the promotion picker.
 
 ### Alternative considered: `chessops`
 
