@@ -230,7 +230,9 @@ export const Route = createFileRoute('/api/auth/$')({
 ```
 
 Cross-checked against Start's current server-routes guide — this is today's API.
-`createServerFileRoute` is gone from the Start docs.
+`createServerFileRoute` is gone from the Start docs. One `ANY` handler works too
+and is what we ship: BetterAuth's `handler` dispatches on the method itself, so
+splitting `GET`/`POST` only duplicates the same one-liner.
 
 - **`reactStartCookies` is gone** from 1.7.2 (zero occurrences in `dist/`). The
   current plugin is **`tanstackStartCookies()`** from `better-auth/tanstack-start`,
