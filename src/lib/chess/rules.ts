@@ -165,6 +165,12 @@ export function explainIllegal(fen: string, from: Square, to: Square): string {
   const shape = shapeTargets(piece, from)
   const reachable = piece.type === "k" ? shape : pseudoLegalTargets(fen, from)
   if (reachable.includes(to)) return "That would leave your king in danger."
-  if (shape.includes(to)) return "There is a piece in the way."
+  if (shape.includes(to)) {
+    // A pawn's shape is its own file, so an occupied square it can reach is
+    // always a piece standing in front of it rather than one in its path.
+    return piece.type === "p" && position.get(to)
+      ? "A pawn cannot take a piece straight ahead — only diagonally."
+      : "There is a piece in the way."
+  }
   return movementReasons[piece.type]
 }

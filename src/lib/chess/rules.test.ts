@@ -256,8 +256,34 @@ describe("explainIllegal, on the cases the first cut got wrong", () => {
 
   it("says a blocked pawn is blocked", () => {
     const blocked = "4k3/8/8/8/8/4n3/4P3/4K3 w - - 0 1"
-    expect(explainIllegal(blocked, "e2", "e3")).toBe(
+    expect(explainIllegal(blocked, "e2", "e4")).toBe(
       "There is a piece in the way."
+    )
+  })
+
+  it("tells a pawn it cannot take the piece standing in front of it", () => {
+    const facing = "4k3/8/8/8/8/4n3/4P3/4K3 w - - 0 1"
+    const reason =
+      "A pawn cannot take a piece straight ahead — only diagonally."
+    expect(explainIllegal(facing, "e2", "e3")).toBe(reason)
+    // Two squares ahead, with the square between it empty: same truth.
+    expect(
+      explainIllegal("4k3/8/8/8/4n3/8/4P3/4K3 w - - 0 1", "e2", "e4")
+    ).toBe(reason)
+  })
+
+  it("does not blame the other side's piece on your own pieces", () => {
+    // The rook is stopped by the knight in its path; the black rook it was
+    // going for is on the destination, and belongs to nobody friendly.
+    const stopped = "7k/8/8/4r3/8/4n3/8/K3R3 w - - 0 1"
+    expect(explainIllegal(stopped, "e1", "e5")).toBe(
+      "There is a piece in the way."
+    )
+  })
+
+  it("does not call an impossible move blocked just because the board is full", () => {
+    expect(explainIllegal(START, "a1", "c3")).toBe(
+      "A rook moves only in straight lines, up and down or side to side."
     )
   })
 

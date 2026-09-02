@@ -49,7 +49,17 @@ four would otherwise have said something false to a six-year-old: "One of your
 own pieces is already on that square", "There is a piece in the way" (a blocked
 rook is not a rook that moves diagonally), and "Your king cannot castle right
 now" (gated on the king standing on its home square, so a two-square king walk
-elsewhere is still just an illegal king move).
+elsewhere is still just an illegal king move), and "A pawn cannot take a piece
+straight ahead — only diagonally."
+
+Each branch asserts a *cause*, so a badly gated one lies rather than merely
+being vague — which is how the castle branch first went wrong. Every one of
+them therefore carries a test pinning a case where it must **not** fire.
+
+Still assumed, and cheap to break: the board never encodes castling as
+king-takes-rook (e1→h1). `legalTargets` offers `c1`/`g1`, so tap-tap in ticket
+07 cannot produce it; if it ever did, "One of your own pieces is already on
+that square" would fire on a legal castle.
 
 **`evaluateGoal(goal, moves)` takes `Array<PlayedMove>`** — `{ fen, san }`,
 exactly what a successful `applyMove` returns, so the game loop pushes the
