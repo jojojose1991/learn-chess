@@ -1,7 +1,12 @@
 import { Chess } from "chess.js"
 import { describe, expect, it } from "vitest"
 
-import { applyMove, legalTargets, validatePosition } from "./rules"
+import {
+  applyMove,
+  explainIllegal,
+  legalTargets,
+  validatePosition,
+} from "./rules"
 
 const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 const CASTLING = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
@@ -179,5 +184,87 @@ describe("applyMove", () => {
       ok: false,
       reason: "e7 to e8 is not a legal move in this position.",
     })
+  })
+})
+
+describe("explainIllegal", () => {
+  it("says when there is no piece on the square", () => {
+    expect(explainIllegal(START, "e5", "e6")).toBe(
+      "There is no piece on that square."
+    )
+  })
+
+  it("says when the piece belongs to the other side", () => {
+    expect(explainIllegal(START, "e7", "e6")).toBe("That is not your piece.")
+  })
+
+  it("says when one of your own pieces is already there", () => {
+    expect(explainIllegal(START, "a1", "a2")).toBe(
+      "One of your own pieces is already on that square."
+    )
+  })
+
+  it("says how the piece moves when it could never reach the square", () => {
+    expect(explainIllegal(START, "b1", "e5")).toBe(
+      "A knight moves in an L: two squares one way, then one square across."
+    )
+    expect(explainIllegal(START, "c1", "c3")).toBe(
+      "A bishop moves only along the slanted lines, never straight."
+    )
+    expect(explainIllegal(START, "e2", "d3")).toBe(
+      "A pawn moves straight forward, and only takes a piece diagonally."
+    )
+  })
+
+  it("says when a piece is in the way", () => {
+    expect(explainIllegal(START, "a1", "a5")).toBe(
+      "There is a piece in the way."
+    )
+  })
+
+  it("says when the move would expose your own king", () => {
+    const pinned = "4r3/8/8/8/8/8/4R3/4K2k w - - 0 1"
+    expect(explainIllegal(pinned, "e2", "d2")).toBe(
+      "That would leave your king in danger."
+    )
+  })
+
+  it("says the same when the king itself would step into danger", () => {
+    const attacked = "8/8/8/8/8/8/1r6/4K2k w - - 0 1"
+    expect(explainIllegal(attacked, "e1", "e2")).toBe(
+      "That would leave your king in danger."
+    )
+  })
+
+  it("does not mistake a castle it cannot make for a two-square king move", () => {
+    const noRights = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w - - 0 1"
+    expect(explainIllegal(noRights, "e1", "g1")).toBe(
+      "Your king cannot castle right now."
+    )
+  })
+})
+
+describe("explainIllegal, on the cases the first cut got wrong", () => {
+  it("blames the pin, not the pawn, for a pinned pawn's capture", () => {
+    // exd3 is a real pawn capture; it is illegal only because the pawn is
+    // pinned to e1 by the rook on e8.
+    const pinnedPawn = "4rk2/8/8/8/8/3n4/4P3/4K3 w - - 0 1"
+    expect(explainIllegal(pinnedPawn, "e2", "d3")).toBe(
+      "That would leave your king in danger."
+    )
+  })
+
+  it("says a blocked pawn is blocked", () => {
+    const blocked = "4k3/8/8/8/8/4n3/4P3/4K3 w - - 0 1"
+    expect(explainIllegal(blocked, "e2", "e3")).toBe(
+      "There is a piece in the way."
+    )
+  })
+
+  it("only calls it a castle when the king is on its own square", () => {
+    const roaming = "7k/8/8/8/4K3/8/8/8 w - - 0 1"
+    expect(explainIllegal(roaming, "e4", "g4")).toBe(
+      "A king moves one square at a time, in any direction."
+    )
   })
 })

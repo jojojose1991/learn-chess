@@ -47,6 +47,28 @@ So only the last two are ours. `findPiece({ type: "p", color })` counts pawns,
 and `isAttacked(king, turn)` answers the check question without having to flip
 the side to move.
 
+### Getting pseudo-legal moves out of a library that will not give them
+
+`moves()` only ever returns *legal* moves, and 1.4.0 exposes no pseudo-legal
+generator. Telling "that piece cannot reach that square" apart from "that would
+expose your own king" needs one, because the only filter `moves()` applies on
+top of pseudo-legality **is** king safety. Two probes, both measured while
+building `explainIllegal`:
+
+- **Take the moving side's king off the board.** `new Chess(fen, { skipValidation: true })`
+  then `remove(kingSquare)`, and `moves()` returns pseudo-legal moves — the
+  check filter has nothing left to filter on, and it does not throw on the
+  missing king. Meaningless for a king's own move, which is the one case that
+  needs the other probe.
+- **Put the piece alone on a cleared board** — `clear()`, `put(piece, square)`,
+  `setTurn(color)` — and `moves()` gives pure movement shape. Note what this
+  loses: a lone pawn generates **no diagonal captures** (nothing to capture)
+  and a lone king generates **no castling** (rights are cleared with the
+  board), so a pinned pawn's capture must be recognised on the true board
+  first, and a castle must be special-cased before this probe sees it.
+
+`remove`, `put` and `setTurn` all exist in 1.4.0 despite not being listed above.
+
 Two more measured behaviours:
 
 - `fen()` **drops the en-passant square when no capture can actually be made**,
