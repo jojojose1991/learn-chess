@@ -6,6 +6,8 @@ import { tanstackStartCookies } from "better-auth/tanstack-start"
 import { getDb } from "@/db"
 import { requireEnv } from "@/lib/env"
 
+import type { Db } from "@/db"
+
 /**
  * The role that may work the accounts screen. `user.role` is the plugin's own
  * column and its own permission check reads it, so this is the single
@@ -57,12 +59,18 @@ export async function getCoach(headers: Headers): Promise<Coach | null> {
  *
  * `signUp` opens the sign-up endpoint on one instance, for that script alone.
  * The app itself never passes it, so the endpoint is closed in the server.
+ *
+ * `db` is for the e2e template, which is a different database from the
+ * singleton and needs the same auth to write the credential row.
  */
-export function createAuth({ signUp = false }: { signUp?: boolean } = {}) {
+export function createAuth({
+  signUp = false,
+  db,
+}: { signUp?: boolean; db?: Db } = {}) {
   return betterAuth({
     baseURL: requireEnv("BETTER_AUTH_URL"),
     secret: requireEnv("BETTER_AUTH_SECRET"),
-    database: drizzleAdapter(getDb(), { provider: "pg" }),
+    database: drizzleAdapter(db ?? getDb(), { provider: "pg" }),
     emailAndPassword: {
       enabled: true,
       disableSignUp: !signUp,

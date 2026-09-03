@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { newCoachBody } from "@/lib/accounts/service"
 
-import type { NewCoach } from "@/lib/accounts/service"
+import type { NewCoach } from "@/lib/accounts/rules"
 
 /**
  * The accounts screen may add a Coach. It may not decide what that Coach *is*.

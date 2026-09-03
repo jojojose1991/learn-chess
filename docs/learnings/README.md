@@ -15,5 +15,9 @@ say. Every claim is either read from source, measured, or flagged as unverified.
   Tailwind v4, and what is and isn't tied to Next.js.
 - [deployment.md](./deployment.md) — Docker on Cloud Run, Neon, Drizzle
   migrations, BetterAuth, Resend, native Stockfish, and `onnxruntime-node`.
+- [testing.md](./testing.md) — three things that passed typecheck, lint and the
+  whole unit suite while the app was broken: a server-fn module's re-exports
+  reaching the client bundle, a form submitting natively before it hydrates,
+  and postgres 18's moved data directory.
 
 Versions are as of 2026-09-02. Check before trusting any of them a year from now.

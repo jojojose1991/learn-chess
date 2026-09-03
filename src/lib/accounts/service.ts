@@ -1,5 +1,8 @@
 import { listCoachesWithPuzzleCounts } from "@/db/repositories/accounts"
 import { getAuth, getCoach } from "@/lib/auth"
+import { MIN_PASSWORD } from "./rules"
+
+import type { NewAccess, NewCoach, NewPassword } from "./rules"
 
 /** One Coach as the accounts screen lists them. */
 export type Account = {
@@ -11,20 +14,11 @@ export type Account = {
 }
 
 /**
- * BetterAuth's own default (`emailAndPassword.minPasswordLength`), which its
- * `setUserPassword` enforces but its `createUser` does not — so the check in
- * `createCoach` below is ours, and the two routes in cannot disagree.
- */
-export const MIN_PASSWORD = 8
-
-export type NewCoach = { email: string; name: string; password: string }
-
-/**
  * The three fields an invite may set, and nothing else.
  *
  * `createUser` also accepts `role` and `banned` — and reads `role` out of a
- * nested `data` bag — while `inputValidator` is a type annotation that strips
- * nothing at runtime. Forwarding the input object whole would therefore let an
+ * nested `data` bag — while the controller's `validator` is a type annotation
+ * that strips nothing at runtime. Forwarding the input object whole would let an
  * admin mint a second admin through the accounts screen, which `pnpm seed` is
  * supposed to be the only way to do. So the body is built field by field, and
  * the test says why.
@@ -32,9 +26,6 @@ export type NewCoach = { email: string; name: string; password: string }
 export function newCoachBody({ email, name, password }: NewCoach) {
   return { email, name, password }
 }
-export type NewPassword = { coachId: string; password: string }
-export type NewAccess = { coachId: string; revoked: boolean }
-
 /**
  * Every account, or null when the caller is not an admin — the screen answers
  * 404 to that rather than refusing, so an unlisted URL does not confirm what

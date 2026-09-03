@@ -48,7 +48,18 @@ function SignIn() {
         Coaches only. Accounts are invite-only.
       </p>
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
+      {/*
+        `method="post"` so a submit before React hydrates fails instead of
+        putting the password in the query string (docs/learnings/testing.md).
+
+        ponytail: the real fix is a server action, so sign-in works with no JS
+        at all. Worth it when a Coach on a slow connection complains.
+      */}
+      <form
+        method="post"
+        onSubmit={submit}
+        className="mt-6 flex flex-col gap-4"
+      >
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>
           <Input
