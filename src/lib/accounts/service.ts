@@ -1,5 +1,5 @@
 import { listCoachesWithPuzzleCounts } from "@/db/repositories/accounts"
-import { getAuth, isAdmin } from "@/lib/auth"
+import { getAuth, getCoach } from "@/lib/auth"
 
 /** One Coach as the accounts screen lists them. */
 export type Account = {
@@ -17,6 +17,10 @@ export type Account = {
  */
 export const MIN_PASSWORD = 8
 
+export type NewCoach = { email: string; name: string; password: string }
+export type NewPassword = { coachId: string; password: string }
+export type NewAccess = { coachId: string; revoked: boolean }
+
 /**
  * Every account, or null when the caller is not an admin — the screen answers
  * 404 to that rather than refusing, so an unlisted URL does not confirm what
@@ -25,8 +29,8 @@ export const MIN_PASSWORD = 8
 export async function listAccounts(
   headers: Headers
 ): Promise<Account[] | null> {
-  const session = await getAuth().api.getSession({ headers })
-  if (!session || !isAdmin(session.user)) return null
+  const coach = await getCoach(headers)
+  if (!coach?.isAdmin) return null
 
   return (await listCoachesWithPuzzleCounts()).map(({ banned, ...row }) => ({
     ...row,
@@ -39,21 +43,11 @@ export async function listAccounts(
  * credential account together, so invite-only stays invite-only: the sign-up
  * endpoint is still closed.
  */
-export function createCoach(
-  input: { email: string; name: string; password: string },
-  headers: Headers
-) {
+export async function createCoach(input: NewCoach, headers: Headers) {
   if (input.password.length < MIN_PASSWORD)
-    return Promise.resolve({
-      error: `A password needs at least ${MIN_PASSWORD} characters.`,
-    })
+    return { error: `A password needs at least ${MIN_PASSWORD} characters.` }
 
-  return attempt((auth) =>
-    auth.api.createUser({
-      body: { email: input.email, name: input.name, password: input.password },
-      headers,
-    })
-  )
+  return attempt(() => getAuth().api.createUser({ body: input, headers }))
 }
 
 /**
@@ -61,11 +55,9 @@ export function createCoach(
  * `setUserPassword` rewrites the credential row and nothing else, so without
  * the second call a Coach signed in elsewhere keeps working.
  */
-export function resetCoachPassword(
-  input: { coachId: string; password: string },
-  headers: Headers
-) {
-  return attempt(async (auth) => {
+export function resetCoachPassword(input: NewPassword, headers: Headers) {
+  return attempt(async () => {
+    const auth = getAuth()
     await auth.api.setUserPassword({
       body: { userId: input.coachId, newPassword: input.password },
       headers,
@@ -83,11 +75,9 @@ export function resetCoachPassword(
  * Link stay — it is what this product has instead of deleting. It also refuses
  * to ban the caller, so an admin cannot revoke themselves.
  */
-export function setAccess(
-  input: { coachId: string; revoked: boolean },
-  headers: Headers
-) {
-  return attempt((auth) => {
+export function setAccess(input: NewAccess, headers: Headers) {
+  return attempt(() => {
+    const auth = getAuth()
     const body = { userId: input.coachId }
     return input.revoked
       ? auth.api.banUser({ body, headers })
@@ -105,10 +95,10 @@ export function setAccess(
  * through unchanged.
  */
 async function attempt(
-  write: (auth: ReturnType<typeof getAuth>) => Promise<unknown>
+  write: () => Promise<unknown>
 ): Promise<{ error?: string }> {
   try {
-    await write(getAuth())
+    await write()
     return {}
   } catch (error) {
     return {

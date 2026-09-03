@@ -3,8 +3,6 @@ import { getRequestHeaders } from "@tanstack/react-start/server"
 
 import { getCoach } from "@/lib/auth"
 
-export type { Coach } from "@/lib/auth"
-
 /**
  * The signed-in Coach, or null. Read on the server from the session cookie so
  * a guard can run before a Coach-only route renders — on the first request as
