@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { withDb } from "./index"
+import { withDb } from "@/db"
 
 /** The pool is built lazily and never queried here, so no socket is opened. */
 beforeAll(() => {

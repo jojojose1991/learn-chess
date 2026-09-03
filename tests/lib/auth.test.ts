@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { createAuth, isAdmin } from "./auth"
+import { createAuth, isAdmin } from "@/lib/auth"
 
 /**
  * The pool is built lazily. `disableSignUp` is checked before the adapter is

@@ -1,9 +1,9 @@
 import { Chess } from "chess.js"
 import { describe, expect, it } from "vitest"
 
-import { evaluateGoal } from "./goals"
+import { evaluateGoal } from "@/lib/chess/goals"
 
-import type { PlayedMove } from "./rules"
+import type { PlayedMove } from "@/lib/chess/rules"
 
 /** The Student moves first, so odd-numbered plies here are the Student's. */
 function play(fen: string, ...sans: Array<string>): Array<PlayedMove> {

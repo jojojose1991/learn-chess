@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { Route } from "./$"
+import { Route } from "@/routes/api/auth/$"
 
 /** The handler is never reached for a closed path, so no socket is opened. */
 beforeAll(() => {

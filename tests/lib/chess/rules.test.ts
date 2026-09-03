@@ -6,7 +6,7 @@ import {
   explainIllegal,
   legalTargets,
   validatePosition,
-} from "./rules"
+} from "@/lib/chess/rules"
 
 const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 const CASTLING = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
