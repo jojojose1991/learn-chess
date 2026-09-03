@@ -42,6 +42,12 @@ two lists.
 - **Animation.** Pieces sliding to their square, captured pieces fading, the
   legal-square dots springing in, and a solve celebration. Cut from the MVP;
   pieces move instantly and the solved state is static.
+- **Dark mode.** `@custom-variant dark` survives because the vendored shadcn
+  components carry `dark:` classes, but nothing sets the class and there is no
+  `.dark` palette to set it against. Derive one from the light palette's
+  recipe rather than shadcn's grey default: neutrals on hue 110 at chroma
+  0.006–0.018, the green on 130, and `--brand-ink` *lighter* than the fill
+  green rather than darker, since the ground inverts.
 
 ## Play
 

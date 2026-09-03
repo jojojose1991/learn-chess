@@ -5,7 +5,8 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**7 of 19 resolved. Three tickets are actionable right now: 07, 12 and 19.**
+**7 of 21 resolved. Five tickets are actionable right now: 07, 12, 19, 20
+and 21.**
 
 ## Tickets
 
@@ -24,6 +25,8 @@ status and pointers and never a second copy of a ticket's detail.
 | 07  | Tap-tap, Guidance, promotion picker | 🟢 **ready**    | 06 ✅          |
 | 12  | Stockfish over UCI                  | 🟢 **ready**    | none           |
 | 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
+| 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
+| 21  | A Library row says what it is       | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | ⬜ ready-for-agent | 07            |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
@@ -62,7 +65,6 @@ already owed by code that shipped. Do not merge them.
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
 | New Puzzle's taps go nowhere and its Position is hardcoded   | 08                                        | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |
-| Only green is asserted — nothing selects brown yet           | the ticket reading the Coach's theme      | 06                                  |
 | `/admin/set-role` and `/admin/update-user` are refused at the route | promote and demote get a screen   | 18                                  |
 | `create-user` still accepts a `role` in its body             | a role that grants what an admin cannot   | 18                                  |
 | `shadcn`'s `field` is not installed; `Label` + `Input` do     | a form needs more than a stacked label    | 04                                  |
@@ -75,6 +77,8 @@ already owed by code that shipped. Do not merge them.
 | `public/pieces/LICENSE` has no extension, so `/credits` downloads it | revisiting ADR-0004               | 06                                  |
 | Nothing encodes castling as king-takes-rook (e1→h1)          | if tap-tap ever produces one              | 02                                  |
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
+| The board's focus outline is under 3:1 at the base layer's 50% alpha | 07                                 | ADR-0005, `src/styles.css`          |
+| `src/styles.css` is outside the prettier glob, so unchecked   | the next change to `styles.css`           | `package.json`                      |
 
 `grep -rn "ponytail:" src scripts` is the code half of this list.
 

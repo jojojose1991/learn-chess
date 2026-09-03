@@ -37,7 +37,7 @@ export function AppSidebar({ coach }: { coach: Coach }) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-3 font-heading text-lg font-medium">
+      <SidebarHeader className="px-4 py-3 font-heading text-lg">
         Learn Chess
       </SidebarHeader>
       <SidebarContent>
@@ -49,7 +49,7 @@ export function AppSidebar({ coach }: { coach: Coach }) {
                   {/* `data-status` is the router's own answer to "is this the
                       page we are on", so nothing here recomputes it. */}
                   <SidebarMenuButton
-                    className="data-[status=active]:bg-sidebar-accent data-[status=active]:font-medium data-[status=active]:text-sidebar-accent-foreground"
+                    className="data-[status=active]:bg-sidebar-accent data-[status=active]:font-medium data-[status=active]:text-brand-ink"
                     render={
                       <Link
                         to={item.to}

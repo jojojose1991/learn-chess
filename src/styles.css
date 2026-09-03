@@ -2,14 +2,18 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+/* latin-400: the only weight Instrument Serif has, so no heading may ask for a
+   bolder one — the browser would synthesise it. */
+@import "@fontsource/instrument-serif/latin-400.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
+    --font-heading: "Instrument Serif", ui-serif, Georgia, serif;
     --font-sans: 'Geist Variable', sans-serif;
     --color-board-light: var(--board-light);
     --color-board-dark: var(--board-dark);
+    --color-brand-ink: var(--brand-ink);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,11 +22,6 @@
     --color-sidebar-primary: var(--sidebar-primary);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
     --color-input: var(--input);
     --color-border: var(--border);
@@ -50,73 +49,49 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.205 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-}
+/*
+  Neutrals carry a little chroma on hue 110 — between the green board's two
+  squares — so the chrome is warm rather than grey. Stock shadcn `neutral`
+  ships every token at chroma 0, which is why the app read as a template while
+  its own favicon had a palette. `--card` and `--popover` are the exception and
+  stay pure white: raised surfaces read as raised against a tinted ground
+  without needing a shadow.
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.922 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+  `--brand-ink` is the green as text, dark enough to pass AA on a light ground.
+  It is not `--primary` and not `--ring`; docs/adr/0005 says why.
+*/
+:root {
+    --background: oklch(0.985 0.006 110);
+    --foreground: oklch(0.205 0.014 110);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.205 0.014 110);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.205 0.014 110);
+    --primary: oklch(0.26 0.022 130);
+    --primary-foreground: oklch(0.985 0.01 110);
+    --secondary: oklch(0.965 0.01 110);
+    --secondary-foreground: oklch(0.26 0.022 130);
+    --muted: oklch(0.965 0.01 110);
+    --muted-foreground: oklch(0.52 0.014 110);
+    --accent: oklch(0.26 0.022 130);
+    --accent-foreground: oklch(0.985 0.01 110);
+    --destructive: oklch(0.545 0.235 27.5);
+    --border: oklch(0.91 0.012 110);
+    --input: oklch(0.91 0.012 110);
+    /* Ink, not the brand green: this colours the focus outline, and a green
+       one on a green board square measures 1.00 — invisible. Ink is 5.50 on
+       the darkest square and 17.15 on the page. */
+    --ring: oklch(0.205 0.014 110);
+    --brand-ink: oklch(0.47 0.095 132);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.968 0.012 110);
+    --sidebar-foreground: oklch(0.205 0.014 110);
+    --sidebar-primary: oklch(0.26 0.022 130);
+    --sidebar-primary-foreground: oklch(0.985 0.01 110);
+    --sidebar-accent: oklch(0.935 0.018 110);
+    --sidebar-accent-foreground: oklch(0.205 0.014 110);
+    --sidebar-border: oklch(0.905 0.014 110);
+    --sidebar-ring: oklch(0.205 0.014 110);
 }
 
 /* The two board themes. Deliberately not on `:root`: a board always carries
@@ -142,5 +117,8 @@
     }
   html {
     @apply font-sans;
+    }
+  h1, h2, h3 {
+    @apply font-heading;
     }
 }

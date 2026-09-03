@@ -17,7 +17,7 @@ export const Route = createRootRoute({
       // wants its own title just declares one.
       { title: "Learn Chess" },
       { name: "description", content: DESCRIPTION },
-      { name: "theme-color", content: "#ffffff" },
+      { name: "theme-color", content: "#fafaf6" },
       // A Coach shares a Puzzle Link in a chat app, which renders this.
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "Learn Chess" },

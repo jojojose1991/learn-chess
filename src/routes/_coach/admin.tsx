@@ -76,7 +76,7 @@ function Accounts() {
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
-      <h1 className="font-heading text-2xl font-medium">Accounts</h1>
+      <h1 className="text-2xl">Accounts</h1>
 
       {error ? (
         <p role="alert" className="text-sm text-destructive">
@@ -171,7 +171,7 @@ function Accounts() {
       </table>
 
       <section className="flex flex-col gap-4">
-        <h2 className="font-heading text-lg font-medium">Add a Coach</h2>
+        <h2 className="text-lg">Add a Coach</h2>
         <form
           onSubmit={submitCoach}
           className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end"

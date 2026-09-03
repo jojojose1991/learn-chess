@@ -14,12 +14,10 @@ export const Route = createFileRoute("/credits")({
 function Credits() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <h1 className="font-heading text-2xl font-medium">Credits</h1>
+      <h1 className="text-2xl">Credits</h1>
 
       <section className="flex flex-col gap-3 text-sm">
-        <h2 className="font-heading text-lg font-medium">
-          Chess piece graphics
-        </h2>
+        <h2 className="text-lg">Chess piece graphics</h2>
         <p>
           Copyright &copy; Colin M.L. Burnett (Wikimedia Commons user{" "}
           <a
