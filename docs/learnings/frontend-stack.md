@@ -134,6 +134,57 @@ FOUC mitigation.
 
 Moot for this project — dark mode is cut (see [BACKLOG.md](../BACKLOG.md)).
 
+## `color-scheme: light` does not stop Chrome darkening the page
+
+A light-only palette is overridden anyway unless it says **`only`**. [CSS Color
+Adjust 1 §2.5](https://drafts.csswg.org/css-color-adjust-1/) makes the UA
+auto-adjust when the user prefers a scheme "the author does not explicitly
+support, **and the author has not disallowed this (by using the `only`
+keyword)**", and names the remedy: pages that have "not explicitly forbidden
+this auto-adjustment by specifying `color-scheme: only light`" get their colours
+inverted. Chrome's own
+[Auto Dark Theme](https://developer.chrome.com/blog/auto-dark-theme) doc
+corroborates it by accident — its *detection* snippet ships
+`color-scheme: light` and checks whether the background came back non-white, so
+plain `light` is a thing Chrome still darkens.
+
+That is why `src/styles.css` says `only light`. Lightning CSS serialises it to
+`light only`; the grammar is `[ light | dark | <custom-ident> ]+ && only?`, so
+the two are the same value.
+
+**None of it is verifiable in a headless browser, which is why no test holds
+it.** `Emulation.setAutoDarkModeOverride` is the only handle Playwright has, and
+it ignores the opt-out. Measured against minimal static pages, one row per
+opt-out, probing an element with `background: canvas` and an author-coloured
+`#edeed1` square:
+
+| declared on the page                     | ADT on, canvas    | ADT off, canvas    | author square, either |
+| ---------------------------------------- | ----------------- | ------------------ | --------------------- |
+| nothing                                  | `rgb(18,18,18)`   | `rgb(255,255,255)` | `rgb(237,238,209)`    |
+| `:root { color-scheme: light }`           | `rgb(18,18,18)`   | `rgb(255,255,255)` | `rgb(237,238,209)`    |
+| `:root { color-scheme: only light }`      | `rgb(18,18,18)`   | `rgb(255,255,255)` | `rgb(237,238,209)`    |
+| `<meta name="color-scheme" content="only light">` | `rgb(18,18,18)` | `rgb(255,255,255)` | `rgb(237,238,209)` |
+
+Two things to take from it. The `canvas` probe reports whether the *emulation*
+is enabled, not whether the page opted out — every opt-out reads identically, so
+an assertion on it passes with the declaration deleted. And **the darkening
+never reaches computed style**: the author's square is `rgb(237,238,209)` in
+every row, because the transform happens at paint. So `toHaveCSS` on the thing
+that looks wrong cannot see this bug either, and the only thing that could is a
+screenshot, which `eslint.config.js` forbids.
+
+The CSS property alone is enough in production; `<meta name="color-scheme">`
+only closes the pre-first-paint window, and `src/routes/__root.tsx` loads the
+stylesheet as a render-blocking `<link>`, so nothing paints before it parses.
+Worth knowing that **`pnpm vite dev` is not that shape** — it serves
+`src/styles.css` as a JS module that injects the style after load, which is also
+what the e2e suite runs against.
+
+`only light` does not stop `prefers-color-scheme: dark` matching (measured
+`false` here only because the harness reports no OS preference), so a future
+class-based `.dark` variant is unaffected — it would need `light` on `:root` and
+`dark` under `.dark`, never a static `light dark`.
+
 ## Serving large binary assets from a Vite build
 
 Relevant only if Scan or the engine ever move client-side. Three ways to get a

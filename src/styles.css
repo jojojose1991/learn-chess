@@ -64,6 +64,10 @@
   is `--primary` and neither is `--ring`; docs/adr/0005 says why.
 */
 :root {
+  /* `only`, not plain `light`, which a UA may still override: an auto-darkened
+     `--board-light` is a wrong board (docs/learnings/frontend-stack.md). */
+  color-scheme: only light;
+
   --background: oklch(0.985 0.006 110);
   --foreground: oklch(0.205 0.014 110);
   --card: oklch(1 0 0);
