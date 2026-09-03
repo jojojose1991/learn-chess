@@ -28,6 +28,24 @@ export function isAdmin(coach: { role?: string | null }): boolean {
   )
 }
 
+/** The signed-in Coach as the product sees them, not as BetterAuth stores them. */
+export type Coach = { id: string; email: string; isAdmin: boolean }
+
+/**
+ * Who these request headers are signed in as, or null. Reading the session is
+ * the auth module's job, so nothing above it has to know that admin-ness is a
+ * column on `user` or that BetterAuth is what answers.
+ */
+export async function getCoach(headers: Headers): Promise<Coach | null> {
+  const session = await getAuth().api.getSession({ headers })
+  if (!session) return null
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    isAdmin: isAdmin(session.user),
+  }
+}
+
 /**
  * The Coach's auth. Invite-only: no sign-up route, no password reset and no
  * email verification — the admin mints Coaches on the accounts screen, and
