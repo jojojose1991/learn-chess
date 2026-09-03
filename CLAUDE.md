@@ -14,7 +14,14 @@ pnpm test <file> # single file, e.g. pnpm test tests/lib/chess/rules.test.ts
 pnpm typecheck   # tsc --noEmit
 pnpm lint        # eslint
 pnpm format      # prettier --write
+
+docker compose up -d   # the e2e postgres, on 5433
+pnpm e2e:db            # migrate + seed the template, clone it
+pnpm e2e               # playwright; provisions the clone itself
 ```
+
+`pnpm e2e` is deliberately not part of `pnpm test`: it needs a database and a
+running app, and the point of the unit suite is that it needs neither.
 
 The interactive shell here is **fish**, which has no heredocs, no
 `export FOO=bar`, no `VAR=x cmd` prefix and no `[[ ]]`. `.claude/settings.json`
@@ -80,8 +87,64 @@ verbs in paths, no `?action=`, and never a 200 with an error inside.
 - shadcn/ui with the `base-nova` style, `neutral` base color, `@base-ui/react` primitives and Tabler icons. Add components with `pnpm dlx shadcn@latest add <name>` — they land in `src/components/ui/`.
 - Compose Tailwind classes through `cn()` (`src/lib/utils.ts`); Prettier is configured to sort classes inside `cn()` and `cva()`.
 - Prettier: no semicolons, double quotes, 80 cols. TS is `strict` with `noUnusedLocals`/`noUnusedParameters`, so unused imports fail `pnpm typecheck`.
-- **All tests live in `tests/`**, mirroring the source path — `src/lib/chess/rules.ts` is tested by `tests/lib/chess/rules.test.ts`. None beside the source. Tests import through `@/*`, never relative paths.
-- Vitest has no config block yet — a DOM test needs `environment: "jsdom"` added to `vite.config.ts` (jsdom and Testing Library are already installed).
+- **All tests live in `tests/`**, mirroring the source path — `src/lib/chess/rules.ts` is tested by `tests/lib/chess/rules.test.ts`. None beside the source. Tests import through `@/*`, never relative paths. See [Testing](#testing) for which layer a behaviour belongs to.
+
+## Testing
+
+Three layers, and a behaviour belongs to exactly one of them. Testing the same
+rule twice is how a suite becomes something people switch off.
+
+| Layer | Files | Runs in | For |
+| --- | --- | --- | --- |
+| Logic | `tests/**/*.test.ts` | node | Pure functions, services, repositories, reducers |
+| DOM | `tests/**/*.test.tsx` | jsdom | A component's interaction contract |
+| E2E | `tests/e2e/*.spec.ts` | Playwright + real postgres | A journey no layer below can prove |
+
+The extension picks the environment (`vite.config.ts` `test.projects`), so a
+test that renders is `.tsx` and gets a DOM, and nothing needs an opt-in comment.
+
+**Prefer the lowest layer that can hold the behaviour.** The Play loop is one
+reducer, so it is tested as a reducer, not by driving HTML. The board emits
+taps, so it is tested as a component. A real cookie set by a real server
+surviving a real navigation is e2e, because nothing below it can lie about that
+convincingly.
+
+**The middle layer is the one that rots.** A jsdom test of a screen that mocks
+the server function it calls asserts that a mock was reached. Those belong in
+e2e or nowhere.
+
+### Behavioural, not brittle
+
+Half of this is enforced by `eslint.config.js` rather than by review, because
+it is greps rather than judgement — read the messages there, they say why. In
+short: no snapshots, no `getByTestId`, no `toHaveBeenCalled`, no reaching into
+DOM nodes.
+
+`toHaveBeenCalledWith` is deliberately still allowed. A spy on a collaborator
+you own is implementation; a callback prop that *is* the component's output
+(`onMove`) is its contract, and its arguments are the behaviour.
+
+What lint cannot check, and what review is therefore for:
+
+- **Does this assert a behaviour anyone cares about?** The sharpest failure in
+  this repo's history was a test asserting a 404 that the library returned
+  anyway for the wrong HTTP method. Lint-clean, role-free, mock-free, and it
+  proved nothing for as long as it existed. Ask what would have to break for
+  the test to fail, and if the answer is "nothing", delete it.
+- **Would it still pass against a different correct implementation?** That is
+  the actual definition of behavioural. Mutation testing is the honest way to
+  answer it and is not set up; until then it is a question you ask by hand.
+- **Test names state a behaviour and its reason**, not a function name —
+  "closes the sign-up endpoint, so the only way in is an invite" is the house
+  style.
+
+Anti-goals, stated so they are not drifted into:
+
+- **Coverage percentage is not a target.** It is the metric an agent games
+  hardest, by executing lines without asserting anything.
+- **Do not edit a test to make an implementation pass.** The failing test is
+  the spec; changing it redefines the task. Doing so is a separate, announced
+  decision, not a step in getting to green.
 
 ## Design documents
 
@@ -134,12 +197,16 @@ taps; it knows nothing about Goals, engines or games.
 
 **The loop for one unit of work**, in order, and the order is the point:
 
-1. **Write the test first.** Red before green — the failing test states what
-   the change is for, then the implementation makes it pass.
-   `/mattpocock-skills:tdd` drives this if you want it driven. This binds
-   anything with logic in it: `src/lib/**`, services, repositories, reducers.
-   A screen or a component is exempt only until `environment: "jsdom"` is in
-   `vite.config.ts`; add it rather than skipping the test.
+0. **Design first, and the design names the behaviours.** The architecture
+   subagent CLAUDE.md already calls for must return the list of behaviours the
+   change has to exhibit, in the language of the domain — not test code. A ten
+   line list is cheap to review and is what the tests are then written
+   against; reviewing test code instead means reviewing it after you have
+   already built to it.
+1. **Write the test first**, from that list. Red before green.
+   `/mattpocock-skills:tdd` drives this if you want it driven. No exemptions:
+   logic goes in `tests/**/*.test.ts`, a component's contract in
+   `tests/**/*.test.tsx`, a journey in `tests/e2e/`.
 2. **Implement to green**, and get `pnpm typecheck`, `pnpm lint` and `pnpm test`
    passing.
 3. **`/ponytail:ponytail-review` over the diff, in a subagent.** Dispatch it
@@ -165,6 +232,23 @@ When a finding is declined, say so in the commit message with the reason. A
 review that was overruled silently is a review nobody can audit.
 
 **Commit to `main`. Do not create branches.**
+
+**Commit messages are short**, and `commitlint` enforces it through
+`.githooks/commit-msg` — on an agent's commits as much as a person's. Subject
+≤72 characters (aim for 50) stating the outcome; body ≤400 characters, wrapped
+at 72, carrying only what the diff cannot say; then trailers. Never
+`--no-verify`: if the hook refuses, the message is too long, not the hook
+wrong.
+
+Two rules do the work: **if a line is derivable from `git show`, cut it**, and
+**durable knowledge belongs in docs, not commit messages** — nobody greps
+`git log`. A required deploy step goes in `docs/PLAN.md`, a library gotcha in
+`docs/learnings/`, a rule in this file; the commit points at them. Declined
+review findings are raised in the review, not archived in the message.
+
+The same applies to comments. A comment longer than the code it explains, or
+one repeating what a doc already says, is the same habit — say it once, in the
+place someone will look.
 
 ## Agent skills
 

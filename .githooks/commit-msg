@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Versioned, unlike .git/hooks. `pnpm prepare` points git here.
+exec pnpm exec commitlint --edit "$1"

@@ -16,4 +16,5 @@ todos.json
 *.tsbuildinfo
 
 # playwright
+playwright-report
 test-results
