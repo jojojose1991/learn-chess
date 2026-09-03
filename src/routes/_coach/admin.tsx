@@ -1,10 +1,5 @@
 import { useState } from "react"
-import {
-  Link,
-  createFileRoute,
-  notFound,
-  useRouter,
-} from "@tanstack/react-router"
+import { createFileRoute, notFound, useRouter } from "@tanstack/react-router"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -81,12 +76,7 @@ function Accounts() {
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-8 p-6">
-      <header className="flex items-baseline justify-between gap-4">
-        <h1 className="font-heading text-2xl font-medium">Accounts</h1>
-        <Link to="/" className="text-sm underline underline-offset-4">
-          Library
-        </Link>
-      </header>
+      <h1 className="font-heading text-2xl font-medium">Accounts</h1>
 
       {error ? (
         <p role="alert" className="text-sm text-destructive">

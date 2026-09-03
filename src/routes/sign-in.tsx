@@ -42,55 +42,65 @@ function SignIn() {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-sm flex-col justify-center p-6">
-      <h1 className="font-heading text-2xl font-medium">Sign in</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Coaches only. Accounts are invite-only.
-      </p>
+    <main className="grid min-h-svh lg:grid-cols-2">
+      <div className="mx-auto flex max-w-sm flex-col justify-center p-6">
+        <h1 className="font-heading text-2xl font-medium">Sign in</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Coaches only. Accounts are invite-only.
+        </p>
+
+        {/*
+          `method="post"` so a submit before React hydrates fails instead of
+          putting the password in the query string (docs/learnings/testing.md).
+
+          ponytail: the real fix is a server action, so sign-in works with no JS
+          at all. Worth it when a Coach on a slow connection complains.
+        */}
+        <form
+          method="post"
+          onSubmit={submit}
+          className="mt-6 flex flex-col gap-4"
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          {error ? (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+
+          <Button type="submit" size="lg" disabled={busy}>
+            {busy ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+      </div>
 
       {/*
-        `method="post"` so a submit before React hydrates fails instead of
-        putting the password in the query string (docs/learnings/testing.md).
-
-        ponytail: the real fix is a server action, so sign-in works with no JS
-        at all. Worth it when a Coach on a slow connection complains.
+        Decorative, and a CSS background rather than an `<img>` on purpose: a
+        hidden `<img>` is still fetched, so a phone would pay 136KB for a photo
+        it never shows. Served from `public/`, not Unsplash — signing in does
+        not depend on a third-party CDN.
       */}
-      <form
-        method="post"
-        onSubmit={submit}
-        className="mt-6 flex flex-col gap-4"
-      >
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="username"
-            required
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </div>
-
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-
-        <Button type="submit" size="lg" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
-        </Button>
-      </form>
+      <div className="hidden bg-[url('/sign-in.jpg')] bg-cover bg-center lg:block" />
     </main>
   )
 }

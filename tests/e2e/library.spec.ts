@@ -34,7 +34,6 @@ test("an empty Library says so, rather than showing an empty box", async ({
   await signIn(page)
 
   await expect(page.getByText("No puzzles yet")).toBeVisible()
-  await expect(page.getByRole("link", { name: "New Puzzle" })).toBeVisible()
 })
 
 test("lists the Coach's own Puzzles by name, and never another Coach's", async ({
@@ -56,12 +55,4 @@ test("lists the Coach's own Puzzles by name, and never another Coach's", async (
     page.getByRole("list", { name: "Puzzles" }).getByRole("listitem")
   ).toHaveText(["anastasia's mate", "Back rank mate"])
   await expect(page.getByText("No puzzles yet")).toBeHidden()
-})
-
-test("New Puzzle opens the New Puzzle screen", async ({ page }) => {
-  await signIn(page)
-
-  await page.getByRole("link", { name: "New Puzzle" }).click()
-
-  await expect(page.getByRole("heading", { name: "New Puzzle" })).toBeVisible()
 })

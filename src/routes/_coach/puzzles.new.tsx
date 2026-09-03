@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/_coach/puzzles/new")({
   component: NewPuzzle,
@@ -7,12 +7,7 @@ export const Route = createFileRoute("/_coach/puzzles/new")({
 function NewPuzzle() {
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-      <header className="flex items-baseline justify-between gap-4">
-        <h1 className="font-heading text-2xl font-medium">New Puzzle</h1>
-        <Link to="/" className="text-sm underline underline-offset-4">
-          Library
-        </Link>
-      </header>
+      <h1 className="font-heading text-2xl font-medium">New Puzzle</h1>
     </main>
   )
 }
