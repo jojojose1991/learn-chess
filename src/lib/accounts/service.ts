@@ -18,6 +18,20 @@ export type Account = {
 export const MIN_PASSWORD = 8
 
 export type NewCoach = { email: string; name: string; password: string }
+
+/**
+ * The three fields an invite may set, and nothing else.
+ *
+ * `createUser` also accepts `role` and `banned` — and reads `role` out of a
+ * nested `data` bag — while `inputValidator` is a type annotation that strips
+ * nothing at runtime. Forwarding the input object whole would therefore let an
+ * admin mint a second admin through the accounts screen, which `pnpm seed` is
+ * supposed to be the only way to do. So the body is built field by field, and
+ * the test says why.
+ */
+export function newCoachBody({ email, name, password }: NewCoach) {
+  return { email, name, password }
+}
 export type NewPassword = { coachId: string; password: string }
 export type NewAccess = { coachId: string; revoked: boolean }
 
@@ -44,10 +58,18 @@ export async function listAccounts(
  * endpoint is still closed.
  */
 export async function createCoach(input: NewCoach, headers: Headers) {
+  // Before the password rule, so a caller who may not add Coaches learns
+  // nothing about what a password has to be — the plugin's own check below is
+  // the gate, but it runs too late to keep that quiet.
+  const coach = await getCoach(headers)
+  if (!coach?.isAdmin) return { error: "That did not work." }
+
   if (input.password.length < MIN_PASSWORD)
     return { error: `A password needs at least ${MIN_PASSWORD} characters.` }
 
-  return attempt(() => getAuth().api.createUser({ body: input, headers }))
+  return attempt(() =>
+    getAuth().api.createUser({ body: newCoachBody(input), headers })
+  )
 }
 
 /**

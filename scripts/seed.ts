@@ -50,6 +50,10 @@ async function seed() {
 
   // signUpEmail goes through the plugin's `defaultRole` hook, which writes
   // "user" — so the role is granted here either way.
+  //
+  // ponytail: this replaces the column rather than adding to it, which is
+  // lossless only while "user" grants nothing. Merge instead on the day a
+  // second role carries product meaning, or re-seeding will silently drop it.
   await db.update(user).set({ role: ADMIN_ROLE }).where(eq(user.email, email))
   console.log(`Coach ${email} is now an admin.`)
 }

@@ -21,11 +21,15 @@ export const ADMIN_ROLE = "admin"
 /**
  * Whether this Coach is an admin. `role` holds a comma-separated list once a
  * Coach has more than one, which is why this is not an equality test.
+ *
+ * Deliberately untrimmed: the plugin's own `hasPermission` splits on "," and
+ * does not trim either, so a padded `"user, admin"` is not an admin to it. If
+ * we trimmed, that row would render the accounts screen and then be refused by
+ * every write on it — an admin with no way back. Agreeing with the library
+ * beats being right alone.
  */
 export function isAdmin(coach: { role?: string | null }): boolean {
-  return (
-    coach.role?.split(",").some((role) => role.trim() === ADMIN_ROLE) ?? false
-  )
+  return coach.role?.split(",").includes(ADMIN_ROLE) ?? false
 }
 
 /** The signed-in Coach as the product sees them, not as BetterAuth stores them. */

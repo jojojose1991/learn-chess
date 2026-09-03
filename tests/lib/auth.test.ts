@@ -61,7 +61,16 @@ describe("isAdmin", () => {
   /** The plugin stores several roles comma-separated, so this is no equality test. */
   it("is a Coach who is an admin among other roles", () => {
     expect(isAdmin({ role: "user,admin" })).toBe(true)
-    expect(isAdmin({ role: "user, admin" })).toBe(true)
+  })
+
+  /**
+   * Not trimmed, because better-auth's own `hasPermission` splits on "," and
+   * does not trim either. A padded role that read as admin here would render
+   * the accounts screen and then be refused by every write on it, with no way
+   * back. Agreeing with the library beats being right on our own.
+   */
+  it("is not a Coach whose role is padded, because the plugin agrees", () => {
+    expect(isAdmin({ role: "user, admin" })).toBe(false)
   })
 
   it("is not the default role every other Coach gets", () => {

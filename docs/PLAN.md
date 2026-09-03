@@ -174,6 +174,11 @@ Verified against the shipped packages, not inferred:
   into `.output/server/node_modules/`. A runtime stage that copies only
   `.output` can therefore be missing `onnxruntime-node`'s `.so`. Nitro's
   `traceDeps` is the knob. This is why the Dockerfile stays honest from phase 5.
+- **`pnpm seed` is a required step on the release that adds the role column**,
+  not just on a fresh database. `0001` adds `user.role` as nullable with no
+  backfill, and the first admin was created before the plugin was mounted — so
+  its role is NULL and it gets a silent 404 on `/admin` until the seed runs
+  again. It is idempotent, so running it on every deploy is the safe default.
 - **Migrations run as a CI step or a Cloud Run Job before a revision takes
   traffic, never at boot.** Drizzle's migrator has no advisory lock — it reads
   the last applied migration, then writes, with no mutual exclusion — and Cloud
