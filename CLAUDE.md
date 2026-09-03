@@ -15,12 +15,15 @@ pnpm test --project logic   # or dom — one environment only (see Testing)
 pnpm typecheck    # tsc --noEmit
 pnpm lint         # eslint
 pnpm format       # prettier --write; `pnpm check` reports without writing
+                  # .githooks/pre-commit already formats staged files, so a
+                  # commit is formatted whether or not this was run
 
 pnpm db:generate  # drizzle-kit generate, after editing src/db/schema.ts
 pnpm db:migrate   # applies them over DATABASE_URL_UNPOOLED, not DATABASE_URL
 pnpm seed         # grants admin to SEED_ADMIN_USER, creating the Coach if new
-pnpm prepare      # points git at .githooks — a fresh clone has no commit-msg
-                  # hook, so commitlint silently does not run until this does
+pnpm prepare      # points git at .githooks — a fresh clone has neither the
+                  # commit-msg nor the pre-commit hook, so commitlint and
+                  # prettier silently do not run until this does
 
 docker compose up -d   # the e2e postgres, on 5433
 pnpm e2e:db            # migrate + seed the template, clone it
