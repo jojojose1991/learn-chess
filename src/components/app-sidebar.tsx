@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
+import { Wordmark } from "@/components/wordmark"
 import {
   Sidebar,
   SidebarContent,
@@ -37,8 +38,8 @@ export function AppSidebar({ coach }: { coach: Coach }) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-3 font-heading text-lg font-bold tracking-tight">
-        Learn Chess
+      <SidebarHeader className="px-4 py-3">
+        <Wordmark className="text-lg" />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

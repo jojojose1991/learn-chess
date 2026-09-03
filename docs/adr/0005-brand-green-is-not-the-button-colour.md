@@ -2,8 +2,8 @@
 
 The app's green is `#779952` — the green board's dark square, and the favicon.
 It is neither `--primary` nor `--ring`. Buttons are a dark olive ink that reads
-as near-black; so is the focus ring. Green ships in one place today, the active
-sidebar item, as `--brand-ink`; the wordmark joins it with the sign-in work.
+as near-black; so is the focus ring. Green ships in two places: the active
+sidebar item as `--brand-ink`, and the wordmark's checker as `--brand`.
 
 ## Why
 
@@ -27,11 +27,14 @@ everywhere it can land, and on this product that includes both boards.
 
 ## Consequences
 
-**Two greens exist and only one is a token.** `--brand-ink`
-(`oklch(0.47 0.095 132)`) is the green as text: the board green itself measures
-3.12:1 on the app background, fine for a fill and short of the 4.5:1 small
-text needs. A token for the fill green arrives with the first thing that fills
-with it, not before.
+**Two greens exist and both are tokens.** `--brand`
+(`oklch(0.64 0.105 130)`, exactly `#779952`) is the fill. It arrived with the
+first thing that fills with it, the wordmark's checker, and not before —
+measuring 3.11:1 on the page and 2.96:1 on the sidebar, which a decorative
+`aria-hidden` mark beside the words it illustrates is allowed to be.
+`--brand-ink` (`oklch(0.47 0.095 132)`) is the same green pulled dark enough to
+be text, which the fill is not: at 3.12:1 on the app background it is fine for
+a fill and short of the 4.5:1 small text needs.
 
 **`--brand-ink` and `--board-dark` are not the same thing** and neither should
 be made to reference the other, though both descend from `#779952`. One is a

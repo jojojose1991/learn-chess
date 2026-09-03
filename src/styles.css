@@ -14,6 +14,7 @@
     --font-sans: 'Geist Variable', sans-serif;
     --color-board-light: var(--board-light);
     --color-board-dark: var(--board-dark);
+    --color-brand: var(--brand);
     --color-brand-ink: var(--brand-ink);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -58,8 +59,9 @@
   stay pure white: raised surfaces read as raised against a tinted ground
   without needing a shadow.
 
-  `--brand-ink` is the green as text, dark enough to pass AA on a light ground.
-  It is not `--primary` and not `--ring`; docs/adr/0005 says why.
+  `--brand` is the favicon's green, for the wordmark's checker to fill with.
+  `--brand-ink` is the same green pulled dark enough to pass AA as text. Neither
+  is `--primary` and neither is `--ring`; docs/adr/0005 says why.
 */
 :root {
     --background: oklch(0.985 0.006 110);
@@ -83,6 +85,8 @@
        one on a green board square measures 1.00 — invisible. Ink is 5.50 on
        the darkest square and 17.15 on the page. */
     --ring: oklch(0.205 0.014 110);
+    /* #779952, the same green as the favicon and `.board-green`. */
+    --brand: oklch(0.64 0.105 130);
     --brand-ink: oklch(0.47 0.095 132);
     --radius: 0.625rem;
     --sidebar: oklch(0.968 0.012 110);

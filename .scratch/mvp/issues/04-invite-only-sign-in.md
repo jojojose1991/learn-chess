@@ -62,3 +62,10 @@ Deliberately not added: `shadcn`'s `field` component. It arrived with
 `pnpm dlx shadcn@latest add`, brought `separator` with it, and 237 lines of ten
 exports served two labels — `Label` and `Input` do the job. Add it back when a
 form needs more than a stacked label.
+
+**The screen's presentation was settled outside any ticket.** The wordmark, the
+scrim joining the form to the photo and the palette they sit on are app-wide
+theming, done in one pass across the signed-out and Library screens rather than
+reopened here. `docs/adr/0005-brand-green-is-not-the-button-colour.md` holds the
+colour decisions and `docs/learnings/typography.md` the type; the Coach's own
+board-theme preference became ticket 19.

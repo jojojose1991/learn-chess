@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { authClient } from "@/lib/auth-client"
+import { Wordmark } from "@/components/wordmark"
 
 export const Route = createFileRoute("/sign-in")({ component: SignIn })
 
@@ -43,7 +44,12 @@ function SignIn() {
 
   return (
     <main className="grid min-h-svh lg:grid-cols-2">
-      <div className="mx-auto flex max-w-sm flex-col justify-center p-6">
+      {/* `w-full` for the reason `_coach.tsx` gives about a flex item: auto
+          margins on a grid item absorb the free space before `justify-self`
+          can stretch it, so `max-w-sm` meant "as narrow as its content". */}
+      <div className="mx-auto flex w-full max-w-sm flex-col justify-center p-6">
+        <Wordmark className="mb-12 text-xl" />
+
         <h1 className="text-2xl">Sign in</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Coaches only. Accounts are invite-only.
@@ -98,9 +104,11 @@ function SignIn() {
         Decorative, and a CSS background rather than an `<img>` on purpose: a
         hidden `<img>` is still fetched, so a phone would pay 136KB for a photo
         it never shows. Served from `public/`, not Unsplash — signing in does
-        not depend on a third-party CDN.
+        not depend on a third-party CDN. The gradient layer stacked in front of
+        it fades the page's background into the photo's left edge, so the two
+        halves read as one screen rather than a form beside a picture.
       */}
-      <div className="hidden bg-[url('/sign-in.jpg')] bg-cover bg-center lg:block" />
+      <div className="hidden bg-[image:linear-gradient(to_right,var(--background),transparent_20%),url('/sign-in.jpg')] bg-cover bg-center lg:block" />
     </main>
   )
 }

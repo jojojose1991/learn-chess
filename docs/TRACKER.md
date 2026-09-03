@@ -79,6 +79,8 @@ already owed by code that shipped. Do not merge them.
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
 | The board's focus outline is under 3:1 at the base layer's 50% alpha | 07                                 | ADR-0005, `src/styles.css`          |
 | `src/styles.css` is outside the prettier glob, so unchecked   | the next change to `styles.css`           | `package.json`                      |
+| The wordmark is under 3:1 and leans on the words beside it   | the sidebar goes `collapsible="icon"`     | ADR-0005, `src/components/wordmark.tsx` |
+| Nothing declares `color-scheme`, so Android Chrome may invert it | a Coach reports the app looking dark   | `src/styles.css`                    |
 
 `grep -rn "ponytail:" src scripts` is the code half of this list.
 
