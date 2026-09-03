@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { newCoachBody } from "@/lib/accounts/service"
 
@@ -43,5 +43,59 @@ describe("newCoachBody", () => {
     expect(newCoachBody(fromWire({ banned: true }))).not.toHaveProperty(
       "banned"
     )
+  })
+})
+
+/**
+ * Who may read the accounts list, and what a caller who may not is told. Both
+ * questions are answered before anything is queried or validated, so the
+ * refusals are what this covers — the writes themselves answer to BetterAuth's
+ * own admin check, which `tests/lib/auth.test.ts` pins.
+ */
+describe("refusing a Coach who is not an admin", () => {
+  const invite = { email: "new@example.com", name: "New", password: "hunter22" }
+
+  /** A signed-in Coach with no roles, which is every Coach but the seeded one. */
+  function asPlainCoach() {
+    vi.doMock("@/lib/auth", () => ({
+      getCoach: async () => ({
+        id: "c1",
+        email: "coach@example.com",
+        isAdmin: false,
+      }),
+      getAuth: () => {
+        throw new Error("createUser was reached")
+      },
+    }))
+    // The repository would throw rather than return rows, so a refusal that
+    // queries first fails here instead of passing quietly.
+    vi.doMock("@/db/repositories/accounts", () => ({
+      listCoachesWithPuzzleCounts: () => {
+        throw new Error("the accounts table was read")
+      },
+    }))
+    return import("@/lib/accounts/service")
+  }
+
+  beforeEach(() => vi.resetModules())
+  afterEach(() => vi.doUnmock("@/lib/auth"))
+
+  it("gives them no list to read, so the screen can answer 404", async () => {
+    const { listAccounts } = await asPlainCoach()
+
+    await expect(listAccounts(new Headers())).resolves.toBeNull()
+  })
+
+  it("tells them nothing about the password rule, because they cannot add a Coach anyway", async () => {
+    const { createCoach } = await asPlainCoach()
+
+    // Short on purpose: the password rule would reject it, and saying so would
+    // describe a form this caller may not use.
+    const refused = await createCoach(
+      { ...invite, password: "x" },
+      new Headers()
+    )
+
+    expect(refused).toEqual({ error: "That did not work." })
   })
 })

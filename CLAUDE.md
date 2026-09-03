@@ -75,11 +75,11 @@ not trim, deliberately; the reason is in the file.
 Three, and imports flow one way only: **controller → service → repository**.
 Nothing ever imports back up.
 
-| Layer | Lives in | May import |
-| --- | --- | --- |
-| Controller | `src/routes/**`, and the `createServerFn` exports in `src/lib/<domain>/index.ts` | services |
-| Service | `src/lib/<domain>/service.ts` | repositories, `src/lib/auth.ts`, the pure libs |
-| Repository | `src/db/repositories/<table>.ts` | `drizzle-orm`, `@/db`, `@/db/schema` |
+| Layer      | Lives in                                                                         | May import                                     |
+| ---------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Controller | `src/routes/**`, and the `createServerFn` exports in `src/lib/<domain>/index.ts` | services                                       |
+| Service    | `src/lib/<domain>/service.ts`                                                    | repositories, `src/lib/auth.ts`, the pure libs |
+| Repository | `src/db/repositories/<table>.ts`                                                 | `drizzle-orm`, `@/db`, `@/db/schema`           |
 
 - A **controller** validates input, reads the request (`getRequestHeaders()`),
   calls one service function and shapes the answer. No rules, no queries.
@@ -132,11 +132,11 @@ verbs in paths, no `?action=`, and never a 200 with an error inside.
 Three layers, and a behaviour belongs to exactly one of them. Testing the same
 rule twice is how a suite becomes something people switch off.
 
-| Layer | Files | Runs in | For |
-| --- | --- | --- | --- |
-| Logic | `tests/**/*.test.ts` | node | Pure functions, services, repositories, reducers |
-| DOM | `tests/**/*.test.tsx` | jsdom | A component's interaction contract |
-| E2E | `tests/e2e/*.spec.ts` | Playwright + real postgres | A journey no layer below can prove |
+| Layer | Files                 | Runs in                    | For                                              |
+| ----- | --------------------- | -------------------------- | ------------------------------------------------ |
+| Logic | `tests/**/*.test.ts`  | node                       | Pure functions, services, repositories, reducers |
+| DOM   | `tests/**/*.test.tsx` | jsdom                      | A component's interaction contract               |
+| E2E   | `tests/e2e/*.spec.ts` | Playwright + real postgres | A journey no layer below can prove               |
 
 The extension picks the environment (`vite.config.ts` `test.projects`), so a
 test that renders is `.tsx` and gets a DOM, and nothing needs an opt-in comment.
@@ -155,7 +155,7 @@ e2e or nowhere.
 `eslint.config.js` enforces the greppable half — no snapshots, no
 `getByTestId`, no `toHaveBeenCalled`, no reaching into DOM nodes — and its
 messages say why. `toHaveBeenCalledWith` stays allowed: a spy on a collaborator
-you own is implementation, but a callback prop that *is* the component's output
+you own is implementation, but a callback prop that _is_ the component's output
 (`onMove`) is its contract.
 
 What lint cannot check, and review is therefore for:
@@ -172,6 +172,26 @@ What lint cannot check, and review is therefore for:
   hardest, by executing lines without asserting anything.
 - **Do not edit a test to make an implementation pass.** The failing test is
   the spec; changing it is a separate, announced decision, not a step to green.
+
+### A fixed bug leaves a test that would have caught it
+
+A defect that shipped, or that review caught on its way to shipping, is a
+behaviour the suite did not hold. Closing it is part of the fix, not follow-up.
+
+- **Say how you saw it red**, in the commit: the test written before the fix
+  and failing, or the fix reverted afterwards and the test failing then. Which
+  order you worked in is not auditable from a diff; the evidence is. A test
+  that never failed proves the bug was somewhere else.
+- **Test the cause, at the lowest layer that holds it.** A bug report names a
+  symptom, and the symptom is usually visible several layers above the line
+  that is wrong. One repository test beats the e2e that found it.
+- **No test rather than a dishonest one.** If the behaviour cannot be held
+  without coupling the suite to styling, a design token, a vendored file or a
+  mock of the thing under test, say so in the commit and fix it anyway. A test
+  that would have passed with the bug present is a false guarantee, and worse
+  than the gap it hides.
+- **This is for defects, not for every review finding.** A cut abstraction, a
+  rename or a simplification changes no behaviour and needs no new test.
 
 ## Design documents
 
