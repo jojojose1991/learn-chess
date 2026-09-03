@@ -15,6 +15,9 @@ say. Every claim is either read from source, measured, or flagged as unverified.
   Tailwind v4, and what is and isn't tied to Next.js.
 - [deployment.md](./deployment.md) — Docker on Cloud Run, Neon, Drizzle
   migrations, BetterAuth, Resend, native Stockfish, and `onnxruntime-node`.
+- [commit-messages.md](./commit-messages.md) — where 50/72 comes from, how
+  much stricter we are than the JS ecosystem, and why the total body cap is a
+  deliberate deviation with no industry backing.
 - [testing.md](./testing.md) — three things that passed typecheck, lint and the
   whole unit suite while the app was broken: a server-fn module's re-exports
   reaching the client bundle, a form submitting natively before it hydrates,
