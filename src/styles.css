@@ -2,14 +2,15 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
-/* latin-400: the only weight Instrument Serif has, so no heading may ask for a
-   bolder one — the browser would synthesise it. */
-@import "@fontsource/instrument-serif/latin-400.css";
+/* Upright variable, 100-900, so a heading weight is real rather than
+   synthesised. Every subset is declared but `unicode-range` means only latin
+   is fetched. */
+@import "@fontsource-variable/montserrat/wght.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: "Instrument Serif", ui-serif, Georgia, serif;
+    --font-heading: "Montserrat Variable", ui-sans-serif, system-ui, sans-serif;
     --font-sans: 'Geist Variable', sans-serif;
     --color-board-light: var(--board-light);
     --color-board-dark: var(--board-dark);
@@ -118,7 +119,9 @@
   html {
     @apply font-sans;
     }
+  /* 700, like both references: a geometric sans carries a heading by weight
+     and width, not by contrast. */
   h1, h2, h3 {
-    @apply font-heading;
+    @apply font-heading font-bold tracking-tight;
     }
 }

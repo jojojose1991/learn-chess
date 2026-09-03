@@ -37,7 +37,7 @@ export function AppSidebar({ coach }: { coach: Coach }) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="px-4 py-3 font-heading text-lg">
+      <SidebarHeader className="px-4 py-3 font-heading text-lg font-bold tracking-tight">
         Learn Chess
       </SidebarHeader>
       <SidebarContent>
