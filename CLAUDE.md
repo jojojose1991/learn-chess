@@ -233,22 +233,39 @@ review that was overruled silently is a review nobody can audit.
 
 **Commit to `main`. Do not create branches.**
 
-**Commit messages are short**, and `commitlint` enforces it through
-`.githooks/commit-msg` — on an agent's commits as much as a person's. Subject
-≤72 characters (aim for 50) stating the outcome; body ≤400 characters, wrapped
-at 72, carrying only what the diff cannot say; then trailers. Never
-`--no-verify`: if the hook refuses, the message is too long, not the hook
-wrong.
+**Commit messages are short and outcome-focused.** This shape:
 
-Two rules do the work: **if a line is derivable from `git show`, cut it**, and
-**durable knowledge belongs in docs, not commit messages** — nobody greps
-`git log`. A required deploy step goes in `docs/PLAN.md`, a library gotcha in
-`docs/learnings/`, a rule in this file; the commit points at them. Declined
-review findings are raised in the review, not archived in the message.
+```
+<type>: <what is now true, imperative, ≤72 chars>
 
-The same applies to comments. A comment longer than the code it explains, or
-one repeating what a doc already says, is the same habit — say it once, in the
-place someone will look.
+- <an outcome, or something the diff cannot say>
+- <at most three of these>
+
+<trailers>
+```
+
+`commitlint` enforces the size through `.githooks/commit-msg` — on an agent's
+commits as much as a person's: subject ≤72 characters, body ≤400 wrapped at
+72. Never `--no-verify`; if the hook refuses, the message is too long, not the
+hook wrong.
+
+It cannot enforce the style, so:
+
+- **Bullets, never prose paragraphs.** A wall of text is why the rule exists.
+- **Say what is now true, not what was done.** "server-only code no longer
+  reaches the browser", not "moved MIN_PASSWORD into rules.ts". The file moves
+  are in the diff; the consequence is not.
+- **One bullet per outcome.** No bullet for a file, a step, or a rationale.
+- **If a line is derivable from `git show`, cut it.**
+- **Durable knowledge goes in docs, not commit messages** — nobody greps
+  `git log`. A deploy step belongs in `docs/PLAN.md`, a library gotcha in
+  `docs/learnings/`, a rule in this file. The commit names the file and stops.
+- **Declined review findings are raised in the review**, not archived in the
+  message.
+
+Comments follow the same rule. One longer than the code it explains, or
+repeating what a doc already says, is the same habit — say it once, where
+someone will look.
 
 ## Agent skills
 
