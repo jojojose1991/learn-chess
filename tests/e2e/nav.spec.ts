@@ -34,3 +34,20 @@ test.describe("on a phone", () => {
     await expect(page.getByRole("dialog")).toBeHidden()
   })
 })
+
+test("marks the screen the Coach is on, so the sidebar says where they are", async ({
+  page,
+}) => {
+  await signIn(page)
+
+  const library = page.getByRole("link", { name: "Library" })
+  await expect(library).toHaveAttribute("aria-current", "page")
+
+  await page.getByRole("link", { name: "New Puzzle" }).click()
+
+  await expect(library).not.toHaveAttribute("aria-current", "page")
+  await expect(page.getByRole("link", { name: "New Puzzle" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  )
+})
