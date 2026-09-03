@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest"
 import {
   applyMove,
   explainIllegal,
+  isPromotion,
   legalTargets,
+  pieceToMove,
   readPlacement,
   validatePosition,
 } from "@/lib/chess/rules"
@@ -323,5 +325,50 @@ describe("readPlacement", () => {
     expect(squares[7]).toBe("h8")
     expect(squares[56]).toBe("a1")
     expect(squares[63]).toBe("h1")
+  })
+})
+
+describe("legalTargets and a pinned piece", () => {
+  it("leaves out the moves that would expose the king, so Guidance marks legal squares and not merely reachable ones", () => {
+    // The pawn on d2 stands between the bishop on a5 and its own king on e1.
+    // d3 and d4 are both squares it could otherwise reach — a generator that
+    // skipped the check filter would mark them.
+    const pinned = "4k3/8/8/b7/8/8/3P4/4K3 w - - 0 1"
+
+    expect(legalTargets(pinned, "d2")).toEqual([])
+  })
+})
+
+describe("pieceToMove", () => {
+  it("hands back the piece a tap may pick up, which is the side to move's", () => {
+    expect(pieceToMove(START, "e2")).toMatchObject({ type: "p", color: "w" })
+  })
+
+  it("hands back nothing for an empty square, so a tap on one starts no move", () => {
+    expect(pieceToMove(START, "e4")).toBeNull()
+  })
+
+  it("hands back nothing for the waiting side's piece, so a Student cannot move their opponent", () => {
+    expect(pieceToMove(START, "e7")).toBeNull()
+  })
+})
+
+describe("isPromotion", () => {
+  it("says a pawn reaching the last rank must be asked which piece", () => {
+    expect(isPromotion(PROMOTING, "e7", "e8")).toBe(true)
+  })
+
+  it("says the same pawn a rank short is an ordinary move", () => {
+    const short = "8/8/4P3/8/8/8/8/K6k w - - 0 1"
+    expect(isPromotion(short, "e6", "e7")).toBe(false)
+  })
+
+  it("says a promotion for Black too, whose last rank is the first", () => {
+    const black = "K6k/8/8/8/8/8/4p3/8 b - - 0 1"
+    expect(isPromotion(black, "e2", "e1")).toBe(true)
+  })
+
+  it("says no for a move that is illegal anyway, so no picker opens on one", () => {
+    expect(isPromotion(PROMOTING, "e7", "d8")).toBe(false)
   })
 })

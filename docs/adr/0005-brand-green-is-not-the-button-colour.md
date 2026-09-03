@@ -48,6 +48,29 @@ makes one value do that is a translucent overlay shifting the square rather
 than replacing it. Naming a hex here, with nothing to look at, would be
 guessing.
 
+## What ticket 07 measured
+
+`--board-mark` is `oklch(0.35 0.14 55)` — a dark burnt orange, on `:root` and
+shared by both themes. As a **shape** at full alpha it measures 9.92, 3.61,
+8.55 and 3.73 against light green, dark green, light brown and dark brown, so
+the Guidance dot, the capture ring and the two borders clear 3:1 everywhere
+they can land.
+
+**The translucent overlay guessed at above does not work on its own.** A
+whole-square wash of that colour measures 2.52, 1.90, 2.39 and 1.82 at 45%,
+and still only 2.68 on dark green at 70% — by which point the square has lost
+the colour the wash was meant to shift. So the shapes carry the contrast, the
+wash is reinforcement, and every mark also says itself in the square's
+accessible name (`", selected"`, `", can move here"`, `", last move"`). Dark
+is the direction that works on all four fills, which is the same finding
+ticket 06 made for the square coordinates.
+
+**The board's focus outline is settled here too.** The base layer's
+`outline-ring/50` measures 2.36:1 on the dark green square — the shortfall
+ticket 06 left carried forward. Each square now sets `outline-ring` at full
+alpha with a negative offset, which is the 5.50:1 and 15.11:1 this ADR already
+records for ink.
+
 ## Considered and rejected
 
 **Green as `--primary`, the chess.com reading.** Its CTAs are green and it

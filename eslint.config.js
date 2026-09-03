@@ -29,6 +29,24 @@ const behaviouralTests = {
   },
 }
 
+/**
+ * The absence of a drag gesture cannot be tested — a dispatched drag event
+ * does nothing whether a handler exists or not — so lint holds it.
+ */
+const noDragging = {
+  files: ["src/**/*.tsx"],
+  rules: {
+    "no-restricted-syntax": [
+      "error",
+      {
+        selector: "JSXAttribute[name.name=/^(onDrag|onDrop)/]",
+        message:
+          "Tap a piece, tap a square — no dragging anywhere, including the editor, because a five-year-old on a touchscreen drags badly (docs/PLAN.md).",
+      },
+    ],
+  },
+}
+
 export default [
   ...tanstackConfig,
   {
@@ -46,6 +64,7 @@ export default [
     files: ["tests/**/*.tsx"],
   },
   behaviouralTests,
+  noDragging,
   {
     ignores: [
       // Plain-JS config files: no `allowJs`, so they are not in the TS program.

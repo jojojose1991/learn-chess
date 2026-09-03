@@ -44,6 +44,16 @@ describe("the board", () => {
     expect(squares[63]).toHaveAccessibleName("a8, black rook")
   })
 
+  it("lets nothing be dragged, because a five-year-old on a touchscreen drags badly", () => {
+    render(<Board fen={START} onSquareTap={() => {}} />)
+
+    // The gesture the browser gives away for free; written handlers are
+    // `eslint.config.js`'s job.
+    const [piece] = screen.getAllByRole("presentation")
+
+    expect(piece).toHaveAttribute("draggable", "false")
+  })
+
   it("draws each coordinate on the square it names, so a flip cannot desync them", () => {
     const { unmount } = render(<Board fen={START} onSquareTap={() => {}} />)
 
