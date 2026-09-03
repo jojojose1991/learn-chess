@@ -20,7 +20,7 @@ and no app code reads a role.
 
 **Blocked by:** 04 — invite-only sign-in (resolved).
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] `/admin` lists every account: email, name, Puzzle count, and whether access is revoked
 - [ ] Adding a Coach takes an email, a name and an initial password, and that Coach can then sign in

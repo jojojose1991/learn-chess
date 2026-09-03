@@ -8,6 +8,13 @@
       "when": 1788354249444,
       "tag": "0000_cheerful_may_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788410388628,
+      "tag": "0001_worthless_madame_web",
+      "breakpoints": true
     }
   ]
 }

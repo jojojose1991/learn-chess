@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { createAuth } from "./auth"
+import { adminUserIds, createAuth } from "./auth"
 
 /**
  * The pool is built lazily. `disableSignUp` is checked before the adapter is
@@ -40,8 +40,27 @@ describe("createAuth", () => {
   })
 
   /** Any plugin after it never gets its Set-Cookie headers written. */
-  it("keeps the cookie plugin last", () => {
-    const plugins = createAuth().options.plugins
-    expect(plugins.at(-1)?.id).toBe("tanstack-start-cookies")
+  it("keeps the cookie plugin last, with admin ahead of it", () => {
+    const ids = createAuth().options.plugins.map((plugin) => plugin.id)
+    expect(ids.at(-1)).toBe("tanstack-start-cookies")
+    expect(ids.indexOf("admin")).toBeGreaterThanOrEqual(0)
+    expect(ids.indexOf("admin")).toBeLessThan(ids.length - 1)
+  })
+})
+
+/**
+ * Admin-ness is deploy configuration, not data: no role column is read, and no
+ * promote or demote exists. An empty value is the state a fresh clone is in
+ * before `pnpm seed` has produced an id to name, so it must not throw.
+ */
+describe("adminUserIds", () => {
+  it("reads a comma-separated ADMIN_USER_IDS", () => {
+    process.env.ADMIN_USER_IDS = " abc , def ,,"
+    expect(adminUserIds()).toEqual(["abc", "def"])
+  })
+
+  it("names nobody when the variable is unset", () => {
+    process.env.ADMIN_USER_IDS = ""
+    expect(adminUserIds()).toEqual([])
   })
 })

@@ -1,9 +1,25 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { betterAuth } from "better-auth"
+import { admin } from "better-auth/plugins"
 import { tanstackStartCookies } from "better-auth/tanstack-start"
 
 import { getDb } from "@/db"
-import { requireEnv } from "@/lib/env"
+import { optionalEnv, requireEnv } from "@/lib/env"
+
+/**
+ * The Coaches who may work the accounts screen, by user id. Admin-ness is
+ * deploy configuration and not data: there is no promote, no demote, and no
+ * app code reads `user.role`.
+ *
+ * Empty until `pnpm seed` has made a Coach whose id there is something to
+ * name, so an unset value is a state and not a misconfiguration.
+ */
+export function adminUserIds(): string[] {
+  return (optionalEnv("ADMIN_USER_IDS") ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean)
+}
 
 /**
  * The Coach's auth. Invite-only: no sign-up route, no password reset and no
@@ -38,7 +54,7 @@ export function createAuth({ signUp = false }: { signUp?: boolean } = {}) {
     // A documented 2–3x improvement on /get-session.
     advanced: { database: { joins: true } },
     // Cookie plugins go last.
-    plugins: [tanstackStartCookies()],
+    plugins: [admin({ adminUserIds: adminUserIds() }), tanstackStartCookies()],
   })
 }
 
