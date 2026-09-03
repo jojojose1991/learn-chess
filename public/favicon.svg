@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Learn Chess</title>
+  <defs>
+    <clipPath id="rounded"><rect width="32" height="32" rx="6" /></clipPath>
+  </defs>
+  <g clip-path="url(#rounded)">
+    <rect width="32" height="32" fill="#edeed1" />
+    <path
+      fill="#779952"
+      d="M0 0h8v8H0zM16 0h8v8h-8zM8 8h8v8H8zM24 8h8v8h-8zM0 16h8v8H0zM16 16h8v8h-8zM8 24h8v8H8zM24 24h8v8h-8z"
+    />
+  </g>
+</svg>

@@ -1,5 +1,5 @@
 {
-  "projectName": "start-app",
+  "projectName": "learn-chess",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "pnpm",

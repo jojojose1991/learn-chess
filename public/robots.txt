@@ -1,3 +1,6 @@
-# https://www.robotstxt.org/robotstxt.html
+# Nothing here is meant to be found by searching: sign-in is invite-only, the
+# Library and accounts screens need a session, and a Puzzle Link is unlisted.
+# This only asks well-behaved crawlers — an unlisted link is kept private by
+# its slug being unguessable and by the Coach revoking it, not by this file.
 User-agent: *
-Disallow:
+Disallow: /
