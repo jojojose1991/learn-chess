@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 
+import { CheckerMark } from "@/components/checker-mark"
 import { fetchLibrary } from "@/lib/puzzles"
 
 export const Route = createFileRoute("/_coach/")({
@@ -20,15 +21,18 @@ function Library() {
       <h1 className="text-2xl">Library</h1>
 
       {puzzles.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          No puzzles yet. Set one up and it will be here.
-        </p>
+        <div className="flex flex-col items-center gap-4 py-20 text-center">
+          <CheckerMark className="size-12 text-brand/25" />
+          <p className="text-sm text-muted-foreground">
+            No puzzles yet. Set one up and it will be here.
+          </p>
+        </div>
       ) : (
         // `role` explicitly: Tailwind's preflight sets `list-style: none`, and
         // WebKit drops the implicit list role from a list styled that way.
-        <ul role="list" aria-label="Puzzles" className="flex flex-col">
+        <ul role="list" aria-label="Puzzles" className="flex flex-col divide-y">
           {puzzles.map((puzzle) => (
-            <li key={puzzle.id} className="border-b py-3">
+            <li key={puzzle.id} className="py-3">
               {puzzle.name}
             </li>
           ))}
