@@ -5,8 +5,8 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**9 of 21 resolved. Four tickets are actionable right now: 08, 19, 20
-and 21.**
+**9 of 23 resolved. Five tickets are actionable right now: 08, 19, 20, 21
+and 22.**
 
 ## Tickets
 
@@ -28,6 +28,7 @@ and 21.**
 | 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
 | 21  | A Library row says what it is       | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | 🟢 **ready**    | 07 ✅          |
+| 22  | `/admin` scrolls sideways at 390px  | 🟢 **ready**    | none           |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
 | 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
@@ -36,6 +37,7 @@ and 21.**
 | 15  | The four-corner warp                | ⬜ ready-for-agent | 14            |
 | 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15        |
 | 17  | Position rejection detail           | ❓ needs-triage | 14             |
+| 23  | Engine route hardening              | ❓ needs-triage | 16             |
 
 Build order and the reasoning behind it are `docs/PLAN.md`. It is not the same
 as ticket order: 12 and 19 sit off the critical path on purpose, so the engine
@@ -65,7 +67,7 @@ already owed by code that shipped. Do not merge them.
 | The real-engine test skips wherever no Stockfish is installed | a suite runs where the binary is (16)   | 12, `tests/lib/engine/service.test.ts` |
 | A failed handshake's kill is untested, and eight queued searches each wait out the 5 s startup | the startup budget becomes reachable in a test | 12, `src/lib/engine/service.ts` |
 | Nothing is logged when the engine times out, dies or restarts | 19                                        | 12, `src/lib/engine/service.ts`     |
-| The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling | a Puzzle Link is live in production (11, 16) | 12, `src/lib/engine/service.ts` |
+| The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling | a Puzzle Link is live in production (11, 16) | Ticket 23 |
 | No `ucinewgame`, so one engine's table carries between Positions | a Puzzle's defence must be reproducible | 12                                  |
 | The image has no `CMD`: `vite build` emits a handler, not a server | 16                                      | 12, `Dockerfile`                    |
 | The Stockfish URL and its checksum are pinned by hand         | Stockfish 19, or a CVE in 18              | 12, `Dockerfile`                    |
@@ -86,7 +88,7 @@ already owed by code that shipped. Do not merge them.
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
 | A selection outlives the Position changing under it, so the next tap emits a move the screen drops in silence | 09, where Rewind and Reset change it | `src/components/move-board.tsx` |
 | `MoveBoard` passes the board neither orientation nor theme   | 09 flips one, or 20 puts brown on Play    | `src/components/move-board.tsx`     |
-| `/admin` scrolls sideways at 390px by 120px, so `responsive.spec.ts` is red | now: it fails on `main` too | 18, `tests/e2e/responsive.spec.ts`  |
+| `/admin` scrolls sideways at 390px by 120px, so `responsive.spec.ts` is red | now: it fails on `main` too | Ticket 22 |
 | Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
 | The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |
 | `public/favicon.svg` keeps its own copy of the checker path   | the mark's shape changes                  | `src/assets/checker-mark.svg`       |
