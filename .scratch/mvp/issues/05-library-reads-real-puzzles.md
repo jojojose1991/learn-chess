@@ -6,10 +6,10 @@ empty Library says so plainly rather than showing an empty box.
 
 **Blocked by:** 04 — invite-only sign-in.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] A signed-in Coach with no Puzzles sees an empty state and a New Puzzle action
-- [ ] Puzzles inserted directly into the database appear in the list by name
-- [ ] A Coach sees only their own Puzzles, never another Coach's
-- [ ] New Puzzle navigates to the New Puzzle screen
-- [ ] `pnpm typecheck` and `pnpm lint` pass
+- [x] A signed-in Coach with no Puzzles sees an empty state and a New Puzzle action
+- [x] Puzzles inserted directly into the database appear in the list by name
+- [x] A Coach sees only their own Puzzles, never another Coach's
+- [x] New Puzzle navigates to the New Puzzle screen
+- [x] `pnpm typecheck` and `pnpm lint` pass

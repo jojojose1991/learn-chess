@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test"
 
 import { E2E_ADMIN } from "../../scripts/e2e-db"
+import { signIn } from "./coach"
 import { hydrated } from "./hydrated"
 
 /**
@@ -38,12 +39,7 @@ test("a wrong password says so without saying which half was wrong", async ({
 
 /** The admin's screen, and the only one a Coach can be refused. */
 test("the seeded admin can reach Accounts", async ({ page }) => {
-  await page.goto("/sign-in")
-  await hydrated(page, "form")
-  await page.getByLabel("Email").fill(E2E_ADMIN.email)
-  await page.getByLabel("Password").fill(E2E_ADMIN.password)
-  await page.getByRole("button", { name: "Sign in" }).click()
-  await expect(page.getByRole("heading", { name: "Library" })).toBeVisible()
+  await signIn(page)
 
   await page.getByRole("link", { name: "Accounts" }).click()
 
