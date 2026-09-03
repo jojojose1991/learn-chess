@@ -25,7 +25,9 @@ stay true in the MVP so it can be added without a rewrite.
 ## Auth
 
 - **Password reset via Resend.** Blocked on a verified domain; Resend's sandbox
-  sender only delivers to the account owner. MVP: admin sets passwords by hand.
+  sender only delivers to the account owner. MVP: the Admin sets passwords by
+  hand on the Accounts screen, so a Coach who is locked out asks them. That
+  screen is the stand-in, not the feature — self-service reset is still out.
 - **Public Coach signup**, email verification, rate limits. MVP is invite-only.
 
 ## Feel

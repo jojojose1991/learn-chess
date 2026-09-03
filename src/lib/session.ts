@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
 import { getRequestHeaders } from "@tanstack/react-start/server"
 
-import { getAuth } from "@/lib/auth"
+import { getAuth, isAdmin } from "@/lib/auth"
 
-export type Coach = { id: string; email: string }
+export type Coach = { id: string; email: string; isAdmin: boolean }
 
 /**
  * The signed-in Coach, or null. Read on the server from the session cookie so
@@ -16,10 +16,16 @@ export type Coach = { id: string; email: string }
  */
 export const fetchCoach = createServerFn({ method: "POST" }).handler(
   async (): Promise<Coach | null> => {
-    const session = await getAuth().api.getSession({
+    const session = await (
+      await getAuth()
+    ).api.getSession({
       headers: getRequestHeaders(),
     })
     if (!session) return null
-    return { id: session.user.id, email: session.user.email }
+    return {
+      id: session.user.id,
+      email: session.user.email,
+      isAdmin: isAdmin(session.user),
+    }
   }
 )

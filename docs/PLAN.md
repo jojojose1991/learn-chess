@@ -106,6 +106,11 @@ highlights the piece that should move and never the move itself.
 6. **Solved / Not this time** — a static banner (no animation in the MVP). Not
    solved rewinds to the start and offers Hint. No score, no red X. Stalemate
    and draws get a one-line plain-English explanation.
+7. **Accounts** — the Admin's screen, and the only one a Coach can be refused.
+   Every account with its email, name and Puzzle count, and whether it is
+   Revoked; adding a Coach with an initial password; setting a new password,
+   which ends every session that Coach had; revoking and restoring. Nothing is
+   ever deleted. A Coach who is not the Admin gets a 404, not a hidden link.
 
 A Puzzle Link lands straight on **Play** — no sign-in, no library, no navigation.
 

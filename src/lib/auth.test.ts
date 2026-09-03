@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { adminUserIds, createAuth } from "./auth"
+import { adminEmail, createAuth, isAdmin } from "./auth"
 
 /**
  * The pool is built lazily. `disableSignUp` is checked before the adapter is
@@ -49,18 +49,26 @@ describe("createAuth", () => {
 })
 
 /**
- * Admin-ness is deploy configuration, not data: no role column is read, and no
- * promote or demote exists. An empty value is the state a fresh clone is in
- * before `pnpm seed` has produced an id to name, so it must not throw.
+ * Admin-ness is deploy configuration, not data: the Coach `SEED_ADMIN_USER`
+ * names is the admin, no role column is read, and no promote or demote exists.
  */
-describe("adminUserIds", () => {
-  it("reads a comma-separated ADMIN_USER_IDS", () => {
-    process.env.ADMIN_USER_IDS = " abc , def ,,"
-    expect(adminUserIds()).toEqual(["abc", "def"])
+describe("isAdmin", () => {
+  it("is the Coach SEED_ADMIN_USER names, whatever the casing", () => {
+    process.env.SEED_ADMIN_USER = "Boss@Example.com"
+    expect(adminEmail()).toBe("boss@example.com")
+    expect(isAdmin({ email: "boss@example.com" })).toBe(true)
+    expect(isAdmin({ email: "BOSS@example.com" })).toBe(true)
   })
 
-  it("names nobody when the variable is unset", () => {
-    process.env.ADMIN_USER_IDS = ""
-    expect(adminUserIds()).toEqual([])
+  it("is nobody else", () => {
+    process.env.SEED_ADMIN_USER = "boss@example.com"
+    expect(isAdmin({ email: "someone@example.com" })).toBe(false)
+  })
+
+  /** A fresh clone, before `pnpm seed` has run. Nobody is admin, and nothing throws. */
+  it("is nobody at all when the variable is unset", () => {
+    process.env.SEED_ADMIN_USER = ""
+    expect(adminEmail()).toBeUndefined()
+    expect(isAdmin({ email: "boss@example.com" })).toBe(false)
   })
 })

@@ -1,8 +1,10 @@
 /**
- * Creates the first Coach. Invite-only means there is no sign-up route, so
- * this is how a Coach comes to exist. Re-running it is a no-op.
+ * Creates the admin. Invite-only means there is no sign-up route, so this is
+ * how the first Coach comes to exist — and `SEED_ADMIN_USER` names the admin,
+ * so that Coach reaches the accounts screen and mints every other one there.
+ * Re-running it is a no-op.
  *
- *   SEED_COACH_EMAIL=… SEED_COACH_PASSWORD=… SEED_COACH_NAME=… pnpm seed
+ *   SEED_ADMIN_USER=… SEED_ADMIN_PASSWORD=… SEED_ADMIN_NAME=… pnpm seed
  */
 import { eq } from "drizzle-orm"
 
@@ -11,7 +13,7 @@ import { user } from "../src/db/schema"
 import { createAuth } from "../src/lib/auth"
 import { requireEnv } from "../src/lib/env"
 
-const email = requireEnv("SEED_COACH_EMAIL").toLowerCase()
+const email = requireEnv("SEED_ADMIN_USER").toLowerCase()
 const db = getDb()
 
 try {
@@ -35,9 +37,9 @@ async function seed() {
   await createAuth({ signUp: true }).api.signUpEmail({
     body: {
       email,
-      password: requireEnv("SEED_COACH_PASSWORD"),
-      name: requireEnv("SEED_COACH_NAME"),
+      password: requireEnv("SEED_ADMIN_PASSWORD"),
+      name: requireEnv("SEED_ADMIN_NAME"),
     },
   })
-  console.log(`Created Coach ${email}.`)
+  console.log(`Created Coach ${email}, who is the admin.`)
 }

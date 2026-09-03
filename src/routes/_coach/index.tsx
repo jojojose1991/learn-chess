@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router"
+import { Link, createFileRoute, useRouter } from "@tanstack/react-router"
 
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
@@ -21,9 +21,16 @@ function Library() {
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <header className="flex items-baseline justify-between gap-4">
         <h1 className="font-heading text-2xl font-medium">Library</h1>
-        <Button variant="ghost" size="sm" onClick={signOut}>
-          Sign out
-        </Button>
+        <div className="flex items-baseline gap-4">
+          {coach.isAdmin ? (
+            <Link to="/admin" className="text-sm underline underline-offset-4">
+              Accounts
+            </Link>
+          ) : null}
+          <Button variant="ghost" size="sm" onClick={signOut}>
+            Sign out
+          </Button>
+        </div>
       </header>
       <p className="text-sm text-muted-foreground">
         Signed in as {coach.email}. No puzzles yet.

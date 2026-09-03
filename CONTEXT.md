@@ -14,6 +14,19 @@ A chess teacher, assumed strong. Sets up and shares Puzzles, and demonstrates
 them live to a Student.
 _Avoid_: Teacher, tutor, grandmaster, master
 
+**Admin**:
+One Coach, named by email in `SEED_ADMIN_USER`, who keeps the accounts — adds
+a Coach, sets a password, revokes and restores. Not a third kind of person and
+not a role: admin-ness is deploy configuration, nothing in the product asks who
+you are, and there is no promote or demote.
+_Avoid_: Superuser, owner, root, administrator, staff, admin role
+
+**Revoked**:
+A Coach whose access is withdrawn — every session ends and sign-in is refused,
+while the row, their Library and every Puzzle Link stay. It is what this
+product does instead of deleting an account, which it never does.
+_Avoid_: Banned, disabled, deactivated, suspended, removed, deleted
+
 **Student**:
 A child aged 5–10 learning chess. Solves Puzzles the Coach shared, or sets up
 Puzzles they found themselves.
