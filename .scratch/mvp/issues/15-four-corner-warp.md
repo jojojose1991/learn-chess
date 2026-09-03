@@ -28,4 +28,5 @@ Minimum confidence collapses well before accuracy does, which is what makes a
 - [ ] Corners placed badly produce a low minimum confidence and an on-screen warning that they are off
 - [ ] The corners can be adjusted and resubmitted without starting the Scan over
 - [ ] The resulting draft opens in Confirm & Edit like any other Scan
+- [ ] The four handles can be dragged accurately at 390px, and the loupe is what makes that true
 - [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass

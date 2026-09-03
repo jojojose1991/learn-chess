@@ -15,4 +15,5 @@ draws get a one-line plain-English explanation rather than a bare "draw".
 - [ ] The banner is static — no animation anywhere in the outcome
 - [ ] No score, rating, star count or red X appears
 - [ ] After an unsuccessful attempt the Puzzle is immediately playable again from the start
+- [ ] The banner and its buttons are usable at 390px, 820px and 1280px, with no sideways scrolling
 - [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass

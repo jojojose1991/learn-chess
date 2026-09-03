@@ -120,6 +120,17 @@ Layout: the board is the hero and always square. The move list sits to its right
 from ~900px up, and collapses to a horizontally-scrolling strip beneath it on
 narrow screens. The board never shrinks to make room for the list.
 
+Widths: three, and every screen is used at all three — a 390px phone, an 820px
+tablet and a 1280px desktop. Phone is the one that matters, because a Student
+meets a Puzzle Link on a parent's phone, so no screen may need horizontal
+scrolling to be usable and the sidebar stays the sheet it already is below
+`md`. Nothing is phone-only or desktop-only: there is one layout that bends.
+
+On the screens a Student meets — Play, the promotion picker, Solved — every
+control is at least 44px on a side, because the person tapping is five. A
+Coach's own chrome is held to no such floor: the sidebar trigger is `icon-sm`
+and stays there.
+
 Themes: green `#779952` / `#edeed1` (default) and brown `#b58863` / `#f0d9b5`.
 Low saturation, and the highlight colour is reserved for Guidance and last-move
 so the only saturated thing on screen always means something.

@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**7 of 18 resolved. Two tickets are actionable right now: 07 and 12.**
+**7 of 19 resolved. Three tickets are actionable right now: 07, 12 and 19.**
 
 ## Tickets
 
@@ -23,6 +23,7 @@ status and pointers and never a second copy of a ticket's detail.
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
 | 07  | Tap-tap, Guidance, promotion picker | 🟢 **ready**    | 06 ✅          |
 | 12  | Stockfish over UCI                  | 🟢 **ready**    | none           |
+| 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | ⬜ ready-for-agent | 07            |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
@@ -34,8 +35,15 @@ status and pointers and never a second copy of a ticket's detail.
 | 17  | Position rejection detail           | ❓ needs-triage | 14             |
 
 Build order and the reasoning behind it are `docs/PLAN.md`. It is not the same
-as ticket order: 12 sits off the critical path on purpose, so the engine can be
-proven while the screens are still being built.
+as ticket order: 12 and 19 sit off the critical path on purpose, so the engine
+and the logs can be proven while the screens are still being built.
+
+**Responsiveness has no ticket, deliberately.** The rule is one paragraph in
+`docs/PLAN.md` — phone, tablet and desktop, one layout that bends — and each
+screen's own ticket carries it as a criterion, because a screen is responsive
+when it is built or it is rework. 16 is where all seven are checked at all
+three widths on the deployed URL. Do not file a ticket to make the app
+responsive afterwards.
 
 ## Carried forward
 

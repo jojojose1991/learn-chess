@@ -20,4 +20,5 @@ picking a Goal type and a number — a Coach never enters moves.
 - [ ] An illegal Position shows its reasons and blocks both play and save
 - [ ] A legal Position saves with a name and appears in the Library
 - [ ] Reopening a saved Puzzle shows the same Position, side to move and Goal
+- [ ] The screen is usable at 390px, 820px and 1280px with no sideways scrolling, board squares included
 - [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass

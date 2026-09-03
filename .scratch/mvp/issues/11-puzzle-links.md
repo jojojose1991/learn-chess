@@ -16,4 +16,5 @@ sign-in, no library, no navigation, no editing. The Coach can revoke it.
 - [ ] Changing the Coach's theme afterwards does not change an already-minted link
 - [ ] Revoking the link makes it refuse politely, and it stays refused
 - [ ] An unknown slug is refused the same way, revealing nothing about which Puzzles exist
+- [ ] Play on a 390px phone needs no sideways scrolling, since that is where a Student meets the link
 - [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass

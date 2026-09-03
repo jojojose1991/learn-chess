@@ -30,5 +30,7 @@ the loser crash-loops.
 - [ ] Two concurrent instances of a new revision cannot both run the same DDL
 - [ ] Secrets are passed at deploy time, never as build args, and no non-`VITE_` value is read at module scope
 - [ ] A Puzzle Link opened on a phone with no session lands on Play
+- [ ] Every screen is used on the deployed URL at 390px, 820px and 1280px, and none needs sideways scrolling
+- [ ] Container logs reach Cloud Logging with the severity the line was written at, and `LOG_LEVEL` is set on the service
 - [ ] The `/credits` notice page is live on the deployed service, and `/pieces/LICENSE` is served
 - [ ] `pnpm typecheck` and `pnpm lint` pass in CI

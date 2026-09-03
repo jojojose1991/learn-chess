@@ -24,4 +24,5 @@ Queen first and biggest.
 - [ ] The last move is shown, in the same reserved highlight colour as Guidance
 - [ ] A promoting pawn opens four buttons, Queen first and largest, and the chosen piece appears
 - [ ] No drag handler exists anywhere in the component
+- [ ] Every tap target, the promotion buttons included, is at least 44px on a side at 390px wide
 - [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass

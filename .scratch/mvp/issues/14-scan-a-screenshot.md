@@ -32,4 +32,5 @@ The Goal is not read from the image; the person types N.
 - [ ] A non-image or oversized file is refused at the boundary with a clear message
 - [ ] The uploaded image is held only for the life of the request and never persisted
 - [ ] The image runs the classifier with the ONNX install script skipped and no GPU providers downloaded
+- [ ] Picking an image and confirming the read Position both work at 390px, 820px and 1280px
 - [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
