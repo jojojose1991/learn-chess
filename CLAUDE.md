@@ -245,9 +245,10 @@ review that was overruled silently is a review nobody can audit.
 ```
 
 `commitlint` enforces the size through `.githooks/commit-msg` — on an agent's
-commits as much as a person's: subject ≤72 characters, body ≤400 wrapped at
-72. Never `--no-verify`; if the hook refuses, the message is too long, not the
-hook wrong.
+commits as much as a person's: subject ≤72 characters, body ≤600 wrapped at
+72. The 72s are the standard 50/72 rule; the total body cap is a deliberate
+deviation from it, and `commitlint.config.js` says why. Never `--no-verify`;
+if the hook refuses, the message is too long, not the hook wrong.
 
 It cannot enforce the style, so:
 
