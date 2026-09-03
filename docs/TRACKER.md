@@ -79,6 +79,9 @@ already owed by code that shipped. Do not merge them.
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
 | The board's focus outline is under 3:1 at the base layer's 50% alpha | 07                                 | ADR-0005, `src/styles.css`          |
 | Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
+| The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |
+| `public/favicon.svg` keeps its own copy of the checker path   | the mark's shape changes                  | `src/assets/checker-mark.svg`       |
+| `src/assets/*.svg` is outside prettier, eslint and typecheck  | a second asset                            | `package.json`                      |
 | The checker mark is under 3:1 and leans on the words beside it | the sidebar goes `collapsible="icon"`   | ADR-0005, `src/components/checker-mark.tsx` |
 
 `grep -rn "ponytail:" src scripts` is the code half of this list.

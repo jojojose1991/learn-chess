@@ -49,6 +49,7 @@ TanStack Start (SSR-capable React 19 + Vite 8) with the **file-based router**:
 - `src/routes/_coach.tsx` — the pathless layout whose `beforeLoad` is the auth guard. A Coach-only screen is protected by living under `_coach/`, not by checking anything itself.
 - `src/router.tsx` — `getRouter()` is the entry point TanStack Start calls; it also declares the `Register` module augmentation that types `Link`/`useNavigate` across the app.
 - `src/styles.css` — the single stylesheet, imported as a URL in `__root.tsx`. Tailwind v4 is CSS-configured (`@theme inline`, shadcn design tokens) — there is no `tailwind.config.js`.
+- `src/assets/` — files the app **imports**, as against `public/`, which is served as-is at a fixed URL. An SVG here is loaded with Vite's own `?raw` and inlined, so `currentColor` reaches it; give it no `id` attribute, because nothing prefixes them and two inlined marks on one page would collide.
 
 **Two generated files, never hand-edited:** `src/routeTree.gen.ts`, which the
 `tanstackStart()` Vite plugin rewrites when `src/routes/` changes, and
