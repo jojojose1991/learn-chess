@@ -46,7 +46,7 @@ column has to change type and no table has to split.
 ## Modules
 
 `src/lib/chess/` — pure, no I/O, no React, and the only place chess rules live.
-This is where the test suite goes.
+This is what the suite in `tests/` leans on hardest.
 
 - `validatePosition(fen)` → `ok` or a list of reasons. Wraps `chess.js`'s
   `validateFen`, which already rejects wrong king counts and pawns on rank 1

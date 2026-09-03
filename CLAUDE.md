@@ -10,11 +10,16 @@ pnpm is the package manager (`.cta.json`, `pnpm-workspace.yaml`).
 pnpm dev         # vite dev server on PORT from .env (3012)
 pnpm build       # production build
 pnpm test        # vitest run
-pnpm test <file> # single file, e.g. pnpm test src/foo.test.ts
+pnpm test <file> # single file, e.g. pnpm test tests/lib/chess/rules.test.ts
 pnpm typecheck   # tsc --noEmit
 pnpm lint        # eslint
 pnpm format      # prettier --write
 ```
+
+The interactive shell here is **fish**, which has no heredocs, no
+`export FOO=bar`, no `VAR=x cmd` prefix and no `[[ ]]`. `.claude/settings.json`
+pins the harness to `/bin/bash`, so tool calls can use POSIX freely. Anything
+committed to `scripts/` must run under `#!/usr/bin/env bash`, not fish.
 
 ## Architecture
 
@@ -25,12 +30,57 @@ TanStack Start (SSR-capable React 19 + Vite 8) with the **file-based router**:
 - `src/router.tsx` — `getRouter()` is the entry point TanStack Start calls; it also declares the `Register` module augmentation that types `Link`/`useNavigate` across the app.
 - `src/styles.css` — the single stylesheet, imported as a URL in `__root.tsx`. Tailwind v4 is CSS-configured (`@theme inline`, shadcn design tokens) — there is no `tailwind.config.js`.
 
+### Layers
+
+Three, and imports flow one way only: **controller → service → repository**.
+Nothing ever imports back up.
+
+| Layer | Lives in | May import |
+| --- | --- | --- |
+| Controller | `src/routes/**`, and the `createServerFn` exports in `src/lib/<domain>/index.ts` | services |
+| Service | `src/lib/<domain>/service.ts` | repositories, `src/lib/auth.ts`, the pure libs |
+| Repository | `src/db/repositories/<table>.ts` | `drizzle-orm`, `@/db`, `@/db/schema` |
+
+- A **controller** validates input, reads the request (`getRequestHeaders()`),
+  calls one service function and shapes the answer. No rules, no queries.
+- A **service** holds the rules: who may do this, what is valid, what a thing
+  is called. It takes `headers: Headers` as an argument rather than reaching
+  for the request, and it never touches `drizzle`.
+- A **repository** is queries. It returns rows as the database has them and
+  knows nothing about HTTP, sessions or `Response`.
+- **Never return a database row to the client.** The service maps it to an
+  explicit DTO — that is where `user.banned` becomes `Account.revoked`.
+- **The service owns the transaction boundary**, not the repository and not the
+  controller.
+- **A service throws or returns a domain error; the controller maps it to
+  HTTP.** Today's failures collapse into `{ error: string }` carrying
+  BetterAuth's own message. That is deliberate — only an admin reads it — and
+  it is the ceiling, not the pattern to copy to a Coach-facing screen.
+- `src/lib/chess/` is not a service layer, it is the domain: pure functions,
+  no I/O, and a service may call it freely.
+- One file is a layer. Do not create a folder per layer per domain until there
+  is a second thing to put in it.
+
+### Server routes
+
+`src/routes/api/**` is a thin surface and stays one: `/api/auth/$` (BetterAuth's
+own, whose shape is not ours), `/api/scan` and `/api/engine/move`. Those two are
+**actions, not resources** — POST, one job each, validated input, an explicit
+error shape and honest status codes. Everything else is `createServerFn` RPC by
+design; do not reshape it into resource URLs.
+
+If a genuine CRUD resource ever appears, it follows REST properly: plural
+lowercase-kebab nouns, verbs in the method, nesting only where the child cannot
+exist alone, 401 vs 403 vs 404 chosen deliberately, and one error envelope. No
+verbs in paths, no `?action=`, and never a 200 with an error inside.
+
 ## Conventions
 
 - `@/*` maps to `src/*`.
 - shadcn/ui with the `base-nova` style, `neutral` base color, `@base-ui/react` primitives and Tabler icons. Add components with `pnpm dlx shadcn@latest add <name>` — they land in `src/components/ui/`.
 - Compose Tailwind classes through `cn()` (`src/lib/utils.ts`); Prettier is configured to sort classes inside `cn()` and `cva()`.
 - Prettier: no semicolons, double quotes, 80 cols. TS is `strict` with `noUnusedLocals`/`noUnusedParameters`, so unused imports fail `pnpm typecheck`.
+- **All tests live in `tests/`**, mirroring the source path — `src/lib/chess/rules.ts` is tested by `tests/lib/chess/rules.test.ts`. None beside the source. Tests import through `@/*`, never relative paths.
 - Vitest has no config block yet — a DOM test needs `environment: "jsdom"` added to `vite.config.ts` (jsdom and Testing Library are already installed).
 
 ## Design documents
@@ -78,13 +128,16 @@ Anything else is speculation. No interface with one implementation and no
 prospect of a second.
 
 **Keep the rules pure.** All chess logic lives in `src/lib/chess/` with no I/O,
-no React and no framework imports, and it is the layer that carries tests. The
+no React and no framework imports, and it is the layer the suite leans on
+hardest (`tests/lib/chess/`). The
 board component renders a Position and emits taps; it knows nothing about Goals,
 engines or games.
 
 **Cut before you review.** When the work is written and the checks pass, run
-`/ponytail:ponytail-review` over the diff before `/code-review`. It hunts one
-thing — over-engineering — and it is cheaper to delete a speculative
+`/ponytail:ponytail-review` over the diff before `/code-review`, **both in
+subagents** — dispatch ponytail-review through the Agent tool and take back its
+findings list, not its running commentary. It hunts one thing —
+over-engineering — and it is cheaper to delete a speculative
 abstraction, a vendored component nothing imports or a dependency a stdlib call
 covers while the diff is still yours than to argue about it afterwards. Then run
 `/code-review` on what survives.
