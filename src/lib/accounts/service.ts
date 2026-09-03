@@ -1,5 +1,6 @@
 import { listCoachesWithPuzzleCounts } from "@/db/repositories/accounts"
 import { getAuth, getCoach } from "@/lib/auth"
+import { log } from "@/lib/log"
 import { MIN_PASSWORD } from "./rules"
 
 import type { NewAccess, NewCoach, NewPassword } from "./rules"
@@ -114,8 +115,9 @@ async function attempt(
     await write()
     return {}
   } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : "That did not work.",
-    }
+    const message =
+      error instanceof Error ? error.message : "That did not work."
+    log.error(() => `accounts write failed: ${message}`)
+    return { error: message }
   }
 }

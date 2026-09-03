@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 
 import { requireEnv } from "@/lib/env"
+import { log } from "@/lib/log"
 import * as schema from "./schema"
 
 export type Db = ReturnType<typeof connect>
@@ -24,7 +25,7 @@ function connect() {
   })
   // An idle client that errors with no listener takes the whole process down.
   pool.on("error", (error) => {
-    console.error("postgres pool error", error)
+    log.error(() => `postgres pool error: ${error.message}`)
   })
   return drizzle(pool, { schema })
 }
@@ -75,6 +76,7 @@ export async function withDb<T>(query: (db: Db) => Promise<T>): Promise<T> {
     return await query(getDb())
   } catch (error) {
     if (!isConnectionError(error)) throw error
+    log.warn(() => "postgres connection was gone, retrying once")
     return await query(getDb())
   }
 }

@@ -1,6 +1,7 @@
-import { beforeAll, describe, expect, it } from "vitest"
+import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import { withDb } from "@/db"
+import { log } from "@/lib/log"
 
 /** The pool is built lazily and never queried here, so no socket is opened. */
 beforeAll(() => {
@@ -29,6 +30,20 @@ describe("withDb", () => {
 
     expect(result).toBe("rows")
     expect(attempts).toBe(2)
+  })
+
+  it("logs when the retry fires, so a Neon resume is visible afterwards", async () => {
+    const warn = vi.spyOn(log, "warn").mockImplementation(() => {})
+    let attempts = 0
+
+    await withDb(async () => {
+      attempts += 1
+      if (attempts === 1) throw failWith("57P01")
+      return "rows"
+    })
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
   })
 
   it("gives up after one retry rather than looping", async () => {

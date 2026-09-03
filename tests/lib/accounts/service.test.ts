@@ -99,3 +99,46 @@ describe("refusing a Coach who is not an admin", () => {
     expect(refused).toEqual({ error: "That did not work." })
   })
 })
+
+/**
+ * A write BetterAuth refuses leaves no trace once the admin closes the tab —
+ * `attempt()` is the one seam every write in this service passes through, so
+ * this is where the fix lives rather than in each caller.
+ */
+describe("a write that fails", () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.doMock("@/lib/auth", () => ({
+      getCoach: async () => ({
+        id: "admin1",
+        email: "admin@example.com",
+        isAdmin: true,
+      }),
+      getAuth: () => ({
+        api: {
+          createUser: async () => {
+            throw new Error("User already exists. Use another email.")
+          },
+        },
+      }),
+    }))
+  })
+
+  afterEach(() => vi.doUnmock("@/lib/auth"))
+
+  it("logs the error it converts, before returning the admin their message", async () => {
+    vi.doMock("@/lib/log", () => ({ log: { error: vi.fn() } }))
+    const { createCoach } = await import("@/lib/accounts/service")
+    const { log } = await import("@/lib/log")
+
+    const result = await createCoach(
+      { email: "new@example.com", name: "New", password: "hunter22" },
+      new Headers()
+    )
+
+    expect(result).toEqual({ error: "User already exists. Use another email." })
+    expect(log.error).toHaveBeenCalledTimes(1)
+    const [build] = vi.mocked(log.error).mock.calls[0] as [() => string]
+    expect(build()).toContain("User already exists. Use another email.")
+  })
+})

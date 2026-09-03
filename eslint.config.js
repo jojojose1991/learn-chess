@@ -30,6 +30,19 @@ const behaviouralTests = {
 }
 
 /**
+ * `console` is a raw platform call with no level gate and no shape Cloud
+ * Logging can parse — `src/lib/log.ts` is the one place that decides both, so
+ * it is the only file allowed to reach for `console` directly.
+ */
+const consoleThroughLog = {
+  files: ["src/**/*.{ts,tsx}"],
+  ignores: ["src/lib/log.ts"],
+  rules: {
+    "no-console": "error",
+  },
+}
+
+/**
  * The absence of a drag gesture cannot be tested — a dispatched drag event
  * does nothing whether a handler exists or not — so lint holds it.
  */
@@ -64,6 +77,7 @@ export default [
     files: ["tests/**/*.tsx"],
   },
   behaviouralTests,
+  consoleThroughLog,
   noDragging,
   {
     ignores: [

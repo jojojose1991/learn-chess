@@ -5,8 +5,8 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**9 of 23 resolved. Five tickets are actionable right now: 08, 19, 20, 21
-and 22.**
+**10 of 24 resolved. Five tickets are actionable right now: 08, 20, 21, 22
+and 24.**
 
 ## Tickets
 
@@ -24,11 +24,12 @@ and 22.**
 | 07  | Tap-tap, Guidance, promotion picker | ✅ resolved     | —              |
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
 | 12  | Stockfish over UCI                  | ✅ resolved     | —              |
-| 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
+| 19  | Logging, dev and prod               | ✅ resolved     | —              |
 | 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
 | 21  | A Library row says what it is       | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | 🟢 **ready**    | 07 ✅          |
 | 22  | `/admin` scrolls sideways at 390px  | 🟢 **ready**    | none           |
+| 24  | The engine's failures are logged    | 🟢 **ready**    | none           |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
 | 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
@@ -66,7 +67,6 @@ already owed by code that shipped. Do not merge them.
 | A rejected Position may need more than one sentence         | 14                                        | Ticket 17                           |
 | The real-engine test skips wherever no Stockfish is installed | a suite runs where the binary is (16)   | 12, `tests/lib/engine/service.test.ts` |
 | A failed handshake's kill is untested, and eight queued searches each wait out the 5 s startup | the startup budget becomes reachable in a test | 12, `src/lib/engine/service.ts` |
-| Nothing is logged when the engine times out, dies or restarts | 19                                        | 12, `src/lib/engine/service.ts`     |
 | The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling | a Puzzle Link is live in production (11, 16) | Ticket 23 |
 | No `ucinewgame`, so one engine's table carries between Positions | a Puzzle's defence must be reproducible | 12                                  |
 | The image has no `CMD`: `vite build` emits a handler, not a server | 16                                      | 12, `Dockerfile`                    |
