@@ -1,4 +1,7 @@
-# Issue tracker: Local Markdown
+# Issue files: local markdown
+
+How issues are filed — the conventions, not the contents. Where each ticket
+currently stands is `docs/TRACKER.md`.
 
 Issues and specs for this repo live as markdown files in `.scratch/`.
 
@@ -23,6 +26,9 @@ Read the file at the referenced path. The user will normally pass the path or th
 Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 
 - **Map**: `.scratch/<effort>/map.md` — the Notes / Decisions-so-far / Fog body.
+  This is a `/wayfinder` effort's own working map, and is **not** the MVP's
+  status: that is `docs/TRACKER.md`, which already indexes the 18 tickets in
+  `.scratch/mvp/issues/`. Do not build a second index over them.
 - **Child ticket**: `.scratch/<effort>/issues/NN-<slug>.md`, numbered from `01`, with the question in the body. A `Type:` line records the ticket type (`research`/`prototype`/`grilling`/`task`); a `Status:` line records `claimed`/`resolved`.
 - **Blocking**: a `Blocked by: NN, NN` line near the top. A ticket is unblocked when every file it lists is `resolved`.
 - **Frontier**: scan `.scratch/<effort>/issues/` for files that are open, unblocked, and unclaimed; first by number wins.

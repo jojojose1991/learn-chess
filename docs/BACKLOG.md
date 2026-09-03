@@ -3,6 +3,11 @@
 Deliberately deferred during design. Each line says what it is and what has to
 stay true in the MVP so it can be added without a rewrite.
 
+Nothing here is owed. A shortcut taken during a build, or a review finding not
+taken, is a debt rather than a choice, and lives in `docs/TRACKER.md` under
+Carried forward — with the trigger that makes it live again. Do not merge the
+two lists.
+
 ## Goals
 
 - **Win-material Goals** ("win a piece worth ≥ V within N moves"). Requires the

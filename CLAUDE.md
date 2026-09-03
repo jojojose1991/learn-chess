@@ -201,6 +201,7 @@ If a change contradicts one, say so and revisit it; do not silently diverge.
 - `CONTEXT.md` — the ubiquitous language, to be used in code, types, table names, routes and commit messages. Each entry lists rejected synonyms.
 - `docs/PLAN.md` — domain model, schema, module boundaries, interaction rules, the six screens, build order.
 - `docs/adr/` — decisions with real trade-offs, and the evidence behind them.
+- `docs/TRACKER.md` — where every ticket stands, and what earlier tickets left behind with the trigger that makes each live again. Start here to pick up work.
 - `docs/BACKLOG.md` — deliberately out of scope, plus what must stay true in the MVP so it can be added later. Do not build these.
 - `docs/learnings/` — verified library facts, measured numbers and gotchas. Check here before trusting a library's own docs; several entries record where the official docs are wrong.
 
@@ -248,7 +249,12 @@ taps; it knows nothing about Goals, engines or games.
    while the diff is still yours to throw away.
 4. **`/code-review` on what survives**, also in a subagent.
 5. **Apply the fixes**, and re-run the three checks.
-6. **Then commit** — once, at the end, with the review's cuts already in it.
+6. **Update `docs/TRACKER.md`** — the ticket's status, and one row per thing
+   the work leaves owed, with the trigger that makes it live again. A finding
+   that was declined outright goes in the ticket's `## Comments` with its
+   reason instead. Do this before the commit, so the tracker lands in the same
+   unit as the work it describes rather than in a sweep-up later.
+7. **Then commit** — once, at the end, with the review's cuts already in it.
 
 **Nothing is committed mid-loop**: a commit is a unit that has been reviewed,
 not one that merely runs. That still means several commits per feature, not one
@@ -293,6 +299,6 @@ someone will look.
 
 ## Agent skills
 
-- **Issue tracker** — local markdown under `.scratch/<feature-slug>/issues/NN-slug.md`; the MVP's are in `.scratch/mvp/issues/`. See `docs/agents/issue-tracker.md`.
+- **Issue tracker** — local markdown under `.scratch/<feature-slug>/issues/NN-slug.md`; the MVP's are in `.scratch/mvp/issues/`. How they are filed is `docs/agents/issue-files.md`; where each one stands is `docs/TRACKER.md`.
 - **Triage labels** — five canonical roles, used verbatim: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
 - **Domain docs** — single-context, `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
