@@ -5,6 +5,7 @@ import {
   applyMove,
   explainIllegal,
   legalTargets,
+  readPlacement,
   validatePosition,
 } from "@/lib/chess/rules"
 
@@ -292,5 +293,35 @@ describe("explainIllegal, on the cases the first cut got wrong", () => {
     expect(explainIllegal(roaming, "e4", "g4")).toBe(
       "A king moves one square at a time, in any direction."
     )
+  })
+})
+
+describe("readPlacement", () => {
+  it("puts each piece of a Position on its own square", () => {
+    const placement = new Map(
+      readPlacement(START).map(({ square, piece }) => [square, piece])
+    )
+
+    expect(placement.get("a1")).toMatchObject({ type: "r", color: "w" })
+    expect(placement.get("e8")).toMatchObject({ type: "k", color: "b" })
+    expect(placement.get("d4")).toBeNull()
+  })
+
+  it("reads a Position that validatePosition rejects, because Confirm & Edit draws an invalid board while refusing to play it", () => {
+    const kingless = "8/8/8/8/8/8/8/R7 w - - 0 1"
+    expect(validatePosition(kingless).ok).toBe(false)
+
+    const [first] = readPlacement(kingless).filter(({ piece }) => piece)
+    expect(first).toMatchObject({ square: "a1", piece: { type: "r" } })
+  })
+
+  it("returns all sixty-four squares, empties included, from a8 to h1", () => {
+    const squares = readPlacement(START).map(({ square }) => square)
+
+    expect(squares).toHaveLength(64)
+    expect(squares[0]).toBe("a8")
+    expect(squares[7]).toBe("h8")
+    expect(squares[56]).toBe("a1")
+    expect(squares[63]).toBe("h1")
   })
 })

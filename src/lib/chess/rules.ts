@@ -1,6 +1,20 @@
-import { Chess, validateFen } from "chess.js"
+import { Chess, SQUARES, validateFen } from "chess.js"
 
 import type { Color, Piece, PieceSymbol, Square } from "chess.js"
+
+type SquareContent = { square: Square; piece: Piece | null }
+
+/**
+ * Every square of a Position, a8 to h1 — the order the board renders in.
+ * Skips validation so Confirm & Edit can draw an invalid Position while
+ * refusing to play it.
+ */
+export function readPlacement(fen: string): Array<SquareContent> {
+  return new Chess(fen, { skipValidation: true })
+    .board()
+    .flat()
+    .map((piece, index) => ({ square: SQUARES[index], piece }))
+}
 
 /** A Position is legal, or it is not, with reasons a person can read. */
 export type PositionValidity =

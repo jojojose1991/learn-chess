@@ -30,7 +30,12 @@ function CoachLayout() {
       {/* Not `SidebarInset`: it renders a `<main>`, and each screen has one. */}
       <div className="flex min-w-0 flex-1 flex-col">
         <SidebarTrigger className="m-2" />
-        <Outlet />
+        {/* A block, not another flex child: `mx-auto` on a column flex item
+            makes it shrink to fit its content, so every screen's `max-w-*`
+            would silently mean "as narrow as its text". */}
+        <div className="flex-1">
+          <Outlet />
+        </div>
       </div>
     </SidebarProvider>
   )
