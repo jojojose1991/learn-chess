@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**7 of 21 resolved. Five tickets are actionable right now: 07, 12, 19, 20
+**8 of 21 resolved. Four tickets are actionable right now: 07, 19, 20
 and 21.**
 
 ## Tickets
@@ -22,8 +22,8 @@ and 21.**
 | 05  | Library reads real Puzzles          | ✅ resolved     | —              |
 | 06  | The board renders a Position        | ✅ resolved     | —              |
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
+| 12  | Stockfish over UCI                  | ✅ resolved     | —              |
 | 07  | Tap-tap, Guidance, promotion picker | 🟢 **ready**    | 06 ✅          |
-| 12  | Stockfish over UCI                  | 🟢 **ready**    | none           |
 | 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
 | 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
 | 21  | A Library row says what it is       | 🟢 **ready**    | none           |
@@ -31,7 +31,7 @@ and 21.**
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
 | 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
-| 13  | The engine defends, and Hint        | ⬜ ready-for-agent | 10, 12        |
+| 13  | The engine defends, and Hint        | ⬜ ready-for-agent | 10 (12 ✅)    |
 | 14  | Scan a clean screenshot             | ⬜ ready-for-agent | 08            |
 | 15  | The four-corner warp                | ⬜ ready-for-agent | 14            |
 | 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15        |
@@ -62,6 +62,13 @@ already owed by code that shipped. Do not merge them.
 | Owed                                                        | Trigger                                   | Detail in                           |
 | ----------------------------------------------------------- | ----------------------------------------- | ----------------------------------- |
 | A rejected Position may need more than one sentence         | 14                                        | Ticket 17                           |
+| The real-engine test skips wherever no Stockfish is installed | a suite runs where the binary is (16)   | 12, `tests/lib/engine/service.test.ts` |
+| A failed handshake's kill is untested, and eight queued searches each wait out the 5 s startup | the startup budget becomes reachable in a test | 12, `src/lib/engine/service.ts` |
+| Nothing is logged when the engine times out, dies or restarts | 19                                        | 12, `src/lib/engine/service.ts`     |
+| The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling | a Puzzle Link is live in production (11, 16) | 12, `src/lib/engine/service.ts` |
+| No `ucinewgame`, so one engine's table carries between Positions | a Puzzle's defence must be reproducible | 12                                  |
+| The image has no `CMD`: `vite build` emits a handler, not a server | 16                                      | 12, `Dockerfile`                    |
+| The Stockfish URL and its checksum are pinned by hand         | Stockfish 19, or a CVE in 18              | 12, `Dockerfile`                    |
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
 | New Puzzle's taps go nowhere and its Position is hardcoded   | 08                                        | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |

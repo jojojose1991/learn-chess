@@ -16,6 +16,7 @@ import { Route as CoachIndexRouteImport } from './routes/_coach/index'
 import { Route as CoachAdminRouteImport } from './routes/_coach/admin'
 import { Route as CoachPuzzlesNewRouteImport } from './routes/_coach/puzzles.new'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiEngineMoveRouteImport } from './routes/api/engine/move'
 
 const CoachRoute = CoachRouteImport.update({
   id: '/_coach',
@@ -51,6 +52,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEngineMoveRoute = ApiEngineMoveRouteImport.update({
+  id: '/api/engine/move',
+  path: '/api/engine/move',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof CoachIndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof CoachAdminRoute
   '/puzzles/new': typeof CoachPuzzlesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/engine/move': typeof ApiEngineMoveRoute
 }
 export interface FileRoutesByTo {
   '/credits': typeof CreditsRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/': typeof CoachIndexRoute
   '/puzzles/new': typeof CoachPuzzlesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/engine/move': typeof ApiEngineMoveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,13 +85,27 @@ export interface FileRoutesById {
   '/_coach/': typeof CoachIndexRoute
   '/_coach/puzzles/new': typeof CoachPuzzlesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/engine/move': typeof ApiEngineMoveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/credits' | '/sign-in' | '/admin' | '/puzzles/new' | '/api/auth/$'
+    | '/'
+    | '/credits'
+    | '/sign-in'
+    | '/admin'
+    | '/puzzles/new'
+    | '/api/auth/$'
+    | '/api/engine/move'
   fileRoutesByTo: FileRoutesByTo
-  to: '/credits' | '/sign-in' | '/admin' | '/' | '/puzzles/new' | '/api/auth/$'
+  to:
+    | '/credits'
+    | '/sign-in'
+    | '/admin'
+    | '/'
+    | '/puzzles/new'
+    | '/api/auth/$'
+    | '/api/engine/move'
   id:
     | '__root__'
     | '/_coach'
@@ -93,6 +115,7 @@ export interface FileRouteTypes {
     | '/_coach/'
     | '/_coach/puzzles/new'
     | '/api/auth/$'
+    | '/api/engine/move'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,6 +123,7 @@ export interface RootRouteChildren {
   CreditsRoute: typeof CreditsRoute
   SignInRoute: typeof SignInRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiEngineMoveRoute: typeof ApiEngineMoveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -153,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/engine/move': {
+      id: '/api/engine/move'
+      path: '/api/engine/move'
+      fullPath: '/api/engine/move'
+      preLoaderRoute: typeof ApiEngineMoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -175,6 +206,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreditsRoute: CreditsRoute,
   SignInRoute: SignInRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiEngineMoveRoute: ApiEngineMoveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

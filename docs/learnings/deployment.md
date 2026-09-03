@@ -69,6 +69,22 @@ CMD ["node", ".output/server/index.mjs"]
 
 No `EXPOSE`, no `--port`, no `node_modules` in the runtime stage.
 
+**Two things the sketch above assumes, measured while building the real
+`Dockerfile` (ticket 12).** Nitro is not in `vite.config.ts` yet, so today
+`vite build` emits `dist/`, and `dist/server/server.js` **exports a fetch
+handler rather than starting a listener** — an image whose `CMD` runs it would
+exit at once. The image therefore has no `CMD` until Nitro arrives with the
+deploy ticket.
+
+**`pnpm install` in the image needs `--ignore-scripts`.** The root `prepare`
+script is `git config core.hooksPath .githooks`, and `node:24-slim` has
+neither git nor a repository, so a plain install fails the build. It is also
+the switch that keeps `onnxruntime-node`'s postinstall from reaching nuget.org.
+
+**Warm-engine cost over HTTP, measured on this app:** a second
+`POST /api/engine/move` on a 200 ms budget round-trips in **209 ms**, so the
+~490 ms spawn is paid once per process and the driver adds ~9 ms.
+
 ⚠️ **The one thing that must be tested early.** Nitro bundles most deps into
 `.output/server`, but **native modules it cannot bundle get externalised into
 `.output/server/node_modules/`**. With `onnxruntime-node` (and anything native

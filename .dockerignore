@@ -1,0 +1,15 @@
+# Kept out of the build context: rebuilt inside it, or never wanted in a layer.
+node_modules
+dist
+.git
+.githooks
+.scratch
+test-results
+playwright-report
+coverage
+.vitest-reports
+
+# Secrets are injected at deploy time. A value copied in here would be baked
+# into the image layer for anyone who pulls it.
+.env
+.env.*
