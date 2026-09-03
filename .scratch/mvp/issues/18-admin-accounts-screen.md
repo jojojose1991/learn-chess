@@ -100,6 +100,18 @@ The product's own gate does not use the id at all: `isAdmin()` compares the
 session's email to `SEED_ADMIN_USER`. Both gates answer to the one variable, so
 they cannot drift.
 
+**`set-role` is refused too, and that one matters more than it looks.** The
+ticket says no app code reads `user.role`, and none does — but the *plugin*
+does: `hasPermission` grants on role before anything else, so a Coach whose
+role said "admin" would hold every admin endpoint while `/admin` still answered
+them 404. That is a second definition of admin the product cannot see. Closing
+`/admin/set-role` leaves no HTTP path that writes the column, so the two cannot
+disagree. `src/routes/api/auth/-closed.test.ts` pins all three refusals.
+
+The admin can still mint a role-carrying account through the raw `create-user`
+endpoint, which takes a `role` in its body. That grants no power the admin does
+not already hold, and `addCoach` never passes one, so it is left alone.
+
 **`removeUser` and `impersonateUser` are refused at the route.** The ticket
 noted the plugin mounts endpoints we do not want and that they are admin-gated.
 `/admin/remove-user` is not merely unwanted — it reaches the `coach_id`
