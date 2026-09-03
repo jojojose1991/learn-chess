@@ -10,45 +10,45 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: "Montserrat Variable", ui-sans-serif, system-ui, sans-serif;
-    --font-sans: 'Geist Variable', sans-serif;
-    --color-board-light: var(--board-light);
-    --color-board-dark: var(--board-dark);
-    --color-brand: var(--brand);
-    --color-brand-ink: var(--brand-ink);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: "Montserrat Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", sans-serif;
+  --color-board-light: var(--board-light);
+  --color-board-dark: var(--board-dark);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 /*
@@ -64,39 +64,39 @@
   is `--primary` and neither is `--ring`; docs/adr/0005 says why.
 */
 :root {
-    --background: oklch(0.985 0.006 110);
-    --foreground: oklch(0.205 0.014 110);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.205 0.014 110);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.205 0.014 110);
-    --primary: oklch(0.26 0.022 130);
-    --primary-foreground: oklch(0.985 0.01 110);
-    --secondary: oklch(0.965 0.01 110);
-    --secondary-foreground: oklch(0.26 0.022 130);
-    --muted: oklch(0.965 0.01 110);
-    --muted-foreground: oklch(0.52 0.014 110);
-    --accent: oklch(0.26 0.022 130);
-    --accent-foreground: oklch(0.985 0.01 110);
-    --destructive: oklch(0.545 0.235 27.5);
-    --border: oklch(0.91 0.012 110);
-    --input: oklch(0.91 0.012 110);
-    /* Ink, not the brand green: this colours the focus outline, and a green
+  --background: oklch(0.985 0.006 110);
+  --foreground: oklch(0.205 0.014 110);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.014 110);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.014 110);
+  --primary: oklch(0.26 0.022 130);
+  --primary-foreground: oklch(0.985 0.01 110);
+  --secondary: oklch(0.965 0.01 110);
+  --secondary-foreground: oklch(0.26 0.022 130);
+  --muted: oklch(0.965 0.01 110);
+  --muted-foreground: oklch(0.52 0.014 110);
+  --accent: oklch(0.26 0.022 130);
+  --accent-foreground: oklch(0.985 0.01 110);
+  --destructive: oklch(0.545 0.235 27.5);
+  --border: oklch(0.91 0.012 110);
+  --input: oklch(0.91 0.012 110);
+  /* Ink, not the brand green: this colours the focus outline, and a green
        one on a green board square measures 1.00 — invisible. Ink is 5.50 on
        the darkest square and 17.15 on the page. */
-    --ring: oklch(0.205 0.014 110);
-    /* #779952, the same green as the favicon and `.board-green`. */
-    --brand: oklch(0.64 0.105 130);
-    --brand-ink: oklch(0.47 0.095 132);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.968 0.012 110);
-    --sidebar-foreground: oklch(0.205 0.014 110);
-    --sidebar-primary: oklch(0.26 0.022 130);
-    --sidebar-primary-foreground: oklch(0.985 0.01 110);
-    --sidebar-accent: oklch(0.935 0.018 110);
-    --sidebar-accent-foreground: oklch(0.205 0.014 110);
-    --sidebar-border: oklch(0.905 0.014 110);
-    --sidebar-ring: oklch(0.205 0.014 110);
+  --ring: oklch(0.205 0.014 110);
+  /* #779952, the same green as the favicon and `.board-green`. */
+  --brand: oklch(0.64 0.105 130);
+  --brand-ink: oklch(0.47 0.095 132);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.968 0.012 110);
+  --sidebar-foreground: oklch(0.205 0.014 110);
+  --sidebar-primary: oklch(0.26 0.022 130);
+  --sidebar-primary-foreground: oklch(0.985 0.01 110);
+  --sidebar-accent: oklch(0.935 0.018 110);
+  --sidebar-accent-foreground: oklch(0.205 0.014 110);
+  --sidebar-border: oklch(0.905 0.014 110);
+  --sidebar-ring: oklch(0.205 0.014 110);
 }
 
 /* The two board themes. Deliberately not on `:root`: a board always carries
@@ -104,28 +104,30 @@
    silently green. The highlight colour is reserved and arrives with Guidance,
    which is the screen that needs it. */
 .board-green {
-    --board-light: #edeed1;
-    --board-dark: #779952;
+  --board-light: #edeed1;
+  --board-dark: #779952;
 }
 
 .board-brown {
-    --board-light: #f0d9b5;
-    --board-dark: #b58863;
+  --board-light: #f0d9b5;
+  --board-dark: #b58863;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
   /* 700, like both references: a geometric sans carries a heading by weight
      and width, not by contrast. */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     @apply font-heading font-bold tracking-tight;
-    }
+  }
 }

@@ -5,7 +5,7 @@ set -euo pipefail
 # NUL-delimited so a path with a space survives xargs.
 staged() {
   git diff --cached --name-only --diff-filter=ACMR -z \
-    -- '*.ts' '*.tsx' '*.js' '*.jsx'
+    -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.css'
 }
 
 [ -n "$(staged)" ] || exit 0
