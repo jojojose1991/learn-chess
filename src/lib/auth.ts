@@ -14,7 +14,7 @@ import { optionalEnv, requireEnv } from "@/lib/env"
  * configuration and not data: there is no promote, no demote, and no app code
  * reads `user.role`.
  */
-export function adminEmail(): string | undefined {
+function adminEmail(): string | undefined {
   return optionalEnv("SEED_ADMIN_USER")?.toLowerCase()
 }
 

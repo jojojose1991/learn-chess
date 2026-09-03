@@ -94,24 +94,20 @@ export const setCoachPassword = createServerFn({ method: "POST" })
   )
 
 /**
- * Access withdrawn: `banUser` kills every live session and sign-in is refused
- * from then on, while the row, the Library and every Puzzle Link stay. It is
- * what this product has instead of deleting, and it refuses to ban the caller.
+ * Access withdrawn or given back. `banUser` kills every live session and
+ * sign-in is refused from then on, while the row, the Library and every Puzzle
+ * Link stay — it is what this product has instead of deleting. It also refuses
+ * to ban the caller, so an admin cannot revoke themselves.
  */
-export const revokeAccess = createServerFn({ method: "POST" })
-  .inputValidator((data: { coachId: string }) => data)
+export const setAccess = createServerFn({ method: "POST" })
+  .inputValidator((data: { coachId: string; revoked: boolean }) => data)
   .handler(({ data }) =>
-    attempt((auth, headers) =>
-      auth.api.banUser({ body: { userId: data.coachId }, headers })
-    )
-  )
-
-export const restoreAccess = createServerFn({ method: "POST" })
-  .inputValidator((data: { coachId: string }) => data)
-  .handler(({ data }) =>
-    attempt((auth, headers) =>
-      auth.api.unbanUser({ body: { userId: data.coachId }, headers })
-    )
+    attempt((auth, headers) => {
+      const body = { userId: data.coachId }
+      return data.revoked
+        ? auth.api.banUser({ body, headers })
+        : auth.api.unbanUser({ body, headers })
+    })
   )
 
 /**

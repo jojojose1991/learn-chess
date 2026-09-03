@@ -12,8 +12,7 @@ import { Label } from "@/components/ui/label"
 import {
   addCoach,
   fetchAccounts,
-  restoreAccess,
-  revokeAccess,
+  setAccess,
   setCoachPassword,
 } from "@/lib/accounts"
 
@@ -144,31 +143,23 @@ function Accounts() {
 
                   {account.id === coach.id ? (
                     <span className="text-muted-foreground">This is you</span>
-                  ) : account.revoked ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() =>
-                        run(() =>
-                          restoreAccess({ data: { coachId: account.id } })
-                        )
-                      }
-                    >
-                      Restore
-                    </Button>
                   ) : (
                     <Button
-                      variant="ghost"
+                      variant={account.revoked ? "outline" : "ghost"}
                       size="sm"
                       disabled={busy}
                       onClick={() =>
                         run(() =>
-                          revokeAccess({ data: { coachId: account.id } })
+                          setAccess({
+                            data: {
+                              coachId: account.id,
+                              revoked: !account.revoked,
+                            },
+                          })
                         )
                       }
                     >
-                      Revoke
+                      {account.revoked ? "Restore" : "Revoke"}
                     </Button>
                   )}
                 </div>

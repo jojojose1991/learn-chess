@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { adminEmail, createAuth, isAdmin } from "./auth"
+import { createAuth, isAdmin } from "./auth"
 
 /**
  * The pool is built lazily. `disableSignUp` is checked before the adapter is
@@ -55,7 +55,6 @@ describe("createAuth", () => {
 describe("isAdmin", () => {
   it("is the Coach SEED_ADMIN_USER names, whatever the casing", () => {
     process.env.SEED_ADMIN_USER = "Boss@Example.com"
-    expect(adminEmail()).toBe("boss@example.com")
     expect(isAdmin({ email: "boss@example.com" })).toBe(true)
     expect(isAdmin({ email: "BOSS@example.com" })).toBe(true)
   })
@@ -68,7 +67,6 @@ describe("isAdmin", () => {
   /** A fresh clone, before `pnpm seed` has run. Nobody is admin, and nothing throws. */
   it("is nobody at all when the variable is unset", () => {
     process.env.SEED_ADMIN_USER = ""
-    expect(adminEmail()).toBeUndefined()
     expect(isAdmin({ email: "boss@example.com" })).toBe(false)
   })
 })
