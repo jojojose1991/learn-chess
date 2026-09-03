@@ -1,0 +1,24 @@
+# The e2e database. Port 5433, not 5432, because something else on this
+# machine already owns 5432 and e2e drops and recreates whole databases.
+#
+#   docker compose up -d
+services:
+  e2e-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: learn-chess
+    ports:
+      - "5433:5432"
+    volumes:
+      # Not `…/data`: postgres 18 moved PGDATA (docs/learnings/testing.md).
+      - e2e-db:/var/lib/postgresql
+    # Lets `docker compose up -d --wait` block until it accepts connections.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d learn-chess"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  e2e-db:

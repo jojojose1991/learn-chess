@@ -1,4 +1,4 @@
-import { defineConfig } from "vite"
+import { defineConfig } from "vitest/config"
 import { devtools } from "@tanstack/devtools-vite"
 import { tanstackStart } from "@tanstack/react-start/plugin/vite"
 import viteReact from "@vitejs/plugin-react"
@@ -17,6 +17,28 @@ const config = defineConfig({
   resolve: { tsconfigPaths: true },
   server: { port: Number(process.env.PORT) || 3012 },
   plugins: [devtools(), tailwindcss(), tanstackStart(), viteReact()],
+  test: {
+    // By extension, so tests keep mirroring the source path and need no
+    // opt-in comment: `.tsx` renders and gets a DOM, `.ts` stays in node.
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "logic",
+          include: ["tests/**/*.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          include: ["tests/**/*.test.tsx"],
+          environment: "jsdom",
+          setupFiles: ["./tests/setup-dom.ts"],
+        },
+      },
+    ],
+  },
 })
 
 export default config
