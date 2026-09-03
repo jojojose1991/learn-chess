@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test"
 import type { Locator } from "@playwright/test"
 
 import { signIn } from "./coach"
+import { hydrated } from "./hydrated"
 
 /**
  * Squareness is the one board behaviour no layer below can hold: jsdom
@@ -107,4 +108,92 @@ test("draws the artwork, so a sighted Student sees the Position too", async ({
 
 function square(board: Locator, name: string) {
   return board.getByRole("button", { name, exact: true })
+}
+
+/**
+ * The 44px floor is `docs/PLAN.md`'s, and only a browser can hold it: jsdom
+ * computes no layout, so a unit test could read back the class string and
+ * nothing else.
+ */
+test("keeps a square at 44px on a phone, because the person tapping is five", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 800 })
+  await signIn(page)
+  await page.goto("/puzzles/new")
+  const board = page.getByRole("group", { name: "Chess board" })
+
+  const box = await square(board, "a1, white rook").boundingBox()
+
+  expect(box!.width).toBeGreaterThanOrEqual(44)
+  expect(box!.height).toBeGreaterThanOrEqual(44)
+})
+
+/** 1. a4 Nf6 2. a5 Ng8 3. a6 Nf6 4. axb7 Ng8 5. bxa8, which has to ask. */
+const TO_A_PROMOTION = [
+  ["a2", "a4"],
+  ["g8", "f6"],
+  ["a4", "a5"],
+  ["f6", "g8"],
+  ["a5", "a6"],
+  ["g8", "f6"],
+  ["a6", "b7"],
+  ["f6", "g8"],
+  ["b7", "a8"],
+]
+
+test("asks which piece with four buttons, Queen first and biggest, all above 44px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 800 })
+  await signIn(page)
+  await page.goto("/puzzles/new")
+  const board = page.getByRole("group", { name: "Chess board" })
+  await hydrated(page, '[aria-label="Chess board"]')
+
+  for (const [from, to] of TO_A_PROMOTION) {
+    await tap(board, from)
+    await tap(board, to)
+  }
+
+  // Which pieces are offered, and in which order, is `move-board.test.tsx`'s;
+  // this is the half that needs pixels and a real screen.
+  const picker = page.getByRole("dialog", { name: "Promote to" })
+  const boxes = await Promise.all(
+    (await picker.getByRole("button").all()).map((choice) =>
+      choice.boundingBox()
+    )
+  )
+  for (const box of boxes) {
+    expect(box!.width).toBeGreaterThanOrEqual(44)
+    expect(box!.height).toBeGreaterThanOrEqual(44)
+  }
+  expect(boxes[0]!.width).toBeGreaterThan(
+    Math.max(...boxes.slice(1).map((box) => box!.width))
+  )
+
+  // Escape is the way out, and it leaves the pawn where it stood. The trap,
+  // the dismissal and the focus that comes back are `<dialog>`'s, so only a
+  // real browser can hold them.
+  await page.keyboard.press("Escape")
+  await expect(picker).toBeHidden()
+  await expect(
+    board.getByRole("button", { name: /^b7, white pawn/ })
+  ).toBeVisible()
+
+  // And on the second attempt the chosen piece appears: a queen on a8, where
+  // a black rook stood.
+  await tap(board, "b7")
+  await tap(board, "a8")
+  await picker.getByRole("button", { name: "Queen", exact: true }).click()
+  await expect(
+    board.getByRole("button", { name: /^a8, white queen/ })
+  ).toBeVisible()
+})
+
+/** One square, whatever Guidance has added to its name. */
+function tap(board: Locator, coordinate: string) {
+  return board
+    .getByRole("button", { name: new RegExp(`^${coordinate},`) })
+    .click()
 }

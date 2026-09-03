@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**8 of 21 resolved. Four tickets are actionable right now: 07, 19, 20
+**9 of 21 resolved. Four tickets are actionable right now: 08, 19, 20
 and 21.**
 
 ## Tickets
@@ -21,13 +21,13 @@ and 21.**
 | 04  | Invite-only sign-in                 | ✅ resolved     | —              |
 | 05  | Library reads real Puzzles          | ✅ resolved     | —              |
 | 06  | The board renders a Position        | ✅ resolved     | —              |
+| 07  | Tap-tap, Guidance, promotion picker | ✅ resolved     | —              |
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
 | 12  | Stockfish over UCI                  | ✅ resolved     | —              |
-| 07  | Tap-tap, Guidance, promotion picker | 🟢 **ready**    | 06 ✅          |
 | 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
 | 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
 | 21  | A Library row says what it is       | 🟢 **ready**    | none           |
-| 08  | Confirm & Edit saves a Puzzle       | ⬜ ready-for-agent | 07            |
+| 08  | Confirm & Edit saves a Puzzle       | 🟢 **ready**    | 07 ✅          |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
 | 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
@@ -70,7 +70,7 @@ already owed by code that shipped. Do not merge them.
 | The image has no `CMD`: `vite build` emits a handler, not a server | 16                                      | 12, `Dockerfile`                    |
 | The Stockfish URL and its checksum are pinned by hand         | Stockfish 19, or a CVE in 18              | 12, `Dockerfile`                    |
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
-| New Puzzle's taps go nowhere and its Position is hardcoded   | 08                                        | `src/routes/_coach/puzzles.new.tsx` |
+| New Puzzle's Position is hardcoded, it hosts Play's Guidance toggle, and `board.spec.ts`'s promotion journey plays nine moves from it | 08 | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |
 | `/admin/set-role` and `/admin/update-user` are refused at the route | promote and demote get a screen   | 18                                  |
 | `create-user` still accepts a `role` in its body             | a role that grants what an admin cannot   | 18                                  |
@@ -82,9 +82,11 @@ already owed by code that shipped. Do not merge them.
 | `board_theme` has no CHECK constraint                        | a writer other than our own code          | 06, `src/db/schema.ts`              |
 | `drizzle.config.ts` reads env at module scope                | a fix that is not worse than the problem  | 03                                  |
 | `public/pieces/LICENSE` has no extension, so `/credits` downloads it | revisiting ADR-0004               | 06                                  |
-| Nothing encodes castling as king-takes-rook (e1→h1)          | if tap-tap ever produces one              | 02                                  |
+| Nothing encodes castling as king-takes-rook (e1→h1)          | still nothing does: a tap on your own piece reselects it | 02, `src/components/move-board.tsx` |
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
-| The board's focus outline is under 3:1 at the base layer's 50% alpha | 07                                 | ADR-0005, `src/styles.css`          |
+| A selection outlives the Position changing under it, so the next tap emits a move the screen drops in silence | 09, where Rewind and Reset change it | `src/components/move-board.tsx` |
+| `MoveBoard` passes the board neither orientation nor theme   | 09 flips one, or 20 puts brown on Play    | `src/components/move-board.tsx`     |
+| `/admin` scrolls sideways at 390px by 120px, so `responsive.spec.ts` is red | now: it fails on `main` too | 18, `tests/e2e/responsive.spec.ts`  |
 | Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
 | The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |
 | `public/favicon.svg` keeps its own copy of the checker path   | the mark's shape changes                  | `src/assets/checker-mark.svg`       |

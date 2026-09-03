@@ -14,6 +14,7 @@
   --font-sans: "Geist Variable", sans-serif;
   --color-board-light: var(--board-light);
   --color-board-dark: var(--board-dark);
+  --color-board-mark: var(--board-mark);
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -92,6 +93,12 @@
   /* #779952, the same green as the favicon and `.board-green`. */
   --brand: oklch(0.64 0.105 130);
   --brand-ink: oklch(0.47 0.095 132);
+  /* The reserved highlight: Guidance marks, the picked-up piece and the last
+     move all draw in it, and nothing else on screen does. One value for both
+     themes, dark for the same reason the square coordinates are — the
+     measurements on all four square fills, and why a wash cannot carry 3:1
+     where a shape can, are in docs/adr/0005. */
+  --board-mark: oklch(0.35 0.14 55);
   --radius: 0.625rem;
   --sidebar: oklch(0.968 0.012 110);
   --sidebar-foreground: oklch(0.205 0.014 110);
@@ -105,8 +112,8 @@
 
 /* The two board themes. Deliberately not on `:root`: a board always carries
    one of these classes, so a missing one renders colourless rather than
-   silently green. The highlight colour is reserved and arrives with Guidance,
-   which is the screen that needs it. */
+   silently green. `--board-mark` is the exception and stays on `:root`: one
+   highlight serves both themes. */
 .board-green {
   --board-light: #edeed1;
   --board-dark: #779952;

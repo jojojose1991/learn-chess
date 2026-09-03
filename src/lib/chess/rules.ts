@@ -20,6 +20,9 @@ export function readPlacement(fen: string): Array<SquareContent> {
 export type PositionValidity =
   { ok: true } | { ok: false; reasons: Array<string> }
 
+/** What a promoting pawn may become. A king is not a choice; a pawn is not one either. */
+export type PromotionPiece = "n" | "b" | "r" | "q"
+
 /** A move that was played: exactly what a successful `applyMove` returns. */
 export type PlayedMove = { fen: string; san: string }
 
@@ -78,6 +81,17 @@ export function validatePosition(fen: string): PositionValidity {
 }
 
 /**
+ * The piece a tap on `square` may pick up: the one standing there if it is the
+ * side to move's. An empty square and the waiting side's pieces are nobody's
+ * to move, which is what makes a tap on either do nothing.
+ */
+export function pieceToMove(fen: string, square: Square): Piece | null {
+  const position = new Chess(fen, { skipValidation: true })
+  const piece = position.get(square)
+  return piece && piece.color === position.turn() ? piece : null
+}
+
+/**
  * The squares the piece on `square` may move to — empty when the square is
  * empty, holds the waiting side's piece, or is off the board. Drives Guidance.
  *
@@ -102,7 +116,7 @@ export function applyMove(
   fen: string,
   from: Square,
   to: Square,
-  promotion?: "n" | "b" | "r" | "q"
+  promotion?: PromotionPiece
 ): MoveOutcome {
   const position = new Chess(fen)
   try {
@@ -114,6 +128,18 @@ export function applyMove(
       reason: `${from} to ${to} is not a legal move in this position.`,
     }
   }
+}
+
+/**
+ * Whether that move lands a pawn on the last rank, and so has to be asked
+ * about before it can be played at all — `chess.js` refuses a promotion with
+ * no piece named. False for a move that is illegal anyway, so no picker opens
+ * on one.
+ */
+export function isPromotion(fen: string, from: Square, to: Square): boolean {
+  return new Chess(fen)
+    .moves({ square: from, verbose: true })
+    .some((move) => move.to === to && move.promotion !== undefined)
 }
 
 /** How each piece moves, for a Student who has just tried something else. */
