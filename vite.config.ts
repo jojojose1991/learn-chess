@@ -18,6 +18,9 @@ const config = defineConfig({
   server: { port: Number(process.env.PORT) || 3012 },
   plugins: [devtools(), tailwindcss(), tanstackStart(), viteReact()],
   test: {
+    // Agents read this output: a passing run costs a summary, and console
+    // noise survives only from tests that failed.
+    silent: "passed-only",
     // By extension, so tests keep mirroring the source path and need no
     // opt-in comment: `.tsx` renders and gets a DOM, `.ts` stays in node.
     projects: [

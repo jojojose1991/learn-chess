@@ -9,7 +9,7 @@ export default defineConfig({
   // One clone is shared by the run, so tests are not isolated from each other.
   workers: 1,
   // `json` and the trace are for a reader that is usually an agent.
-  reporter: [["list"], ["json", { outputFile: "test-results/e2e.json" }]],
+  reporter: [["line"], ["json", { outputFile: "test-results/e2e.json" }]],
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
