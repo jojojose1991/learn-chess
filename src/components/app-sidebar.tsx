@@ -74,6 +74,13 @@ export function AppSidebar({ coach }: { coach: Coach }) {
         <Button variant="outline" size="sm" onClick={signOut}>
           Sign out
         </Button>
+        <Link
+          to="/credits"
+          className="text-xs text-muted-foreground underline"
+          onClick={() => isMobile && setOpenMobile(false)}
+        >
+          Credits
+        </Link>
       </SidebarFooter>
     </Sidebar>
   )

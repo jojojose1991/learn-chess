@@ -18,6 +18,24 @@ Picking by eye from lichess' board settings would have walked directly into this
 Files are `Chess_<kqrbnp><l|d>t45.svg` from
 [Template:SVG chess pieces](https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces)
 (`t` = transparent background). Rename to `wK.svg` … `bP.svg`.
+`https://commons.wikimedia.org/wiki/Special:FilePath/<name>` fetches the
+current file directly, with no per-file hash path to look up.
+
+**One of the twelve looks like it came from somewhere else, and did not.**
+`Chess_klt45.svg` (our `wK.svg`) is SVGO attribute form — no DOCTYPE,
+`fill="none" stroke="#000"` — while the other eleven are raw
+`style="fill:#ffffff; …"` exports. That is not lichess' GPL-elected copy: a
+Commons editor ran the file through SVGOMG **on Commons** in September 2022,
+and it is byte-identical to what `Special:FilePath` serves today. Verified
+against the file's `imageinfo` history, which also shows edits by TomFryers
+(2020) and Antonsusi (2010, 2012). Contributions to a Commons file carry that
+file's stated licence, so Cburnett's `{{self|GFDL|migration=relicense|BSD|GPL}}`
+election covers them and ADR-0004 stands.
+
+**No `viewBox` on any of the twelve**, only `width="45" height="45"`. They
+still scale correctly as an `<img>` sized by CSS, because both intrinsic
+dimensions are present — checked in Chromium at 74px and 90px. Nothing needs
+patching, and patching would forfeit "vendored unmodified".
 
 This is *the* classic Staunton reference — the set a child already sees in
 Wikipedia articles and in most chess books' diagram fonts. Heavy outlines and
