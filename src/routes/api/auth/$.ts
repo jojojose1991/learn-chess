@@ -9,26 +9,27 @@ import { getAuth } from "@/lib/auth"
  * take a Coach's whole Library and every Puzzle Link a Student is holding —
  * and impersonating a Coach has no business here at all.
  *
- * `set-role` is closed because the plugin's own permission check reads
- * `user.role`: a Coach whose role said "admin" would hold every admin
- * endpoint while `/admin` still answered them 404. The admin is whoever
- * `SEED_ADMIN_USER` names, and closing this leaves no HTTP path that writes
- * the column — so the two cannot disagree.
+ * `set-role` and `update-user` both write `user.role`, which is what makes a
+ * Coach an admin. Neither has a screen, so leaving them open would mean the
+ * only way to promote anyone was a request nothing in the product sends.
+ * `update-user` rewrites `email` too, so it is also how an admin could lock
+ * themselves out. They open again when promote and demote get a screen.
  */
 const closed = new Set([
   "/api/auth/admin/remove-user",
   "/api/auth/admin/impersonate-user",
   "/api/auth/admin/set-role",
+  "/api/auth/admin/update-user",
 ])
 
 /** BetterAuth's own endpoints, mounted where its client expects them. */
 export const Route = createFileRoute("/api/auth/$")({
   server: {
     handlers: {
-      ANY: async ({ request }) => {
+      ANY: ({ request }) => {
         if (closed.has(new URL(request.url).pathname))
           return new Response(null, { status: 404 })
-        return (await getAuth()).handler(request)
+        return getAuth().handler(request)
       },
     },
   },

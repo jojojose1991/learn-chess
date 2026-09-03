@@ -1,8 +1,12 @@
 /**
- * Creates the admin. Invite-only means there is no sign-up route, so this is
- * how the first Coach comes to exist — and `SEED_ADMIN_USER` names the admin,
- * so that Coach reaches the accounts screen and mints every other one there.
- * Re-running it is a no-op.
+ * Makes the Coach `SEED_ADMIN_USER` names an admin, creating them first if
+ * they do not exist. Invite-only means there is no sign-up route, so this is
+ * how the first Coach comes to exist, and admin is a role on that row — so
+ * this is also the only thing that grants it. Every other Coach is minted on
+ * the accounts screen and gets the plugin's "user" role.
+ *
+ * Re-running it changes nothing. It does not reset an existing password: the
+ * accounts screen does that.
  *
  *   SEED_ADMIN_USER=… SEED_ADMIN_PASSWORD=… SEED_ADMIN_NAME=… pnpm seed
  */
@@ -10,7 +14,7 @@ import { eq } from "drizzle-orm"
 
 import { getDb } from "../src/db"
 import { user } from "../src/db/schema"
-import { createAuth } from "../src/lib/auth"
+import { ADMIN_ROLE, createAuth, isAdmin } from "../src/lib/auth"
 import { requireEnv } from "../src/lib/env"
 
 const email = requireEnv("SEED_ADMIN_USER").toLowerCase()
@@ -23,23 +27,29 @@ try {
 }
 
 async function seed() {
-  const existing = await db
-    .select({ id: user.id })
+  const rows = await db
+    .select({ role: user.role })
     .from(user)
     .where(eq(user.email, email))
     .limit(1)
+  const existing = rows.at(0)
 
-  if (existing.length > 0) {
-    console.log(`Coach ${email} already exists.`)
+  if (!existing) {
+    await createAuth({ signUp: true }).api.signUpEmail({
+      body: {
+        email,
+        password: requireEnv("SEED_ADMIN_PASSWORD"),
+        name: requireEnv("SEED_ADMIN_NAME"),
+      },
+    })
+    console.log(`Created Coach ${email}.`)
+  } else if (isAdmin(existing)) {
+    console.log(`Coach ${email} is already the admin.`)
     return
   }
 
-  await createAuth({ signUp: true }).api.signUpEmail({
-    body: {
-      email,
-      password: requireEnv("SEED_ADMIN_PASSWORD"),
-      name: requireEnv("SEED_ADMIN_NAME"),
-    },
-  })
-  console.log(`Created Coach ${email}, who is the admin.`)
+  // signUpEmail goes through the plugin's `defaultRole` hook, which writes
+  // "user" — so the role is granted here either way.
+  await db.update(user).set({ role: ADMIN_ROLE }).where(eq(user.email, email))
+  console.log(`Coach ${email} is now an admin.`)
 }

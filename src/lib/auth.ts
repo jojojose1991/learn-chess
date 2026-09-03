@@ -2,26 +2,30 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter"
 import { betterAuth } from "better-auth"
 import { admin } from "better-auth/plugins"
 import { tanstackStartCookies } from "better-auth/tanstack-start"
-import { eq } from "drizzle-orm"
 
-import { getDb, withDb } from "@/db"
-import { user } from "@/db/schema"
-import { optionalEnv, requireEnv } from "@/lib/env"
+import { getDb } from "@/db"
+import { requireEnv } from "@/lib/env"
 
 /**
- * The one Coach who may work the accounts screen, named by email in
- * `SEED_ADMIN_USER` — the same Coach `pnpm seed` creates. Admin-ness is deploy
- * configuration and not data: there is no promote, no demote, and no app code
- * reads `user.role`.
+ * The role that may work the accounts screen. `user.role` is the plugin's own
+ * column and its own permission check reads it, so this is the single
+ * definition of admin — the app and the library cannot disagree about who is
+ * one, which they would if admin-ness lived anywhere else.
+ *
+ * Every other Coach is created with the plugin's `defaultRole` of "user".
+ * Roles that mean something to the product are a later design; for now the
+ * column separates the admin from everyone else and nothing more.
  */
-function adminEmail(): string | undefined {
-  return optionalEnv("SEED_ADMIN_USER")?.toLowerCase()
-}
+export const ADMIN_ROLE = "admin"
 
-/** Whether this Coach is that admin. */
-export function isAdmin(coach: { email: string }): boolean {
-  const email = adminEmail()
-  return email !== undefined && coach.email.toLowerCase() === email
+/**
+ * Whether this Coach is an admin. `role` holds a comma-separated list once a
+ * Coach has more than one, which is why this is not an equality test.
+ */
+export function isAdmin(coach: { role?: string | null }): boolean {
+  return (
+    coach.role?.split(",").some((role) => role.trim() === ADMIN_ROLE) ?? false
+  )
 }
 
 /**
@@ -32,10 +36,7 @@ export function isAdmin(coach: { email: string }): boolean {
  * `signUp` opens the sign-up endpoint on one instance, for that script alone.
  * The app itself never passes it, so the endpoint is closed in the server.
  */
-export function createAuth({
-  signUp = false,
-  adminUserIds = [],
-}: { signUp?: boolean; adminUserIds?: string[] } = {}) {
+export function createAuth({ signUp = false }: { signUp?: boolean } = {}) {
   return betterAuth({
     baseURL: requireEnv("BETTER_AUTH_URL"),
     secret: requireEnv("BETTER_AUTH_SECRET"),
@@ -60,36 +61,15 @@ export function createAuth({
     },
     // A documented 2–3x improvement on /get-session.
     advanced: { database: { joins: true } },
-    // Cookie plugins go last.
-    plugins: [admin({ adminUserIds }), tanstackStartCookies()],
+    // Cookie plugins go last. `admin()` takes its defaults: `defaultRole`
+    // "user" on every create, and `adminRoles` ["admin"] — ADMIN_ROLE above.
+    plugins: [admin(), tanstackStartCookies()],
   })
 }
 
-export type Auth = ReturnType<typeof createAuth>
+let auth: ReturnType<typeof createAuth> | undefined
 
-let auth: Auth | undefined
-let adminId: string | undefined
-
-/**
- * Built on first use, so the secret and base URL are read when a request needs
- * them rather than when this module is imported.
- *
- * The admin is named by email, but the plugin only takes user ids, so the id
- * is looked up here. Until `pnpm seed` has made that Coach there is no id to
- * find, and the answer is not cached — which is what keeps the bootstrap to
- * one step, with no restart to pick up an id that did not exist at boot.
- */
-export async function getAuth() {
-  if (auth && adminId) return auth
-  adminId = await findAdminId()
-  return (auth = createAuth({ adminUserIds: adminId ? [adminId] : [] }))
-}
-
-async function findAdminId(): Promise<string | undefined> {
-  const email = adminEmail()
-  if (!email) return undefined
-  const rows = await withDb((db) =>
-    db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1)
-  )
-  return rows.at(0)?.id
+/** Built on first use, so the secret and base URL are read per request. */
+export function getAuth() {
+  return (auth ??= createAuth())
 }

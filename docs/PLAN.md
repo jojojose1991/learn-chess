@@ -107,6 +107,8 @@ highlights the piece that should move and never the move itself.
    solved rewinds to the start and offers Hint. No score, no red X. Stalemate
    and draws get a one-line plain-English explanation.
 7. **Accounts** — the Admin's screen, and the only one a Coach can be refused.
+   Admin is a Role on the account; `pnpm seed` grants it and nothing else does,
+   so the endpoints that would write a Role have no screen and are refused.
    Every account with its email, name and Puzzle count, and whether it is
    Revoked; adding a Coach with an initial password; setting a new password,
    which ends every session that Coach had; revoking and restoring. Nothing is

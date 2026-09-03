@@ -49,24 +49,29 @@ describe("createAuth", () => {
 })
 
 /**
- * Admin-ness is deploy configuration, not data: the Coach `SEED_ADMIN_USER`
- * names is the admin, no role column is read, and no promote or demote exists.
+ * `user.role` is the one definition of admin, because the plugin's own
+ * permission check reads the same column. Anything that disagreed with it
+ * would be an admin the product could not see, or the other way round.
  */
 describe("isAdmin", () => {
-  it("is the Coach SEED_ADMIN_USER names, whatever the casing", () => {
-    process.env.SEED_ADMIN_USER = "Boss@Example.com"
-    expect(isAdmin({ email: "boss@example.com" })).toBe(true)
-    expect(isAdmin({ email: "BOSS@example.com" })).toBe(true)
+  it("is a Coach whose role is admin", () => {
+    expect(isAdmin({ role: "admin" })).toBe(true)
   })
 
-  it("is nobody else", () => {
-    process.env.SEED_ADMIN_USER = "boss@example.com"
-    expect(isAdmin({ email: "someone@example.com" })).toBe(false)
+  /** The plugin stores several roles comma-separated, so this is no equality test. */
+  it("is a Coach who is an admin among other roles", () => {
+    expect(isAdmin({ role: "user,admin" })).toBe(true)
+    expect(isAdmin({ role: "user, admin" })).toBe(true)
   })
 
-  /** A fresh clone, before `pnpm seed` has run. Nobody is admin, and nothing throws. */
-  it("is nobody at all when the variable is unset", () => {
-    process.env.SEED_ADMIN_USER = ""
-    expect(isAdmin({ email: "boss@example.com" })).toBe(false)
+  it("is not the default role every other Coach gets", () => {
+    expect(isAdmin({ role: "user" })).toBe(false)
+    expect(isAdmin({ role: "administrator" })).toBe(false)
+  })
+
+  /** A row from before the column existed, or one the plugin has not touched. */
+  it("is not a Coach with no role at all", () => {
+    expect(isAdmin({ role: null })).toBe(false)
+    expect(isAdmin({})).toBe(false)
   })
 })

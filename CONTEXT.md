@@ -15,11 +15,18 @@ them live to a Student.
 _Avoid_: Teacher, tutor, grandmaster, master
 
 **Admin**:
-One Coach, named by email in `SEED_ADMIN_USER`, who keeps the accounts — adds
-a Coach, sets a password, revokes and restores. Not a third kind of person and
-not a role: admin-ness is deploy configuration, nothing in the product asks who
-you are, and there is no promote or demote.
-_Avoid_: Superuser, owner, root, administrator, staff, admin role
+A Coach who keeps the accounts — adds a Coach, sets a password, revokes and
+restores. Still a Coach and not a third kind of person: it is a role on the
+account, so a Student never meets it and nothing else in the product asks who
+you are. `pnpm seed` grants it to the Coach `SEED_ADMIN_USER` names, and today
+that is the only thing that grants it — there is no promote or demote screen.
+_Avoid_: Superuser, owner, root, administrator, staff
+
+**Role**:
+What an account is allowed to do, held on the Coach as `user.role`. Today it
+separates the Admin from everyone else and nothing more: every other Coach is
+created as `user`. Roles that carry product meaning are a later design.
+_Avoid_: Permission, group, tier, account type, access level
 
 **Revoked**:
 A Coach whose access is withdrawn — every session ends and sign-in is refused,

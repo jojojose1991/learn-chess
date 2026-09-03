@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  MIN_PASSWORD,
   addCoach,
   fetchAccounts,
   setAccess,
@@ -31,6 +32,7 @@ function Accounts() {
   const accounts = Route.useLoaderData()
   const { coach } = Route.useRouteContext()
   const router = useRouter()
+  const navigate = Route.useNavigate()
   const [error, setError] = useState<string>()
   const [busy, setBusy] = useState(false)
 
@@ -68,8 +70,13 @@ function Accounts() {
     event.preventDefault()
     const form = event.currentTarget
     const password = String(new FormData(form).get("password"))
-    if (await run(() => setCoachPassword({ data: { coachId, password } })))
-      form.reset()
+    if (!(await run(() => setCoachPassword({ data: { coachId, password } }))))
+      return
+    form.reset()
+    // A new password ends every session that Coach had, and when the Coach is
+    // you that includes this one. Say where you are going rather than letting
+    // the next request bounce you there.
+    if (coachId === coach.id) await navigate({ to: "/sign-in" })
   }
 
   return (
@@ -126,10 +133,14 @@ function Accounts() {
                       name="password"
                       type="password"
                       autoComplete="new-password"
-                      placeholder="New password"
-                      minLength={8}
+                      placeholder={
+                        account.id === coach.id
+                          ? "New password — signs you out"
+                          : "New password"
+                      }
+                      minLength={MIN_PASSWORD}
                       required
-                      className="w-40"
+                      className="w-52"
                     />
                     <Button
                       type="submit"
@@ -190,7 +201,7 @@ function Accounts() {
               name="password"
               type="password"
               autoComplete="new-password"
-              minLength={8}
+              minLength={MIN_PASSWORD}
               required
             />
           </div>

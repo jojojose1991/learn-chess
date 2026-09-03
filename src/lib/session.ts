@@ -16,9 +16,7 @@ export type Coach = { id: string; email: string; isAdmin: boolean }
  */
 export const fetchCoach = createServerFn({ method: "POST" }).handler(
   async (): Promise<Coach | null> => {
-    const session = await (
-      await getAuth()
-    ).api.getSession({
+    const session = await getAuth().api.getSession({
       headers: getRequestHeaders(),
     })
     if (!session) return null

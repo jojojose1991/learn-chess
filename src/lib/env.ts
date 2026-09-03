@@ -8,15 +8,10 @@ let attemptedDotEnv = false
  * is no file to read.
  */
 export function requireEnv(name: string): string {
-  const value = optionalEnv(name)
+  // `||`, not `??`: line below treats an empty value as missing too.
+  const value = process.env[name] || loadDotEnv()[name]
   if (!value) throw new Error(`${name} is not set`)
   return value
-}
-
-/** The same lookup, where unset is an answer rather than a failure. */
-export function optionalEnv(name: string): string | undefined {
-  // `||`, not `??`: an empty value counts as missing too.
-  return process.env[name] || loadDotEnv()[name] || undefined
 }
 
 function loadDotEnv(): NodeJS.ProcessEnv {

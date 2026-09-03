@@ -4,7 +4,6 @@ import { count, eq } from "drizzle-orm"
 
 import { withDb } from "@/db"
 import { puzzle, user } from "@/db/schema"
-import type { Auth } from "@/lib/auth"
 import { getAuth, isAdmin } from "@/lib/auth"
 
 /** One Coach as the accounts screen lists them. */
@@ -17,6 +16,13 @@ export type Account = {
 }
 
 /**
+ * BetterAuth's own default (`emailAndPassword.minPasswordLength`), which its
+ * `setUserPassword` enforces but its `createUser` does not — so the check on
+ * `addCoach` below is ours, and the two routes in cannot disagree.
+ */
+export const MIN_PASSWORD = 8
+
+/**
  * Every account, or null when the caller is not an admin — the screen answers
  * 404 to that rather than refusing, so an unlisted URL does not confirm what
  * it guards.
@@ -26,9 +32,7 @@ export type Account = {
  */
 export const fetchAccounts = createServerFn({ method: "POST" }).handler(
   async (): Promise<Account[] | null> => {
-    const session = await (
-      await getAuth()
-    ).api.getSession({
+    const session = await getAuth().api.getSession({
       headers: getRequestHeaders(),
     })
     if (!session || !isAdmin(session.user)) return null
@@ -64,14 +68,16 @@ export const addCoach = createServerFn({ method: "POST" })
   .inputValidator(
     (data: { email: string; name: string; password: string }) => data
   )
-  .handler(({ data }) =>
-    attempt((auth, headers) =>
+  .handler(async ({ data }) => {
+    if (data.password.length < MIN_PASSWORD)
+      return { error: `A password needs at least ${MIN_PASSWORD} characters.` }
+    return attempt((auth, headers) =>
       auth.api.createUser({
         body: { email: data.email, name: data.name, password: data.password },
         headers,
       })
     )
-  )
+  })
 
 /**
  * A new password, and no session left that was signed in under the old one.
@@ -120,10 +126,13 @@ export const setAccess = createServerFn({ method: "POST" })
  * through unchanged.
  */
 async function attempt(
-  write: (auth: Auth, headers: Headers) => Promise<unknown>
+  write: (
+    auth: ReturnType<typeof getAuth>,
+    headers: Headers
+  ) => Promise<unknown>
 ): Promise<{ error?: string }> {
   try {
-    await write(await getAuth(), getRequestHeaders())
+    await write(getAuth(), getRequestHeaders())
     return {}
   } catch (error) {
     return {

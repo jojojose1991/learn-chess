@@ -13,10 +13,9 @@ session dies, sign-in stops working, the row and its Puzzles stay. The cascade
 stays in the schema as the backstop it already is, unreachable from the product.
 
 **An admin is not a third kind of person.** Coach and Student remain
-perspectives on one interface (CONTEXT.md). An admin is one Coach named by
-email in `SEED_ADMIN_USER`, so admin-ness is deploy configuration and not
-data — nothing in the product asks who you are, no promote or demote exists,
-and no app code reads a role.
+perspectives on one interface (CONTEXT.md). An admin is a Coach carrying the
+`admin` role, granted by `pnpm seed` and by nothing else — no promote or
+demote screen exists, so the role is set once at bootstrap.
 
 **Blocked by:** 04 — invite-only sign-in (resolved).
 
@@ -31,7 +30,7 @@ and no app code reads a role.
 - [x] A signed-in Coach who is not an admin gets a 404 from `/admin`, not merely a hidden link
 - [x] A signed-out request to `/admin` redirects to Sign in, like any Coach-only route
 - [x] `admin()` sits before `tanstackStartCookies()`, which is still last in the plugins array
-- [x] Admin-ness comes from `SEED_ADMIN_USER` alone; no app code reads `user.role`
+- [x] Admin-ness comes from `user.role` alone, the same column the plugin's own permission check reads
 - [x] The migration adds only nullable columns, applies cleanly to Neon, and re-running it is a no-op
 - [x] `CONTEXT.md` defines Admin and Revoked; `docs/PLAN.md` lists the seventh screen; `.env.example` documents `SEED_ADMIN_USER`; `docs/BACKLOG.md`'s "admin sets passwords by hand" line is updated
 - [x] `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
@@ -62,16 +61,22 @@ Verified in `better-auth@1.7.2`'s shipped `dist/`, not from its docs:
 
 ## Bootstrap
 
-**Changed during implementation, on the maintainer's call.** The ticket planned
-`ADMIN_USER_IDS`, holding user ids: `pnpm seed`, read the id it made, paste it
-into `.env`, restart. That variable is gone. The admin is named by email in
-`SEED_ADMIN_USER`, which is the same variable `pnpm seed` reads to create them,
-so the whole bootstrap is: fill in `SEED_ADMIN_USER`, `SEED_ADMIN_PASSWORD` and
-`SEED_ADMIN_NAME`, run `pnpm seed`, sign in. No id to copy and no restart.
+**Changed twice during implementation, on the maintainer's call.** The ticket
+planned `ADMIN_USER_IDS`, holding user ids: `pnpm seed`, read the id it made,
+paste it into `.env`, restart. That went first, replaced by `SEED_ADMIN_USER`
+naming the admin by email. It then went too, once it was clear the plugin's own
+permission check already reads `user.role`.
 
-The cost is that only one account can be the admin, and that `pnpm seed` now
-has a second job — it names the admin as well as creating them. Both were
-accepted deliberately.
+**Admin is now a role on the account.** `pnpm seed` grants it to the Coach
+`SEED_ADMIN_USER` names, creating them if they do not exist and promoting them
+if they do; re-running changes nothing. `.env` is still where the bootstrap
+starts, but it is no longer consulted at runtime — changing the email does not
+move admin-ness, and the fix is to run `pnpm seed` again.
+
+The ticket's argument for keeping admin-ness out of the data was overridden
+deliberately, to leave room for the product roles planned later. What it bought
+back is worth recording: `getAuth()` is synchronous again, because there is no
+longer an email to resolve into the user id the plugin wanted.
 
 ## Deliberately not here
 
@@ -100,13 +105,12 @@ The product's own gate does not use the id at all: `isAdmin()` compares the
 session's email to `SEED_ADMIN_USER`. Both gates answer to the one variable, so
 they cannot drift.
 
-**`set-role` is refused too, and that one matters more than it looks.** The
-ticket says no app code reads `user.role`, and none does — but the *plugin*
-does: `hasPermission` grants on role before anything else, so a Coach whose
-role said "admin" would hold every admin endpoint while `/admin` still answered
-them 404. That is a second definition of admin the product cannot see. Closing
-`/admin/set-role` leaves no HTTP path that writes the column, so the two cannot
-disagree. `src/routes/api/auth/-closed.test.ts` pins all three refusals.
+**`set-role` and `update-user` are refused too.** Both write `user.role`, which
+is now what makes a Coach an admin, and neither has a screen — so leaving them
+open would mean the only way to promote anyone was a request nothing in the
+product sends. `update-user` rewrites `email` as well, which is how an admin
+could quietly lock themselves out. They open again when promote and demote get
+a screen. `src/routes/api/auth/-closed.test.ts` pins all four refusals.
 
 The admin can still mint a role-carrying account through the raw `create-user`
 endpoint, which takes a `role` in its body. That grants no power the admin does
@@ -145,8 +149,25 @@ with throwaway Coaches that were then deleted:
 - `POST /api/auth/admin/remove-user` and `/admin/impersonate-user` → `404`
 - the migration applied to Neon and a second `pnpm db:migrate` was a no-op
 
-**The plugin does write `role`.** The seeded Coach came back with `role: "user"`
-— the `defaultRole` hook, exactly as the ticket predicted. Nothing reads it.
+**What the review caught.** Four findings, all real:
+
+- `update-user` was a second open path to `user.role` — closed, above.
+- `getAuth()` rebuilt the whole auth instance on every request whenever no
+  admin id resolved, permanently so if the variable was unset. The move to
+  roles deleted the lookup and with it the bug.
+- Setting your *own* password revokes your own session, so the admin was
+  bounced to Sign in with no explanation. The screen now says so on that row
+  and navigates there itself.
+- `createUser` does **no** password-length check, unlike `setUserPassword`
+  — measured: a one-character password was accepted with `200`. `addCoach`
+  checks `MIN_PASSWORD` itself, so both ways in agree.
+
+**The role model was verified live.** The admin (`role: "admin"`) reached
+`/admin`; a Coach created through the screen came back `role: "user"`, signed
+in, got their Library and a 404 on `/admin`, and was refused `create-user`,
+`ban-user` and `set-user-password` with `403`. All four closed endpoints
+answered `404` to an admin cookie. `pnpm seed` promoted an existing Coach and
+was a no-op the second time.
 
 **A DOM test would need `environment: "jsdom"` in `vite.config.ts`**, which no
 screen needs yet. The screen's own logic is a list and four form submits over

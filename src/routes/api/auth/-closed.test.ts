@@ -18,16 +18,16 @@ const call = (path: string) =>
   ANY({ request: new Request(`http://localhost:3000${path}`) })
 
 /**
- * Three endpoints the admin plugin mounts and this product refuses. Two of
- * them would contradict rules the product is built on: `remove-user` reaches
- * the `coach_id` cascade, and `set-role` writes the column the plugin's own
- * permission check reads, which would make an admin the app cannot see.
+ * The endpoints the admin plugin mounts and this product refuses.
+ * `remove-user` reaches the `coach_id` cascade; `set-role` and `update-user`
+ * write the column that decides who is an admin, with no screen behind them.
  */
 describe("the auth route", () => {
   it.each([
     "/api/auth/admin/remove-user",
     "/api/auth/admin/impersonate-user",
     "/api/auth/admin/set-role",
+    "/api/auth/admin/update-user",
   ])("answers 404 to %s", async (path) => {
     expect((await call(path)).status).toBe(404)
   })
