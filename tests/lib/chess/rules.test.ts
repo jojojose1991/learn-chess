@@ -2,6 +2,7 @@ import { Chess } from "chess.js"
 import { describe, expect, it } from "vitest"
 
 import {
+  EMPTY_POSITION,
   applyMove,
   explainIllegal,
   isPromotion,
@@ -9,6 +10,8 @@ import {
   pieceToMove,
   readPlacement,
   validatePosition,
+  withPiece,
+  withSideToMove,
 } from "@/lib/chess/rules"
 
 const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -370,5 +373,87 @@ describe("isPromotion", () => {
 
   it("says no for a move that is illegal anyway, so no picker opens on one", () => {
     expect(isPromotion(PROMOTING, "e7", "d8")).toBe(false)
+  })
+})
+
+/**
+ * Building a Position by hand, which is the whole of Confirm & Edit: a Coach
+ * places pieces and says whose turn it is, and never enters a move.
+ */
+describe("editing a Position", () => {
+  const WHITE_KING = { type: "k", color: "w" } as const
+  const BLACK_KING = { type: "k", color: "b" } as const
+
+  it("starts from a board with nothing on it, White to move", () => {
+    expect(readPlacement(EMPTY_POSITION).every(({ piece }) => !piece)).toBe(
+      true
+    )
+    expect(withSideToMove(EMPTY_POSITION, "w")).toBe(EMPTY_POSITION)
+  })
+
+  it("puts a piece on the square the Coach tapped", () => {
+    const fen = withPiece(EMPTY_POSITION, "e1", WHITE_KING)
+
+    expect(
+      readPlacement(fen).find(({ square }) => square === "e1")?.piece
+    ).toMatchObject(WHITE_KING)
+  })
+
+  it("takes the piece off again, so removing one needs no eraser", () => {
+    const placed = withPiece(EMPTY_POSITION, "e1", WHITE_KING)
+
+    expect(withPiece(placed, "e1", null)).toBe(EMPTY_POSITION)
+  })
+
+  it("replaces what stood there, rather than refusing an occupied square", () => {
+    const placed = withPiece(EMPTY_POSITION, "e1", WHITE_KING)
+
+    expect(withPiece(placed, "e1", BLACK_KING)).toBe(
+      withPiece(EMPTY_POSITION, "e1", BLACK_KING)
+    )
+  })
+
+  it("drops the castling rights a removed rook carried, so no Position claims a castle it cannot make", () => {
+    expect(withPiece(CASTLING, "h1", null)).toBe(
+      "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K3 w Qkq - 0 1"
+    )
+  })
+
+  it("moves the king a side already has, rather than refusing a Coach who put it on the wrong square", () => {
+    const kings = withPiece(
+      withPiece(EMPTY_POSITION, "e1", WHITE_KING),
+      "e8",
+      BLACK_KING
+    )
+
+    expect(withPiece(kings, "a1", WHITE_KING)).toBe(
+      withPiece(withPiece(EMPTY_POSITION, "a1", WHITE_KING), "e8", BLACK_KING)
+    )
+  })
+
+  it("keeps the castling rights of a king put back where it already stood", () => {
+    // Moving the king is what clears them, and `chess.js` clears them on the
+    // `remove` — so a king dropped on its own square would strip KQ with the
+    // placement byte for byte the same.
+    expect(withPiece(CASTLING, "e1", WHITE_KING)).toBe(CASTLING)
+  })
+
+  it("changes whose turn it is, which is the Coach's to say and never a move's", () => {
+    const black = withSideToMove(EMPTY_POSITION, "b")
+
+    expect(black).toBe("8/8/8/8/8/8/8/8 b - - 0 1")
+    expect(withSideToMove(black, "w")).toBe(EMPTY_POSITION)
+  })
+
+  it("clears an en-passant capture the side now to move was never offered", () => {
+    expect(withSideToMove(EN_PASSANT, "w")).toBe(
+      "rnbqkbnr/pp1ppppp/8/8/2pP4/5N2/PPP1PPPP/RNBQKB1R w - - 0 1"
+    )
+  })
+
+  it("keeps castling rights, which whose turn it is says nothing about", () => {
+    expect(withSideToMove(CASTLING, "b")).toBe(
+      "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R b KQkq - 0 1"
+    )
   })
 })

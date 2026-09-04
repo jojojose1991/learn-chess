@@ -82,7 +82,9 @@ async function choose(page: Page, theme: RegExp) {
 
 /**
  * a1 is dark and its neighbour is light, so a palette applied to the wrong
- * squares fails here as loudly as no palette at all.
+ * squares fails here as loudly as no palette at all. Both are empty: Confirm
+ * & Edit starts from an empty board, and the square's colour is the subject
+ * here rather than what stands on it.
  */
 async function expectBoard(
   page: Page,
@@ -91,9 +93,9 @@ async function expectBoard(
   const board = page.getByRole("group", { name: "Chess board" })
 
   await expect(
-    board.getByRole("button", { name: "a1, white rook", exact: true })
+    board.getByRole("button", { name: "a1, empty", exact: true })
   ).toHaveCSS("background-color", palette.dark)
   await expect(
-    board.getByRole("button", { name: "b1, white knight", exact: true })
+    board.getByRole("button", { name: "b1, empty", exact: true })
   ).toHaveCSS("background-color", palette.light)
 }

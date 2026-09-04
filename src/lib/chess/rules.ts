@@ -16,6 +16,53 @@ export function readPlacement(fen: string): Array<SquareContent> {
     .map((piece, index) => ({ square: SQUARES[index], piece }))
 }
 
+/** A board with nothing on it, White to move: where Confirm & Edit begins. */
+export const EMPTY_POSITION = "8/8/8/8/8/8/8/8 w - - 0 1"
+
+/**
+ * The Position with `piece` standing on `square`, or with that square cleared
+ * when it is null. Whatever stood there is replaced, and a king moves rather
+ * than being duplicated — `chess.js` refuses a second one of a colour, which
+ * would leave a Coach who put it down wrong with a tap that did nothing.
+ *
+ * Skips validation, because a Position under construction is illegal for most
+ * of the time it takes to build one.
+ */
+export function withPiece(
+  fen: string,
+  square: Square,
+  piece: Piece | null
+): string {
+  const board = new Chess(fen, { skipValidation: true })
+  if (!piece) {
+    board.remove(square)
+  } else {
+    if (piece.type === "k") {
+      // Never the square it is going back on: `remove` clears that side's
+      // castling rights and `put` does not give them back, so a king dropped
+      // where it already stood would strip them with nothing else changed.
+      for (const held of board.findPiece({ type: "k", color: piece.color })) {
+        if (held !== square) board.remove(held)
+      }
+    }
+    board.put(piece, square)
+  }
+  return board.fen()
+}
+
+/**
+ * The Position with `color` to move. Any en-passant capture goes with the
+ * turn — it was offered to the other side — and the clocks go back to the
+ * start, because a hand-built Position has no moves behind it.
+ *
+ * Field surgery rather than `setTurn`, which advances the halfmove clock on
+ * every flip, so a Coach toggling twice would not land back where they were.
+ */
+export function withSideToMove(fen: string, color: Color): string {
+  const [placement, , castling] = fen.split(" ")
+  return `${placement} ${color} ${castling} - 0 1`
+}
+
 /** A Position is legal, or it is not, with reasons a person can read. */
 export type PositionValidity =
   { ok: true } | { ok: false; reasons: Array<string> }

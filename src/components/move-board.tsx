@@ -10,7 +10,6 @@ import {
 import { cn } from "@/lib/utils"
 
 import type { Color, Square } from "chess.js"
-import type { BoardTheme } from "@/db/schema"
 import type { PromotionPiece } from "@/lib/chess/rules"
 
 type MoveBoardProps = {
@@ -18,8 +17,6 @@ type MoveBoardProps = {
   fen: string
   /** On, a picked-up piece marks where it may go. Off, the Student finds out. */
   guidance: boolean
-  /** The board this is painted on, straight through to `Board`. */
-  theme?: BoardTheme
   /** The move just played, which the owner of the moves knows and this does not. */
   lastMove?: { from: Square; to: Square } | null
   /**
@@ -50,7 +47,6 @@ const PROMOTIONS: Array<{ piece: PromotionPiece; name: string }> = [
 export function MoveBoard({
   fen,
   guidance,
-  theme,
   lastMove = null,
   onMove,
 }: MoveBoardProps) {
@@ -112,7 +108,6 @@ export function MoveBoard({
     <>
       <Board
         fen={fen}
-        theme={theme}
         selected={selected}
         targets={
           guidance && playable && selected ? legalTargets(fen, selected) : []
