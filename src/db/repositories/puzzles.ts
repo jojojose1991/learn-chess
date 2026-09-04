@@ -4,7 +4,8 @@ import { withDb } from "@/db"
 import { puzzle } from "@/db/schema"
 
 /**
- * One Coach's Puzzles, named and in the order the Library shows them.
+ * One Coach's Puzzles, with the Goal each one sets, in the order the Library
+ * shows them.
  *
  * `lower()` because the sort is otherwise the database's collation: the e2e
  * container provides C, which puts every lowercase name below every
@@ -14,7 +15,12 @@ import { puzzle } from "@/db/schema"
 export function listPuzzlesByCoach(coachId: string) {
   return withDb((db) =>
     db
-      .select({ id: puzzle.id, name: puzzle.name })
+      .select({
+        id: puzzle.id,
+        name: puzzle.name,
+        goalKind: puzzle.goalKind,
+        goalN: puzzle.goalN,
+      })
       .from(puzzle)
       .where(eq(puzzle.coachId, coachId))
       .orderBy(asc(sql`lower(${puzzle.name})`))

@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**10 of 24 resolved. Five tickets are actionable right now: 08, 20, 21, 22
+**11 of 24 resolved. Four tickets are actionable right now: 08, 20, 22
 and 24.**
 
 ## Tickets
@@ -25,8 +25,8 @@ and 24.**
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
 | 12  | Stockfish over UCI                  | ✅ resolved     | —              |
 | 19  | Logging, dev and prod               | ✅ resolved     | —              |
+| 21  | A Library row says what it is       | ✅ resolved     | —              |
 | 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
-| 21  | A Library row says what it is       | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | 🟢 **ready**    | 07 ✅          |
 | 22  | `/admin` scrolls sideways at 390px  | 🟢 **ready**    | none           |
 | 24  | The engine's failures are logged    | 🟢 **ready**    | none           |
@@ -71,6 +71,8 @@ already owed by code that shipped. Do not merge them.
 | No `ucinewgame`, so one engine's table carries between Positions | a Puzzle's defence must be reproducible | 12                                  |
 | The image has no `CMD`: `vite build` emits a handler, not a server | 16                                      | 12, `Dockerfile`                    |
 | The Stockfish URL and its checksum are pinned by hand         | Stockfish 19, or a CVE in 18              | 12, `Dockerfile`                    |
+| The Library route pulls a 35 kB chess.js chunk for two words | the Library's weight is measured (16)     | 21, `src/lib/chess/goals.ts`        |
+| `goal_kind` has no CHECK constraint, and `describeGoal` ignores it | a second Goal kind (`win_material`) | 21, `src/lib/chess/goals.ts`        |
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
 | New Puzzle's Position is hardcoded, it hosts Play's Guidance toggle, and `board.spec.ts`'s promotion journey plays nine moves from it | 08 | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |

@@ -1,7 +1,7 @@
 import { Chess } from "chess.js"
 import { describe, expect, it } from "vitest"
 
-import { evaluateGoal } from "@/lib/chess/goals"
+import { describeGoal, evaluateGoal } from "@/lib/chess/goals"
 
 import type { PlayedMove } from "@/lib/chess/rules"
 
@@ -102,5 +102,15 @@ describe("evaluateGoal", () => {
       reason:
         "Neither side has enough pieces left to give checkmate. The game is a draw.",
     })
+  })
+})
+
+describe("describeGoal", () => {
+  it("says a Goal in plain words rather than notation, because a Student is five", () => {
+    expect(describeGoal(MATE_IN_2)).toBe("Checkmate in 2 moves")
+  })
+
+  it("puts a one-move Goal in the singular, so the shortest Puzzle reads properly", () => {
+    expect(describeGoal(MATE_IN_1)).toBe("Checkmate in 1 move")
   })
 })
