@@ -18,6 +18,15 @@ const moveWord = (n: number) => (n === 1 ? "move" : "moves")
 const failed = (reason: string): GoalOutcome => ({ status: "failed", reason })
 
 /**
+ * The Goal said out loud, for a Library row and for Play's line above the
+ * board. Plain words rather than "mate in 2": the reader on Play is five.
+ */
+// ponytail: assumes `mate_in`, as `evaluateGoal` does — a second Goal kind
+// has to branch in both.
+export const describeGoal = (goal: Goal) =>
+  `Checkmate in ${goal.n} ${moveWord(goal.n)}`
+
+/**
  * Whether the Goal is still open, solved, or out of reach, given the moves
  * played from the Puzzle's Position in order.
  *

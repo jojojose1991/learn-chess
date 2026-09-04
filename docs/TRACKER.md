@@ -5,8 +5,8 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**7 of 21 resolved. Five tickets are actionable right now: 07, 12, 19, 20
-and 21.**
+**8 of 21 resolved. Four tickets are actionable right now: 07, 12, 19 and
+20.**
 
 ## Tickets
 
@@ -22,11 +22,11 @@ and 21.**
 | 05  | Library reads real Puzzles          | ✅ resolved     | —              |
 | 06  | The board renders a Position        | ✅ resolved     | —              |
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
+| 21  | A Library row says what it is       | ✅ resolved     | —              |
 | 07  | Tap-tap, Guidance, promotion picker | 🟢 **ready**    | 06 ✅          |
 | 12  | Stockfish over UCI                  | 🟢 **ready**    | none           |
 | 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
 | 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
-| 21  | A Library row says what it is       | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | ⬜ ready-for-agent | 07            |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
 | 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
@@ -62,6 +62,8 @@ already owed by code that shipped. Do not merge them.
 | Owed                                                        | Trigger                                   | Detail in                           |
 | ----------------------------------------------------------- | ----------------------------------------- | ----------------------------------- |
 | A rejected Position may need more than one sentence         | 14                                        | Ticket 17                           |
+| The Library route pulls a 35 kB chess.js chunk for two words | the Library's weight is measured (16)     | 21, `src/lib/chess/goals.ts`        |
+| `goal_kind` has no CHECK constraint, and `describeGoal` ignores it | a second Goal kind (`win_material`) | 21, `src/lib/chess/goals.ts`        |
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
 | New Puzzle's taps go nowhere and its Position is hardcoded   | 08                                        | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |

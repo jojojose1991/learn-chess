@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 
 import { CheckerMark } from "@/components/checker-mark"
+import { describeGoal } from "@/lib/chess/goals"
 import { fetchLibrary } from "@/lib/puzzles"
 
 export const Route = createFileRoute("/_coach/")({
@@ -34,6 +35,9 @@ function Library() {
           {puzzles.map((puzzle) => (
             <li key={puzzle.id} className="py-3">
               {puzzle.name}
+              <p className="text-sm text-muted-foreground">
+                {describeGoal(puzzle.goal)}
+              </p>
             </li>
           ))}
         </ul>

@@ -1,7 +1,26 @@
 # Testing: what bit us, measured
 
-Three gotchas found by building the suite, all of which passed `typecheck`,
+Four gotchas found by building the suite, all of which passed `typecheck`,
 `lint` and the whole unit suite before the e2e run caught them.
+
+## Playwright's `toContainText(array)` asserts no count, and matches loosely
+
+`toHaveText(["a", "b"])` fails a three-item list; `toContainText(["a", "b"])`
+passes it. The array form skips the length check entirely and then walks the
+expectations as an **ordered subsequence** — extra items before, between or
+after all match. From `playwright-core` 1.62.1's `expectArray`:
+
+```js
+const lengthShouldMatch = expression !== "to.contain.text.array"
+```
+
+So swapping `toHaveText` for `toContainText` — the obvious move when an
+element grows a second line — silently drops "and nothing else is here".
+Verified against real chromium, not read off the docs.
+
+**Rule:** pair `toContainText` with an explicit `toHaveCount`. `toHaveText`'s
+count assertion is load-bearing wherever a test is about which rows appear,
+and `tests/e2e/library.spec.ts` is about exactly that.
 
 ## A server-fn module's re-exports reach the client bundle
 

@@ -1,8 +1,10 @@
 import { listPuzzlesByCoach } from "@/db/repositories/puzzles"
 import { getCoach } from "@/lib/auth"
 
+import type { Goal } from "@/lib/chess/goals"
+
 /** One Puzzle as the Library lists it. Flat, by name — no folders, no tags. */
-type LibraryPuzzle = { id: string; name: string }
+type LibraryPuzzle = { id: string; name: string; goal: Goal }
 
 /**
  * The signed-in Coach's Library, or null when there is no session. The Coach
@@ -19,8 +21,11 @@ export async function listLibrary(
   if (!coach) return null
   // Named fields, not the row: widening the repository's select would
   // otherwise ship new columns to the client with no type error.
-  return (await listPuzzlesByCoach(coach.id)).map(({ id, name }) => ({
-    id,
-    name,
-  }))
+  return (await listPuzzlesByCoach(coach.id)).map(
+    ({ id, name, goalKind, goalN }) => ({
+      id,
+      name,
+      goal: { kind: goalKind, n: goalN },
+    })
+  )
 }

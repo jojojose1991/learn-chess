@@ -5,6 +5,8 @@ import { E2E_ADMIN } from "../../scripts/e2e-db"
 import { requireEnv } from "../../src/lib/env"
 import { signIn } from "./coach"
 
+import type { Page } from "@playwright/test"
+
 /** Rows written behind the app's back, so nothing below this can lie. */
 
 const OTHER_COACH = { id: "e2e-other-coach", email: "other@e2e.test" }
@@ -20,13 +22,16 @@ test.beforeEach(() => pool.query("delete from puzzle"))
 
 test.afterAll(() => pool.end())
 
-async function addPuzzle(email: string, name: string) {
+async function addPuzzle(email: string, name: string, mateIn = 1) {
   await pool.query(
     `insert into puzzle (coach_id, name, fen, goal_kind, goal_n)
-     select id, $2, $3, 'mate_in', 1 from "user" where email = $1`,
-    [email, name, MATE_IN_ONE]
+     select id, $2, $3, 'mate_in', $4 from "user" where email = $1`,
+    [email, name, MATE_IN_ONE, mateIn]
   )
 }
+
+const rows = (page: Page) =>
+  page.getByRole("list", { name: "Puzzles" }).getByRole("listitem")
 
 test("an empty Library says so, rather than showing an empty box", async ({
   page,
@@ -51,8 +56,25 @@ test("lists the Coach's own Puzzles by name, and never another Coach's", async (
 
   await signIn(page)
 
-  await expect(
-    page.getByRole("list", { name: "Puzzles" }).getByRole("listitem")
-  ).toHaveText(["anastasia's mate", "Back rank mate"])
+  // The count is its own assertion because `toContainText` asserts none
+  // (docs/learnings/testing.md), and it is what keeps the other Coach out.
+  await expect(rows(page)).toHaveCount(2)
+  await expect(rows(page)).toContainText(["anastasia's mate", "Back rank mate"])
   await expect(page.getByText("No puzzles yet")).toBeHidden()
+})
+
+test("says what each Puzzle asks for, so a Coach can scan for one", async ({
+  page,
+}) => {
+  await addPuzzle(E2E_ADMIN.email, "Back rank mate", 2)
+  await addPuzzle(E2E_ADMIN.email, "Queen and king", 1)
+
+  await signIn(page)
+
+  // In name order, so each Goal has to land on its own Puzzle's row.
+  await expect(rows(page)).toHaveCount(2)
+  await expect(rows(page)).toContainText([
+    "Checkmate in 2 moves",
+    "Checkmate in 1 move",
+  ])
 })
