@@ -5,8 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**11 of 24 resolved. Four tickets are actionable right now: 08, 20, 22
-and 24.**
+**12 of 24 resolved. Three tickets are actionable right now: 08, 22 and 24.**
 
 ## Tickets
 
@@ -26,7 +25,7 @@ and 24.**
 | 12  | Stockfish over UCI                  | ✅ resolved     | —              |
 | 19  | Logging, dev and prod               | ✅ resolved     | —              |
 | 21  | A Library row says what it is       | ✅ resolved     | —              |
-| 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
+| 20  | A Coach picks their board theme     | ✅ resolved     | —              |
 | 08  | Confirm & Edit saves a Puzzle       | 🟢 **ready**    | 07 ✅          |
 | 22  | `/admin` scrolls sideways at 390px  | 🟢 **ready**    | none           |
 | 24  | The engine's failures are logged    | 🟢 **ready**    | none           |
@@ -73,6 +72,8 @@ already owed by code that shipped. Do not merge them.
 | The Stockfish URL and its checksum are pinned by hand         | Stockfish 19, or a CVE in 18              | 12, `Dockerfile`                    |
 | The Library route pulls a 35 kB chess.js chunk for two words | the Library's weight is measured (16)     | 21, `src/lib/chess/goals.ts`        |
 | `goal_kind` has no CHECK constraint, and `describeGoal` ignores it | a second Goal kind (`win_material`) | 21, `src/lib/chess/goals.ts`        |
+| A Puzzle Link's own theme — stamped, and what a Student sees — is unproven | 11                         | Ticket 20                           |
+| A board theme write that throws is silent, on screen and in the log | a Coach reports a theme that will not stick | 20, `src/components/app-sidebar.tsx` |
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
 | New Puzzle's Position is hardcoded, it hosts Play's Guidance toggle, and `board.spec.ts`'s promotion journey plays nine moves from it | 08 | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |
@@ -89,7 +90,7 @@ already owed by code that shipped. Do not merge them.
 | Nothing encodes castling as king-takes-rook (e1→h1)          | still nothing does: a tap on your own piece reselects it | 02, `src/components/move-board.tsx` |
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
 | A selection outlives the Position changing under it, so the next tap emits a move the screen drops in silence | 09, where Rewind and Reset change it | `src/components/move-board.tsx` |
-| `MoveBoard` passes the board neither orientation nor theme   | 09 flips one, or 20 puts brown on Play    | `src/components/move-board.tsx`     |
+| `MoveBoard` passes the board no orientation                  | 09 flips one                              | `src/components/move-board.tsx`     |
 | `/admin` scrolls sideways at 390px by 120px, so `responsive.spec.ts` is red | now: it fails on `main` too | Ticket 22 |
 | Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
 | The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |

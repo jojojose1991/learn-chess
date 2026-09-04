@@ -21,6 +21,8 @@ function NewPuzzle() {
     to: Square
   } | null>(null)
   const [guidance, setGuidance] = useState(true)
+  // The guard already read the session; the theme rides along with the Coach.
+  const { coach } = Route.useRouteContext()
 
   return (
     // Padding is `p-4` before `sm`: at 390px, `p-6` leaves each square 42.75px,
@@ -46,6 +48,7 @@ function NewPuzzle() {
         <MoveBoard
           fen={fen}
           guidance={guidance}
+          theme={coach.boardTheme}
           lastMove={lastMove}
           onMove={(from, to, promotion) => {
             const played = applyMove(fen, from, to, promotion)

@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 
 import { authClient } from "@/lib/auth-client"
+import { chooseBoardTheme } from "@/lib/board-theme"
 import { Button } from "@/components/ui/button"
 import { Wordmark } from "@/components/wordmark"
 import {
@@ -15,6 +16,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
+import type { BoardTheme } from "@/db/schema"
 import type { Coach } from "@/lib/auth"
 
 const NAV = [
@@ -28,6 +30,13 @@ export function AppSidebar({ coach }: { coach: Coach }) {
   const { isMobile, setOpenMobile } = useSidebar()
   const router = useRouter()
   const navigate = useNavigate()
+
+  // Re-read the guard's answer, so the board repaints and a session that went
+  // lands on sign-in.
+  async function chooseTheme(theme: BoardTheme) {
+    await chooseBoardTheme({ data: theme })
+    await router.invalidate()
+  }
 
   async function signOut() {
     await authClient.signOut()
@@ -69,6 +78,22 @@ export function AppSidebar({ coach }: { coach: Coach }) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="gap-2 px-4 py-3">
+        {/* Here rather than on a settings screen: there are seven screens and
+            none of them is settings, and this is the one preference. */}
+        <div role="group" aria-label="Board theme" className="flex gap-1 pb-1">
+          {(["green", "brown"] as const).map((theme) => (
+            <Button
+              key={theme}
+              variant={coach.boardTheme === theme ? "default" : "outline"}
+              size="sm"
+              aria-pressed={coach.boardTheme === theme}
+              onClick={() => chooseTheme(theme)}
+              className="flex-1 capitalize"
+            >
+              {theme}
+            </Button>
+          ))}
+        </div>
         <p className="text-sm text-muted-foreground">
           Signed in as {coach.email}
         </p>

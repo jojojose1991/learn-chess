@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest"
 
-import { createAuth, isAdmin } from "@/lib/auth"
+import { boardThemeOf, createAuth, isAdmin } from "@/lib/auth"
 
 /**
  * The pool is built lazily. `disableSignUp` is checked before the adapter is
@@ -82,5 +82,28 @@ describe("isAdmin", () => {
   it("is not a Coach with no role at all", () => {
     expect(isAdmin({ role: null })).toBe(false)
     expect(isAdmin({})).toBe(false)
+  })
+})
+
+/**
+ * The Coach's board theme is read once, here, so nothing above has to know
+ * that it is a column BetterAuth carries — and so a row the database would
+ * accept but the stylesheet has no palette for still draws a board. There is
+ * no CHECK constraint behind this.
+ */
+describe("boardThemeOf", () => {
+  it("is the brown board when the Coach chose brown", () => {
+    expect(boardThemeOf({ boardTheme: "brown" })).toBe("brown")
+  })
+
+  it("is the green board when the Coach chose green", () => {
+    expect(boardThemeOf({ boardTheme: "green" })).toBe("green")
+  })
+
+  /** A row written before the column had a default, or by anything but us. */
+  it("is green for a Coach whose theme is missing or unknown, so the board is never colourless", () => {
+    expect(boardThemeOf({ boardTheme: null })).toBe("green")
+    expect(boardThemeOf({})).toBe("green")
+    expect(boardThemeOf({ boardTheme: "tartan" })).toBe("green")
   })
 })
