@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { Link, createFileRoute, redirect } from "@tanstack/react-router"
 
 import { CheckerMark } from "@/components/checker-mark"
 import { fetchLibrary } from "@/lib/puzzles"
@@ -32,8 +32,16 @@ function Library() {
         // WebKit drops the implicit list role from a list styled that way.
         <ul role="list" aria-label="Puzzles" className="flex flex-col divide-y">
           {puzzles.map((puzzle) => (
-            <li key={puzzle.id} className="py-3">
-              {puzzle.name}
+            <li key={puzzle.id}>
+              {/* The row opens Confirm & Edit, which is where a Puzzle is
+                  read as much as changed. Play joins it there in 09. */}
+              <Link
+                to="/puzzles/$puzzleId"
+                params={{ puzzleId: puzzle.id }}
+                className="flex min-h-11 items-center underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {puzzle.name}
+              </Link>
             </li>
           ))}
         </ul>

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 
-import type { Locator } from "@playwright/test"
+import type { Locator, Page } from "@playwright/test"
 
 import { signIn } from "./coach"
 import { hydrated } from "./hydrated"
@@ -8,7 +8,23 @@ import { hydrated } from "./hydrated"
 /**
  * Squareness is the one board behaviour no layer below can hold: jsdom
  * computes no layout, so a unit test could only read the class string back.
+ *
+ * Confirm & Edit is where the board lives now, so that is where it is
+ * measured — an empty board is still a board, and the pieces it can draw are
+ * the tray's, which is the same twelve files.
  */
+
+async function editor(page: Page) {
+  await signIn(page)
+  // Straight to the URL: the sidebar is a drawer on a phone, and how a
+  // Coach navigates is `nav.spec.ts`'s subject rather than this one's.
+  await page.goto("/puzzles/new")
+  await hydrated(page, "form")
+}
+
+const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
+const trayOf = (page: Page) =>
+  page.getByRole("group", { name: "Piece to place" })
 
 for (const viewport of [
   { width: 390, height: 800 },
@@ -18,14 +34,9 @@ for (const viewport of [
     page,
   }) => {
     await page.setViewportSize(viewport)
-    await signIn(page)
-    // Straight to the URL: the sidebar is a drawer on a phone, and how a
-    // Coach navigates is `nav.spec.ts`'s subject rather than this one's.
-    await page.goto("/puzzles/new")
+    await editor(page)
 
-    const box = await page
-      .getByRole("group", { name: "Chess board" })
-      .boundingBox()
+    const box = await boardOf(page).boundingBox()
 
     expect(box).not.toBeNull()
     expect(box!.width).toBeCloseTo(box!.height, 0)
@@ -36,12 +47,9 @@ test("fills the width its screen allows, so the board is the hero", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await signIn(page)
-  await page.goto("/puzzles/new")
+  await editor(page)
 
-  const box = await page
-    .getByRole("group", { name: "Chess board" })
-    .boundingBox()
+  const box = await boardOf(page).boundingBox()
 
   // A floor rather than an exact width, because the exact one is whatever
   // `max-w-*` the screen chose. `mx-auto` on a flex-column child shrinks to
@@ -59,55 +67,61 @@ test("fills the width its screen allows, so the board is the hero", async ({
  * decision, so asserting them is asserting the spec.
  */
 test("checkers the squares in green, the default theme", async ({ page }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  const board = page.getByRole("group", { name: "Chess board" })
+  await editor(page)
+  const board = boardOf(page)
 
   // a1 is dark and its neighbour is light: parity has an off-by-one each side.
-  await expect(square(board, "a1, white rook")).toHaveCSS(
+  await expect(square(board, "a1, empty")).toHaveCSS(
     "background-color",
     "rgb(119, 153, 82)"
   )
-  await expect(square(board, "b1, white knight")).toHaveCSS(
+  await expect(square(board, "b1, empty")).toHaveCSS(
     "background-color",
     "rgb(237, 238, 209)"
   )
-  await expect(square(board, "a8, black rook")).toHaveCSS(
+  await expect(square(board, "a8, empty")).toHaveCSS(
     "background-color",
     "rgb(237, 238, 209)"
   )
 })
 
-test("draws the artwork, so a sighted Student sees the Position too", async ({
+test("draws the artwork, so a sighted Coach sees what they are placing", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  const board = page.getByRole("group", { name: "Chess board" })
-  const pieces = board.locator("img")
+  await editor(page)
+  const tray = trayOf(page)
+  const pieces = tray.locator("img")
 
-  await expect(pieces).toHaveCount(32)
+  await expect(pieces).toHaveCount(12)
   // Every file resolves. A renamed piece, a missing SVG or a wrong public
-  // path draws thirty-two broken images with the whole unit suite green,
-  // because the accessible name never touches the filename.
+  // path draws twelve broken images with the whole unit suite green, because
+  // the accessible name never touches the filename.
   const loaded = await pieces.evaluateAll((images) =>
     images.every((image) => (image as HTMLImageElement).naturalWidth > 0)
   )
   expect(loaded).toBe(true)
 
-  // And the right piece, not merely a piece: both colours of every file exist.
-  await expect(square(board, "a1, white rook").locator("img")).toHaveAttribute(
-    "src",
-    "/pieces/wR.svg"
-  )
-  await expect(square(board, "e8, black king").locator("img")).toHaveAttribute(
-    "src",
-    "/pieces/bK.svg"
-  )
+  // And the right piece, not merely a piece: both colours reach the board.
+  await place(page, "white rook", "a1")
+  await place(page, "black king", "e8")
+  await expect(
+    square(boardOf(page), "a1, white rook").locator("img")
+  ).toHaveAttribute("src", "/pieces/wR.svg")
+  await expect(
+    square(boardOf(page), "e8, black king").locator("img")
+  ).toHaveAttribute("src", "/pieces/bK.svg")
 })
 
 function square(board: Locator, name: string) {
   return board.getByRole("button", { name, exact: true })
+}
+
+/** Choose a piece in the tray, then tap the square it goes on. */
+async function place(page: Page, piece: string, coordinate: string) {
+  await trayOf(page).getByRole("radio", { name: piece }).click()
+  await boardOf(page)
+    .getByRole("button", { name: new RegExp(`^${coordinate},`) })
+    .click()
 }
 
 /**
@@ -119,81 +133,10 @@ test("keeps a square at 44px on a phone, because the person tapping is five", as
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 800 })
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  const board = page.getByRole("group", { name: "Chess board" })
+  await editor(page)
 
-  const box = await square(board, "a1, white rook").boundingBox()
+  const box = await square(boardOf(page), "a1, empty").boundingBox()
 
   expect(box!.width).toBeGreaterThanOrEqual(44)
   expect(box!.height).toBeGreaterThanOrEqual(44)
 })
-
-/** 1. a4 Nf6 2. a5 Ng8 3. a6 Nf6 4. axb7 Ng8 5. bxa8, which has to ask. */
-const TO_A_PROMOTION = [
-  ["a2", "a4"],
-  ["g8", "f6"],
-  ["a4", "a5"],
-  ["f6", "g8"],
-  ["a5", "a6"],
-  ["g8", "f6"],
-  ["a6", "b7"],
-  ["f6", "g8"],
-  ["b7", "a8"],
-]
-
-test("asks which piece with four buttons, Queen first and biggest, all above 44px", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 800 })
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  const board = page.getByRole("group", { name: "Chess board" })
-  await hydrated(page, '[aria-label="Chess board"]')
-
-  for (const [from, to] of TO_A_PROMOTION) {
-    await tap(board, from)
-    await tap(board, to)
-  }
-
-  // Which pieces are offered, and in which order, is `move-board.test.tsx`'s;
-  // this is the half that needs pixels and a real screen.
-  const picker = page.getByRole("dialog", { name: "Promote to" })
-  const boxes = await Promise.all(
-    (await picker.getByRole("button").all()).map((choice) =>
-      choice.boundingBox()
-    )
-  )
-  for (const box of boxes) {
-    expect(box!.width).toBeGreaterThanOrEqual(44)
-    expect(box!.height).toBeGreaterThanOrEqual(44)
-  }
-  expect(boxes[0]!.width).toBeGreaterThan(
-    Math.max(...boxes.slice(1).map((box) => box!.width))
-  )
-
-  // Escape is the way out, and it leaves the pawn where it stood. The trap,
-  // the dismissal and the focus that comes back are `<dialog>`'s, so only a
-  // real browser can hold them.
-  await page.keyboard.press("Escape")
-  await expect(picker).toBeHidden()
-  await expect(
-    board.getByRole("button", { name: /^b7, white pawn/ })
-  ).toBeVisible()
-
-  // And on the second attempt the chosen piece appears: a queen on a8, where
-  // a black rook stood.
-  await tap(board, "b7")
-  await tap(board, "a8")
-  await picker.getByRole("button", { name: "Queen", exact: true }).click()
-  await expect(
-    board.getByRole("button", { name: /^a8, white queen/ })
-  ).toBeVisible()
-})
-
-/** One square, whatever Guidance has added to its name. */
-function tap(board: Locator, coordinate: string) {
-  return board
-    .getByRole("button", { name: new RegExp(`^${coordinate},`) })
-    .click()
-}

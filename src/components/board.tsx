@@ -104,7 +104,7 @@ export function Board({
             key={square}
             type="button"
             onClick={() => onSquareTap(square)}
-            aria-label={`${square}, ${describe(piece)}${
+            aria-label={`${square}, ${pieceName(piece)}${
               mark ? `, ${MARK_NAME[mark]}` : ""
             }`}
             className={cn(
@@ -185,7 +185,11 @@ function isLight(square: Square) {
   return (square.charCodeAt(0) + Number(square[1])) % 2 === 1
 }
 
-function describe(piece: Piece | null) {
+/**
+ * What stands on a square, or "empty". Confirm & Edit's tray says the same of
+ * the piece it is offering, so the two cannot drift into two vocabularies.
+ */
+export function pieceName(piece: Piece | null) {
   if (!piece) return "empty"
   return `${piece.color === "w" ? "white" : "black"} ${PIECE_NAME[piece.type]}`
 }
