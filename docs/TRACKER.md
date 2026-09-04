@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**7 of 21 resolved. Five tickets are actionable right now: 07, 12, 19, 20
+**8 of 21 resolved. Four tickets are actionable right now: 07, 12, 19
 and 21.**
 
 ## Tickets
@@ -22,10 +22,10 @@ and 21.**
 | 05  | Library reads real Puzzles          | ✅ resolved     | —              |
 | 06  | The board renders a Position        | ✅ resolved     | —              |
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
+| 20  | A Coach picks their board theme     | ✅ resolved     | —              |
 | 07  | Tap-tap, Guidance, promotion picker | 🟢 **ready**    | 06 ✅          |
 | 12  | Stockfish over UCI                  | 🟢 **ready**    | none           |
 | 19  | Logging, dev and prod               | 🟢 **ready**    | none           |
-| 20  | A Coach picks their board theme     | 🟢 **ready**    | 06 ✅          |
 | 21  | A Library row says what it is       | 🟢 **ready**    | none           |
 | 08  | Confirm & Edit saves a Puzzle       | ⬜ ready-for-agent | 07            |
 | 09  | Play a Puzzle, local vs local       | ⬜ ready-for-agent | 08            |
@@ -62,6 +62,8 @@ already owed by code that shipped. Do not merge them.
 | Owed                                                        | Trigger                                   | Detail in                           |
 | ----------------------------------------------------------- | ----------------------------------------- | ----------------------------------- |
 | A rejected Position may need more than one sentence         | 14                                        | Ticket 17                           |
+| A Puzzle Link's own theme — stamped, and what a Student sees — is unproven | 11                         | Ticket 20                           |
+| A board theme write that throws is silent, on screen and in the log | 19                                  | `src/components/app-sidebar.tsx`    |
 | `readPlacement` throws on a placement-only FEN              | 14                                        | 06, `src/lib/chess/rules.ts`        |
 | New Puzzle's taps go nowhere and its Position is hardcoded   | 08                                        | `src/routes/_coach/puzzles.new.tsx` |
 | "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |

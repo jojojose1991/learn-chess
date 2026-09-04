@@ -8,6 +8,9 @@ export const Route = createFileRoute("/_coach/puzzles/new")({
 })
 
 function NewPuzzle() {
+  // The guard already read the session; the theme rides along with the Coach.
+  const { coach } = Route.useRouteContext()
+
   return (
     <main className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
       <h1 className="text-2xl">New Puzzle</h1>
@@ -16,7 +19,11 @@ function NewPuzzle() {
           gives the editor a Position of its own. The cap keeps the board on
           a short screen; the board itself only knows how to be square. */}
       <div className="max-w-[80vh]">
-        <Board fen={DEFAULT_POSITION} onSquareTap={() => {}} />
+        <Board
+          fen={DEFAULT_POSITION}
+          theme={coach.boardTheme}
+          onSquareTap={() => {}}
+        />
       </div>
     </main>
   )

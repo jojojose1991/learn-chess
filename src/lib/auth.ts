@@ -7,6 +7,8 @@ import { getDb } from "@/db"
 import { requireEnv } from "@/lib/env"
 
 import type { Db } from "@/db"
+// Type-only, so drizzle is erased rather than dragged in behind it.
+import type { BoardTheme } from "@/db/schema"
 
 /**
  * The role that may work the accounts screen. `user.role` is the plugin's own
@@ -34,8 +36,34 @@ export function isAdmin(coach: { role?: string | null }): boolean {
   return coach.role?.split(",").includes(ADMIN_ROLE) ?? false
 }
 
+/**
+ * A board the product actually paints. `board_theme` has no CHECK constraint
+ * behind it, so this is the one list of what the column may hold — a read
+ * falls back to green through it, and a write is refused by it.
+ */
+export function isBoardTheme(value: unknown): value is BoardTheme {
+  return value === "green" || value === "brown"
+}
+
+/**
+ * The board a Coach teaches on. Read here rather than at a route, so nothing
+ * above knows the theme is a column BetterAuth carries — and narrowed rather
+ * than cast, because a value the stylesheet has no palette for would draw
+ * sixty-four colourless squares.
+ */
+export function boardThemeOf(coach: {
+  boardTheme?: string | null
+}): BoardTheme {
+  return isBoardTheme(coach.boardTheme) ? coach.boardTheme : "green"
+}
+
 /** The signed-in Coach as the product sees them, not as BetterAuth stores them. */
-export type Coach = { id: string; email: string; isAdmin: boolean }
+export type Coach = {
+  id: string
+  email: string
+  isAdmin: boolean
+  boardTheme: BoardTheme
+}
 
 /**
  * Who these request headers are signed in as, or null. Reading the session is
@@ -49,6 +77,7 @@ export async function getCoach(headers: Headers): Promise<Coach | null> {
     id: session.user.id,
     email: session.user.email,
     isAdmin: isAdmin(session.user),
+    boardTheme: boardThemeOf(session.user),
   }
 }
 
