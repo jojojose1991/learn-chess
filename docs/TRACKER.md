@@ -22,7 +22,6 @@ and 24.**
 | 05  | Library reads real Puzzles          | ✅ resolved     | —              |
 | 06  | The board renders a Position        | ✅ resolved     | —              |
 | 07  | Tap-tap, Guidance, promotion picker | ✅ resolved     | —              |
-| 08  | Confirm & Edit saves a Puzzle       | ✅ resolved     | —              |
 | 18  | Admin: the accounts screen          | ✅ resolved     | —              |
 | 12  | Stockfish over UCI                  | ✅ resolved     | —              |
 | 19  | Logging, dev and prod               | ✅ resolved     | —              |
