@@ -159,3 +159,32 @@ describe("Rewind and Reset", () => {
     }
   })
 })
+
+describe("the end of an attempt", () => {
+  it("opens a Puzzle stored in checkmate as an attempt already over, not an open Goal", () => {
+    expect(opened("7k/6Q1/5K2/8/8/8/8/8 b - - 1 1", 2).status).toEqual({
+      status: "failed",
+      reason: "Your own king has been checkmated.",
+    })
+  })
+
+  it("plays nothing more once the Goal is solved, so a mated board stops explaining taps", () => {
+    const solved = run(opened(MATE_IN_ONE), move("g1", "g7"))
+    expect(solved.status).toEqual({ status: "solved" })
+
+    const after = run(solved, move("h8", "h7"))
+
+    expect(sans(after)).toEqual(["Qg7#"])
+    expect(after.fen).toBe(solved.fen)
+    expect(after.refusal).toBeNull()
+  })
+
+  it("plays nothing more once the budget is spent, so the Puzzle waits to be tried again", () => {
+    const spent = run(opened(FOOLS, 1), move("e7", "e5"))
+
+    const after = run(spent, move("g2", "g4"))
+
+    expect(sans(after)).toEqual(["e5"])
+    expect(after.fen).toBe(spent.fen)
+  })
+})

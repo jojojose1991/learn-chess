@@ -20,6 +20,15 @@ const BLACKS_TO_SOLVE: PuzzleDraft = {
 }
 
 /**
+ * The same Position with two moves of budget, so an attempt survives a ply
+ * that is not mate — a spent budget ends the attempt and takes no more moves.
+ */
+const TWO_MOVES: PuzzleDraft = {
+  ...MATE_IN_ONE,
+  goal: { kind: "mate_in", n: 2 },
+}
+
+/**
  * Play, without a server: the screen is handed a Puzzle and nothing else, so
  * what it does with one is the whole of its contract. The loop itself is
  * `tests/lib/chess/play.test.ts` — here it is only what a Student can see.
@@ -33,7 +42,7 @@ describe("the Play screen", () => {
   })
 
   it("hands the turn over once a move lands, so a Student knows who plays next", () => {
-    render(<PlayPuzzle puzzle={MATE_IN_ONE} />)
+    render(<PlayPuzzle puzzle={TWO_MOVES} />)
 
     play("g1, white queen", "g8, empty")
 
@@ -56,7 +65,7 @@ describe("the Play screen", () => {
   })
 
   it("keeps the line played in notation, and Rewind and Reset are the same line's", () => {
-    render(<PlayPuzzle puzzle={MATE_IN_ONE} />)
+    render(<PlayPuzzle puzzle={TWO_MOVES} />)
 
     play("g1, white queen", "g8, empty")
     play("h8, black king", "g8, white queen")
@@ -82,6 +91,42 @@ describe("the Play screen", () => {
 
     expect(guidance).not.toBeChecked()
     expect(marked()).toEqual([])
+  })
+
+  it("announces the outcome where it announced the turn, so a Student hears it once", () => {
+    render(<PlayPuzzle puzzle={MATE_IN_ONE} />)
+    expect(screen.getByRole("status")).toHaveTextContent("White to move")
+
+    play("g1, white queen", "g7, empty")
+
+    expect(screen.getByRole("status")).toHaveTextContent("Solved!")
+    expect(screen.queryByText("Black to move")).not.toBeInTheDocument()
+  })
+
+  it("says why an attempt ended and offers another go, which starts the Puzzle over", () => {
+    render(<PlayPuzzle puzzle={MATE_IN_ONE} />)
+
+    // Legal, and check — but not mate, so the one move the Goal allowed is
+    // spent and the attempt is over.
+    play("g1, white queen", "g8, empty")
+
+    const outcome = screen.getByRole("status")
+    expect(outcome).toHaveTextContent("Not this time")
+    expect(outcome).toHaveTextContent(
+      "That is 1 move played, and no checkmate."
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+
+    expect(moves()).toEqual([])
+    expect(screen.getByRole("status")).toHaveTextContent("White to move")
+    expect(
+      screen.queryByRole("button", { name: "Try again" })
+    ).not.toBeInTheDocument()
+
+    // Immediately playable from the start, which is the whole point of the go.
+    play("g1, white queen", "g7, empty")
+    expect(moves()).toEqual(["Qg7#"])
   })
 
   it("puts Black's side nearest when the Puzzle is Black's to solve", () => {

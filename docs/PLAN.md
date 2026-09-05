@@ -103,9 +103,11 @@ highlights the piece that should move and never the move itself.
 5. **Play** — board, whose turn, the Goal in plain words above it, a Guidance
    toggle, Reset, Rewind, Hint, and the move list in SAN. Promotion offers four
    large buttons with Queen first and biggest.
-6. **Solved / Not this time** — a static banner (no animation in the MVP). Not
-   solved rewinds to the start and offers Hint. No score, no red X. Stalemate
-   and draws get a one-line plain-English explanation.
+6. **Solved / Not this time** — a static banner (no animation in the MVP). It
+   holds the Position the attempt ended on and offers another go, which is the
+   rewind to the start, and Hint. Announcing the outcome and then resetting on
+   its own would erase the banner in the tick it appeared. No score, no red X.
+   Stalemate and draws get a one-line plain-English explanation.
 7. **Accounts** — the Admin's screen, and the only one a Coach can be refused.
    Admin is a Role on the account; `pnpm seed` grants it and nothing else does,
    so the endpoints that would write a Role have no screen and are refused.

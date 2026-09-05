@@ -27,19 +27,22 @@ export const describeGoal = (goal: Goal) =>
   `Checkmate in ${goal.n} ${moveWord(goal.n)}`
 
 /**
- * Whether the Goal is still open, solved, or out of reach, given the moves
- * played from the Puzzle's Position in order.
+ * Whether the Goal is still open, solved, or out of reach, given the Position
+ * the Puzzle starts from and the moves played from it in order.
+ *
+ * The start is a parameter because a Position can be over before anyone has
+ * touched it: nothing stops a Coach saving one that is already checkmate,
+ * stalemate or drawn.
  *
  * The Student moves first, so the odd-numbered plies are theirs and the
  * opponent's replies never count against the budget.
  */
 export function evaluateGoal(
   goal: Goal,
+  start: string,
   moves: Array<PlayedMove>
 ): GoalOutcome {
-  if (moves.length === 0) return { status: "open" }
-
-  const board = new Chess(moves[moves.length - 1].fen, { skipValidation: true })
+  const board = new Chess(moves.at(-1)?.fen ?? start, { skipValidation: true })
   const studentMoved = moves.length % 2 === 1
   const spent = Math.ceil(moves.length / 2)
 
@@ -52,9 +55,11 @@ export function evaluateGoal(
         )
   }
 
+  // "The player to move", not "the other side": the stalemated player is the
+  // Student whenever the stalemate was stored or arrived on the reply.
   if (board.isStalemate()) {
     return failed(
-      "That is stalemate: the other side has no legal move, but is not in check. The game is a draw."
+      "That is stalemate: the player to move has no legal move, but is not in check. The game is a draw."
     )
   }
 

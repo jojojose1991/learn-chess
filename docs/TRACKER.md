@@ -30,10 +30,10 @@ status and pointers and never a second copy of a ticket's detail.
 | 22  | `/admin` scrolls sideways at 390px  | ✅ resolved     | —              |
 | 24  | The engine's failures are logged    | ✅ resolved     | —              |
 | 09  | Play a Puzzle, local vs local       | ✅ resolved     | —              |
+| 10  | Solved / Not this time              | ✅ resolved     | —              |
 | 14  | Scan a clean screenshot             | 🟢 **ready**    | 08 ✅          |
-| 10  | Solved / Not this time              | 🟢 **ready**    | 09 ✅          |
-| 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
-| 13  | The engine defends, and Hint        | ⬜ ready-for-agent | 10 (12 ✅)    |
+| 11  | Puzzle Links                        | 🟢 **ready**    | 10 ✅          |
+| 13  | The engine defends, and Hint        | 🟢 **ready**    | 10 ✅, 12 ✅   |
 | 15  | The four-corner warp                | ⬜ ready-for-agent | 14            |
 | 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15        |
 | 17  | Position rejection detail           | ❓ needs-triage | 14             |
@@ -75,11 +75,11 @@ already owed by code that shipped. Do not merge them.
 | A Puzzle Link's own theme — stamped, and what a Student sees — is unproven | 11                         | Ticket 20                           |
 | A board theme write that throws is silent, on screen and in the log | a Coach reports a theme that will not stick | 20, `src/components/app-sidebar.tsx` |
 | `readPlacement` throws on a placement-only FEN, and `withSideToMove` builds a nonsense one from it | 14 | 06, 08, `src/lib/chess/rules.ts` |
-| A Puzzle stored in checkmate or stalemate opens as `open`, so Play shows a Goal over a board that refuses every tap | 10, which owns what the end of an attempt says | 09, `src/lib/chess/goals.ts` |
-| An unplayable FEN throws out of `playReducer` rather than being refused, because `applyMove` builds its `Chess` outside the `try` | 11, where a FEN reaches a URL a person can type | 09, `src/lib/chess/play.ts` |
+| "Try again" on a Puzzle stored in checkmate resets to the same dead Position, so the banner comes straight back | a Coach reports a Puzzle that cannot be started | 10, `src/components/play-puzzle.tsx` |
+| A board whose attempt has closed still picks pieces up and marks their squares, and swallows the tap in silence | a Student is seen tapping at a finished board | 10, `src/components/play-puzzle.tsx` |
+| An unplayable FEN now throws out of `startPlay`, on the Play route's first render rather than on the first tap, and an invalid one that parses is pronounced stalemate | 11, where a FEN reaches a URL a person can type | 09, 10, `src/lib/chess/goals.ts` |
 | Rewind takes back one ply, which is one of the Student's only while both sides are theirs | 13, where the engine answers every move | 09, `src/lib/chess/play.ts` |
 | Play writes the Puzzle before opening it, so playing one a Coach has not changed still touches `updated_at` | a Library ordered by when a Puzzle last changed | 09, `src/components/puzzle-editor.tsx` |
-| Play still announces whose turn it is after a checkmate, because the screen reads the FEN and nothing knows the game is over | 10, which owns the end of an attempt | 09, `src/components/play-puzzle.tsx` |
 | Save is `disabled` while the Position is illegal, so it is unfocusable and a screen reader never meets the reasons that explain it | a Coach who reads the screen rather than sees it | 08, `src/components/puzzle-editor.tsx` |
 | A hand-placed Position never carries castling rights, so neither side can castle in it | a Puzzle whose solution castles, or whose defender should be able to castle out of the mate net | 08, `src/lib/chess/rules.ts` |
 | `/admin/set-role` and `/admin/update-user` are refused at the route | promote and demote get a screen   | 18                                  |

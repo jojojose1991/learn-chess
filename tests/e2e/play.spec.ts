@@ -86,6 +86,34 @@ test("a Coach opens a saved Puzzle and plays it at the Position it was stored wi
   await expect(square(board, "g1, white queen")).toBeVisible()
 })
 
+test("keeps Try again tappable at all three widths, with no sideways scrolling", async ({
+  page,
+}) => {
+  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await openInPlay(page, "Queen and king mate")
+  const board = boardOf(page)
+
+  // Qg8+ is legal and it is check, but it is not mate — so the one move this
+  // Goal allowed is spent and the attempt is over.
+  await square(board, "g1, white queen").click()
+  await square(board, "g8, empty").click()
+
+  // What the banner says, and that Try again starts the Puzzle over, are
+  // `tests/components/play-puzzle.test.tsx`. Only a browser can measure the
+  // 44px a five-year-old's finger needs, and that the banner pushes nothing
+  // sideways at any of the three widths (docs/PLAN.md).
+  const again = page.getByRole("button", { name: "Try again" })
+  await expect(again).toBeVisible()
+
+  for (const width of [390, 820, 1280]) {
+    await page.setViewportSize({ width, height: 800 })
+    const box = await again.boundingBox()
+    expect(box!.width, `Try again at ${width}px`).toBeGreaterThanOrEqual(44)
+    expect(box!.height, `Try again at ${width}px`).toBeGreaterThanOrEqual(44)
+    expect(await overflow(page), `${width}px`).toBe(0)
+  }
+})
+
 test("keeps the board its full size beside the move list, and puts the list beneath it on a phone", async ({
   page,
 }) => {
