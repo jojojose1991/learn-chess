@@ -10,6 +10,8 @@ import {
 import { cn } from "@/lib/utils"
 
 import type { Color, Square } from "chess.js"
+import type { BoardOrientation } from "@/components/board"
+import type { BoardTheme } from "@/db/schema"
 import type { PromotionPiece } from "@/lib/chess/rules"
 
 type MoveBoardProps = {
@@ -17,6 +19,10 @@ type MoveBoardProps = {
   fen: string
   /** On, a picked-up piece marks where it may go. Off, the Student finds out. */
   guidance: boolean
+  /** Whose side is nearest, straight through to `Board`. */
+  orientation?: BoardOrientation
+  /** The board this Coach teaches on, straight through to `Board`. */
+  theme?: BoardTheme
   /** The move just played, which the owner of the moves knows and this does not. */
   lastMove?: { from: Square; to: Square } | null
   /**
@@ -47,6 +53,8 @@ const PROMOTIONS: Array<{ piece: PromotionPiece; name: string }> = [
 export function MoveBoard({
   fen,
   guidance,
+  orientation,
+  theme,
   lastMove = null,
   onMove,
 }: MoveBoardProps) {
@@ -68,6 +76,13 @@ export function MoveBoard({
     // element's, not ours.
     if (promoting) picker.current?.showModal()
   }, [promoting])
+
+  useEffect(() => {
+    // The Position went back or started over under a piece that was already
+    // picked up. Held on to, the next tap would emit a move from a square
+    // whose piece has gone, which the screen refuses in silence.
+    setSelected(null)
+  }, [fen])
 
   function tap(square: Square) {
     if (!playable) return
@@ -108,6 +123,8 @@ export function MoveBoard({
     <>
       <Board
         fen={fen}
+        orientation={orientation}
+        theme={theme}
         selected={selected}
         targets={
           guidance && playable && selected ? legalTargets(fen, selected) : []
