@@ -11,10 +11,10 @@ because the engine's own error handling wasn't the ticket's scope. It's the
 
 **Blocked by:** nothing — `src/lib/log.ts` exists.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] A search that hits `ENGINE_MOVETIME_MS` and is killed logs a warning naming the FEN or move count, not the full request
-- [ ] A Stockfish process exit (crash) logs an error before the pool restarts it
-- [ ] A restart itself logs, so "it was slow once" and "it died once" read differently in Cloud Logging
-- [ ] No log line carries anything a Student's device sent that isn't already safe to store (position/move data is fine; no headers, no session/auth material)
-- [ ] `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
+- [x] A search that hits `ENGINE_MOVETIME_MS` and is killed logs a warning naming the FEN or move count, not the full request
+- [x] A Stockfish process exit (crash) logs an error before the pool restarts it
+- [x] A restart itself logs, so "it was slow once" and "it died once" read differently in Cloud Logging
+- [x] No log line carries anything a Student's device sent that isn't already safe to store (position/move data is fine; no headers, no session/auth material)
+- [x] `pnpm typecheck`, `pnpm lint` and `pnpm test` pass

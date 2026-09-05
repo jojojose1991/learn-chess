@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { applyMove } from "@/lib/chess/rules"
 import { bestMove, stopEngine } from "@/lib/engine/service"
@@ -21,11 +21,20 @@ const START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1"
 const installed = process.env.STOCKFISH_PATH
 const stockfish = !!installed && existsSync(installed)
 
+// The engine logs, and `log` writes through `console` — so every test gets a
+// quiet one, and the tests about the logging read theirs.
+beforeEach(() => {
+  vi.spyOn(console, "info").mockImplementation(() => {})
+  vi.spyOn(console, "warn").mockImplementation(() => {})
+  vi.spyOn(console, "error").mockImplementation(() => {})
+})
+
 afterEach(() => {
   // Each test gets its own engine, so a warm one must not survive into the
   // next — and a fake left running would outlive the suite.
   stopEngine()
   vi.unstubAllEnvs()
+  vi.restoreAllMocks()
 })
 
 /** What `bestMove` answered, as the coordinates a move is made of. */
@@ -209,6 +218,10 @@ describe("bestMove", () => {
         ok: false,
         failure: "misconfigured",
       })
+      // On screen it is a 500; the variable to go and fix is only in the log.
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining("ENGINE_MOVETIME_MS")
+      )
     }
   )
 
@@ -229,4 +242,80 @@ describe("bestMove", () => {
       })
     }
   )
+
+  /**
+   * A bad run reads three ways in Cloud Logging, and the level is the whole
+   * distinction: slow is a warning, dead is an error, and the replacement
+   * that follows either one says so itself.
+   *
+   * The Position is the only thing off the request that reaches a line, and
+   * it is one `validatePosition` accepted. A header, a cookie or a session
+   * is not in scope here at all: `bestMove` is handed a FEN and a budget.
+   */
+  it("names the Position in a warning when a search hangs, so a slow run is not only a symptom on screen", async () => {
+    vi.stubEnv("STOCKFISH_PATH", fakeEngine(``))
+
+    expect(await bestMove(START, 10)).toEqual({ ok: false, failure: "timeout" })
+
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining(START))
+    // A hang is not a death: killing the engine for one is not it dying.
+    expect(console.error).toHaveBeenCalledTimes(0)
+  })
+
+  it("logs an error when the engine dies, so a crash does not read as a slow search", async () => {
+    vi.stubEnv("STOCKFISH_PATH", fakeEngine(`process.exit(1)`))
+
+    expect(await bestMove(START, 10)).toEqual({
+      ok: false,
+      failure: "unavailable",
+    })
+
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("stockfish")
+    )
+    expect(console.warn).toHaveBeenCalledTimes(0)
+  })
+
+  it("says a path is not an engine rather than calling it a crash, so a typo is not hunted as one", async () => {
+    vi.stubEnv("STOCKFISH_PATH", "/nonexistent/stockfish")
+
+    expect(await bestMove(START, 10)).toEqual({
+      ok: false,
+      failure: "unavailable",
+    })
+
+    // The path itself, which is the thing that is wrong — an engine that
+    // died and one that never existed are not the same page to open.
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining("/nonexistent/stockfish")
+    )
+  })
+
+  /**
+   * A FEN can carry a newline and still be legal (see the command-splitting
+   * test above), and it arrives from an unauthenticated request — so a line
+   * of ours is not somewhere a caller gets to write a line of their own.
+   */
+  it("keeps a warning to one line, so a Position cannot forge a second log entry", async () => {
+    vi.stubEnv("STOCKFISH_PATH", fakeEngine(``))
+
+    await bestMove("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0\n1", 10)
+
+    expect(console.warn).toHaveBeenCalledWith(expect.not.stringContaining("\n"))
+  })
+
+  it("logs every engine it starts, so a respawn loop is visible and not just one slow request", async () => {
+    vi.stubEnv(
+      "STOCKFISH_PATH",
+      fakeEngine(`if (n === 0) process.exit(1)
+       say("bestmove e2e4")`)
+    )
+
+    await bestMove(START, 10)
+    await bestMove(START, 10)
+
+    // Two starts, two lines, at a level neither the hang nor the death uses.
+    expect(console.info).toHaveBeenCalledTimes(2)
+    expect(console.warn).toHaveBeenCalledTimes(0)
+  })
 })

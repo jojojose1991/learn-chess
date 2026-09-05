@@ -3,6 +3,7 @@ import { createInterface } from "node:readline"
 
 import { validatePosition } from "@/lib/chess/rules"
 import { requireEnv } from "@/lib/env"
+import { log } from "@/lib/log"
 
 import type { Square } from "chess.js"
 
@@ -73,6 +74,10 @@ export async function bestMove(
   if (waitingSearches >= MAX_WAITING) return { ok: false, failure: "busy" }
   const budget = movetimeMs ?? configuredMovetime()
   if (budget === null || configured("STOCKFISH_PATH") === null) {
+    // The caller gets a 500; only a line here names what to go and fix.
+    log.error(
+      () => "engine misconfigured: ENGINE_MOVETIME_MS or STOCKFISH_PATH"
+    )
     return { ok: false, failure: "misconfigured" }
   }
   return enqueue(() => search(fen, budget))
@@ -119,10 +124,15 @@ async function search(fen: string, movetimeMs: number): Promise<EngineOutcome> {
     engine.send(`go movetime ${movetimeMs}`)
     return readBestMove(await engine.reply("bestmove", movetimeMs + GRACE_MS))
   } catch (error) {
-    // Hung or dead, it is not trusted with the next request either.
-    stopEngine()
     const failure =
       error instanceof EngineFailed ? error.failure : "unavailable"
+    // The Position and the budget it outran, which is what makes a slow
+    // search reproducible. A death has already logged itself, as an error.
+    if (failure === "timeout") {
+      log.warn(() => `engine search outran ${movetimeMs}ms: ${oneLine(fen)}`)
+    }
+    // Hung or dead, it is not trusted with the next request either.
+    stopEngine()
     return { ok: false, failure }
   }
 }
@@ -161,9 +171,12 @@ async function start() {
     await live.reply("uciok", STARTUP_MS)
     live.send("isready")
     await live.reply("readyok", STARTUP_MS)
+    // One line per process: a container respawning all day reads as that.
+    log.info(() => "stockfish is ready")
     return live
   } catch {
     live.kill()
+    log.error(() => `stockfish said nothing in ${STARTUP_MS}ms of starting`)
     throw new EngineFailed("unavailable")
   }
 }
@@ -179,11 +192,14 @@ function spawnEngine() {
 
   let waiting: ((line: string | null) => void) | null = null
   let down = false
+  let killed = false
 
   // `null` is the engine dying: whoever is waiting hears it at once rather
   // than waiting out a budget for a process that is gone, and an engine that
   // died between requests costs nothing — the next request spawns one.
-  const died = () => {
+  const died = (why: string) => {
+    // A kill is ours, and already logged as whatever prompted it.
+    if (!killed) log.error(() => `stockfish is not running: ${why}`)
     down = true
     if (engine === live) engine = null
     waiting?.(null)
@@ -191,23 +207,22 @@ function spawnEngine() {
   createInterface({ input: child.stdout }).on("line", (line) =>
     waiting?.(line.trim())
   )
-  child.on("exit", died)
+  child.on("exit", (code, signal) => died(`it exited ${signal ?? code}`))
   // Never started at all — a `STOCKFISH_PATH` pointing at nothing. Writing to
   // a dead engine's pipe raises EPIPE the same way, and `readline` adds no
   // handler of its own to the stream it reads: an unhandled error on any of
-  // the three would take the whole server down with it.
-  child.on("error", died)
-  child.stdin.on("error", died)
-  child.stdout.on("error", died)
+  // the three would take the whole server down with it. Node names the path
+  // in the first of those, which is the difference between a bad build and a
+  // bad variable.
+  const broke = (failure: Error) => died(failure.message)
+  child.on("error", broke)
+  child.stdin.on("error", broke)
+  child.stdout.on("error", broke)
 
   const live = {
-    // UCI is line-oriented, so a newline inside a command is a second
-    // command. `chess.js` splits a FEN on any whitespace and therefore
-    // accepts one carrying a newline, and the Position arrives from an
-    // unauthenticated request — so the collapse happens here, where every
-    // command goes past, rather than at one caller.
+    // Every command goes past here, so one cannot become two at any caller.
     send: (command: string) => {
-      if (!down) child.stdin.write(`${command.replace(/\s+/g, " ")}\n`)
+      if (!down) child.stdin.write(`${oneLine(command)}\n`)
     },
     /** The engine's next line beginning `expected`, or why none came. */
     reply: (expected: string, budgetMs: number) =>
@@ -232,11 +247,19 @@ function spawnEngine() {
         }
       }),
     kill: () => {
+      killed = true
       child.kill("SIGKILL")
     },
   }
   return live
 }
+
+/**
+ * A UCI command is one line, and so is a log entry — a FEN carrying a newline
+ * is legal to `chess.js` and arrives from an unauthenticated request, so it
+ * is collapsed before it is written anywhere it could pass for two.
+ */
+const oneLine = (text: string) => text.replace(/\s+/g, " ")
 
 /** Two squares and an optional promotion piece: `e7e5`, or `a7a8q`. */
 const MOVE = /^([a-h][1-8])([a-h][1-8])([nbrq])?$/
