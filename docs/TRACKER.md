@@ -5,39 +5,49 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
+<!-- tracker:count -->
+
 **18 of 24 resolved. Three tickets are actionable right now: 11, 13 and 15.**
+<!-- /tracker:count -->
 
 ## Tickets
 
-`ready` means every blocker is resolved. Status strings are the five in
-`docs/agents/triage-labels.md`, read from each ticket's own `Status:` line.
+**This table is generated — `pnpm tracker` writes it, do not edit it.** Every
+column is read from the ticket files: the title from the `#` heading, the state
+from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
+`ready` is computed rather than stored — a ticket is ready when it is
+`ready-for-agent` and every ticket it waits on is resolved.
 
-| #   | Ticket                              | Status             | Blocked by   |
-| --- | ----------------------------------- | ------------------ | ------------ |
-| 01  | Chess rules core                    | ✅ resolved        | —            |
-| 02  | Illegal-move explanations and Goals | ✅ resolved        | —            |
-| 03  | Schema, first migration, seed Coach | ✅ resolved        | —            |
-| 04  | Invite-only sign-in                 | ✅ resolved        | —            |
-| 05  | Library reads real Puzzles          | ✅ resolved        | —            |
-| 06  | The board renders a Position        | ✅ resolved        | —            |
-| 07  | Tap-tap, Guidance, promotion picker | ✅ resolved        | —            |
-| 18  | Admin: the accounts screen          | ✅ resolved        | —            |
-| 12  | Stockfish over UCI                  | ✅ resolved        | —            |
-| 19  | Logging, dev and prod               | ✅ resolved        | —            |
-| 21  | A Library row says what it is       | ✅ resolved        | —            |
-| 20  | A Coach picks their board theme     | ✅ resolved        | —            |
-| 08  | Confirm & Edit saves a Puzzle       | ✅ resolved        | —            |
-| 22  | `/admin` scrolls sideways at 390px  | ✅ resolved        | —            |
-| 24  | The engine's failures are logged    | ✅ resolved        | —            |
-| 09  | Play a Puzzle, local vs local       | ✅ resolved        | —            |
-| 10  | Solved / Not this time              | ✅ resolved        | —            |
-| 14  | Scan a clean screenshot             | ✅ resolved        | —            |
-| 11  | Puzzle Links                        | 🟢 **ready**       | 10 ✅        |
-| 13  | The engine defends, and Hint        | 🟢 **ready**       | 10 ✅, 12 ✅ |
-| 15  | The four-corner warp                | 🟢 **ready**       | 14 ✅        |
-| 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15       |
-| 17  | Position rejection detail           | ❓ needs-triage    | 14 ✅        |
-| 23  | Engine route hardening              | ❓ needs-triage    | 16           |
+<!-- tracker:tickets -->
+
+| #   | Ticket                                                       | Status             | Blocked by   |
+| --- | ------------------------------------------------------------ | ------------------ | ------------ |
+| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved        | —            |
+| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved        | —            |
+| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved        | —            |
+| 04  | Invite-only sign-in                                          | ✅ resolved        | —            |
+| 05  | Library reads real Puzzles                                   | ✅ resolved        | —            |
+| 06  | The board renders a Position                                 | ✅ resolved        | —            |
+| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved        | —            |
+| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved        | —            |
+| 09  | Play a Puzzle, local versus local                            | ✅ resolved        | —            |
+| 10  | Solved / Not this time                                       | ✅ resolved        | —            |
+| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved        | —            |
+| 14  | Scan a clean screenshot                                      | ✅ resolved        | —            |
+| 18  | Admin: the accounts screen                                   | ✅ resolved        | —            |
+| 19  | Logging, in development and in production                    | ✅ resolved        | —            |
+| 20  | A Coach picks their board theme                              | ✅ resolved        | —            |
+| 21  | A Library row says what the Puzzle is                        | ✅ resolved        | —            |
+| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved        | —            |
+| 24  | The engine's failures are visible somewhere                  | ✅ resolved        | —            |
+| 11  | Puzzle Links                                                 | 🟢 **ready**       | 10 ✅        |
+| 13  | The engine defends, and Hint                                 | 🟢 **ready**       | 10 ✅, 12 ✅ |
+| 15  | The four-corner warp on the unreliable path                  | 🟢 **ready**       | 14 ✅        |
+| 16  | Deploy to Cloud Run                                          | ⬜ ready-for-agent | 13, 15       |
+| 17  | Does a rejected Position need to say more than one sentence? | ❓ needs-triage    | 14 ✅        |
+| 23  | What stops a stranger holding the engine open?               | ❓ needs-triage    | 16           |
+
+<!-- /tracker:tickets -->
 
 Build order and the reasoning behind it are `docs/PLAN.md`. It is not the same
 as ticket order: 12 and 19 sit off the critical path on purpose, so the engine
@@ -107,8 +117,13 @@ already owed by code that shipped. Do not merge them.
 
 ## Keeping this honest
 
-- A ticket's `Status:` line is the truth; the table above is a copy. Update
-  both, or neither is trustworthy.
+- A ticket's `Status:` line is the only truth. The table above is generated
+  from it, so change the ticket and run `pnpm tracker`; there is no second
+  place to keep in step, and that is deliberate — 19 shipped and sat at
+  `ready-for-agent` in its own file for two weeks while this table called it
+  resolved.
+- **The carried-forward table below is hand-written**, and stays that way. A
+  debt has no source to derive it from but the person who owed it.
 - A finding simply **declined** belongs in that ticket's `## Comments` with its
   reason. Only what someone still has to do belongs here.
 - When a trigger fires, the row becomes a ticket and leaves this file.

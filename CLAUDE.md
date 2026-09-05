@@ -21,6 +21,7 @@ pnpm format       # prettier --write; `pnpm check` reports without writing
 pnpm db:generate  # drizzle-kit generate, after editing src/db/schema.ts
 pnpm db:migrate   # applies them over DATABASE_URL_UNPOOLED, not DATABASE_URL
 pnpm seed         # grants admin to SEED_ADMIN_USER, creating the Coach if new
+pnpm tracker      # rewrites docs/TRACKER.md's ticket table from the tickets
 pnpm prepare      # points git at .githooks; pnpm install runs it for you,
                   # so only a clone that has not installed yet is unhooked.
                   # A linked worktree inherits it from the shared .git/config
@@ -273,8 +274,10 @@ taps; it knows nothing about Goals, engines or games.
    while the diff is still yours to throw away.
 4. **`/code-review` on what survives**, also in a subagent.
 5. **Apply the fixes**, and re-run the three checks.
-6. **Update `docs/TRACKER.md`** — the ticket's status, and one row per thing
-   the work leaves owed. **A trigger is a ticket number, a named version or a
+6. **Update the ticket's own `Status:` line, then run `pnpm tracker`** — the
+   table in `docs/TRACKER.md` is generated from the tickets and editing it by
+   hand is the drift this replaced. What is still hand-written there is one
+   row per thing the work leaves owed. **A trigger is a ticket number, a named version or a
    measurement**; "a Coach complains" is not one, because nothing is deployed
    and no Coach can. A debt that cannot name a real trigger is a ticket if it
    is a defect and a `## Comments` note if it is a preference — filing a known
