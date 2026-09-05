@@ -76,6 +76,27 @@ Two consequences, both now in the code:
   `window.__TSR_ROUTER__` is set before render completes and is not a usable
   signal; React's own `__reactProps$…` key on the element is.
 
+## `x.test.ts` beside `x.test.tsx` drops one of them from the program
+
+The two vitest projects are chosen by extension, so a source file's logic and
+its DOM contract look like they belong in `foo.test.ts` and `foo.test.tsx`
+side by side. They cannot. TypeScript resolves both to the module `./foo.test`
+and keeps one — the `.ts` — so the `.tsx` leaves the program entirely.
+
+`pnpm typecheck` goes **green** while silently checking neither the file nor
+anything only it imports. `pnpm lint` is what catches it, and its message
+names the wrong cause:
+
+```
+tests/components/corner-picker.test.tsx
+  0:0  error  Parsing error: "parserOptions.project" has been provided …
+The file was not found in any of the provided project(s)
+```
+
+**Rule:** one test file per source file. A pure function exported from a
+component is tested in that component's `.tsx` — the extension picks the
+environment, not the subject, and a jsdom test asserting arithmetic is fine.
+
 ## postgres 18 moved PGDATA
 
 `postgres:18-alpine` refuses to start on a volume mounted at

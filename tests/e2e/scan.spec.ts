@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test"
 
 import type { Page } from "@playwright/test"
 
+import { KEYSTONE, outBy } from "../fixtures/keystone"
 import { signIn } from "./coach"
 import { hydrated } from "./hydrated"
 
@@ -160,3 +161,131 @@ for (const width of [390, 820, 1280]) {
     ).toBe(0)
   })
 }
+
+/**
+ * The recovery path. `board-keystone.jpg` is the board seen from off to one
+ * side, which the detector cannot find at all — the same script writes the
+ * four corners it landed on, so a test can put the handles exactly where a
+ * careful Coach would.
+ *
+ * What this cannot measure is a finger. It proves the plumbing at each width
+ * and that accurate corners read the board; whether a five-year-old's parent
+ * can hit ±8 image pixels with a thumb is a thing to watch someone do.
+ */
+const HANDLES = ["Top left", "Top right", "Bottom right", "Bottom left"]
+
+/** Drag each handle onto the point it belongs on, in the picture's own pixels. */
+async function putCornersOn(
+  page: Page,
+  corners: Array<{ x: number; y: number }>
+) {
+  const picture = page.getByRole("img", { name: /handle on each corner/ })
+  // `boundingBox` does not scroll, and `page.mouse` is a raw dispatch with no
+  // actionability check — a handle below the fold would be quietly missed and
+  // leave a wrong read rather than an error.
+  await picture.scrollIntoViewIfNeeded()
+  const box = await picture.boundingBox()
+  if (!box) throw new Error("the picture is not on the screen")
+
+  for (const [index, name] of HANDLES.entries()) {
+    const handle = page.getByRole("button", {
+      name: new RegExp(`^${name} corner`),
+    })
+    const from = await handle.boundingBox()
+    if (!from) throw new Error(`no ${name} handle`)
+
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(
+      box.x + (corners[index].x / KEYSTONE.width) * box.width,
+      box.y + (corners[index].y / KEYSTONE.height) * box.height,
+      { steps: 8 }
+    )
+    await page.mouse.up()
+  }
+}
+
+const keystone = () => ({
+  name: "board-keystone.jpg",
+  mimeType: "image/jpeg",
+  buffer: readFileSync(
+    new URL("../fixtures/board-keystone.jpg", import.meta.url)
+  ),
+})
+
+test("a board the Scan cannot read offers four corners instead of a dead end", async ({
+  page,
+}) => {
+  await signIn(page)
+  await page.goto("/puzzles/new")
+  await hydrated(page, "form")
+
+  await page.getByLabel("Scan an image of a board").setInputFiles(keystone())
+
+  // Refused, and in the same breath told what to do about it.
+  await expect(page.getByRole("alert")).toContainText("did not read cleanly")
+  await expect(
+    page.getByRole("button", { name: /^Top left corner/ })
+  ).toBeVisible()
+
+  await putCornersOn(page, KEYSTONE.corners)
+  await page.getByRole("button", { name: "Read these corners" }).click()
+
+  // The same draft any other Scan opens, in Confirm & Edit, and saveable.
+  await expectTheReadPosition(page)
+  await expect(page.getByRole("alert")).toBeHidden()
+
+  await page.getByLabel("Name").fill("Scanned from a photo")
+  await page.getByLabel("Mate in").fill("2")
+  await page.getByRole("button", { name: "Save" }).click()
+
+  await expect(
+    page.getByRole("link", { name: "Scanned from a photo" })
+  ).toBeVisible()
+})
+
+test("corners in the wrong place say so, and moving them reads the board again", async ({
+  page,
+}) => {
+  await signIn(page)
+  await page.goto("/puzzles/new")
+  await hydrated(page, "form")
+  await page.getByLabel("Scan an image of a board").setInputFiles(keystone())
+
+  // 25px out on both axes at every corner: measured, that is 0.24 minimum
+  // confidence, and the read stops being one anybody should trust.
+  await putCornersOn(page, outBy(25))
+  await page.getByRole("button", { name: "Read these corners" }).click()
+
+  await expect(page.getByRole("status")).toContainText("may be off")
+
+  // The Scan is not started over: the same picture, the same handles, moved.
+  await putCornersOn(page, KEYSTONE.corners)
+  await page.getByRole("button", { name: "Read these corners" }).click()
+
+  // The position first: `scanImage` empties the warning before it fetches, so
+  // an empty region on its own would pass against a read that never returned.
+  await expectTheReadPosition(page)
+  await expect(page.getByRole("status")).toBeEmpty()
+})
+
+test("the four corners can be placed on a 390px phone, which is the width that matters", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 800 })
+  await signIn(page)
+  await page.goto("/puzzles/new")
+  await hydrated(page, "form")
+  await page.getByLabel("Scan an image of a board").setInputFiles(keystone())
+
+  await putCornersOn(page, KEYSTONE.corners)
+  await page.getByRole("button", { name: "Read these corners" }).click()
+
+  await expectTheReadPosition(page)
+  expect(
+    await page.evaluate(() => {
+      const doc = document.scrollingElement!
+      return Math.max(0, doc.scrollWidth - doc.clientWidth)
+    })
+  ).toBe(0)
+})
