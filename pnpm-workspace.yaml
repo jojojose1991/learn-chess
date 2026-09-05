@@ -5,3 +5,10 @@ allowBuilds:
   lightningcss: true
   unrs-resolver: true
   msw: false
+  # `onnxruntime-node`'s postinstall fetches CUDA and TensorRT execution
+  # providers from nuget.org — hundreds of MB of GPU code for a 1.3 MB
+  # classifier that runs on a CPU. `false` rather than absent, so
+  # `pnpm approve-builds` cannot quietly turn it on. `protobufjs` arrives
+  # underneath it and its own script is not needed either.
+  onnxruntime-node: false
+  protobufjs: false
