@@ -21,9 +21,9 @@ pnpm format       # prettier --write; `pnpm check` reports without writing
 pnpm db:generate  # drizzle-kit generate, after editing src/db/schema.ts
 pnpm db:migrate   # applies them over DATABASE_URL_UNPOOLED, not DATABASE_URL
 pnpm seed         # grants admin to SEED_ADMIN_USER, creating the Coach if new
-pnpm prepare      # points git at .githooks — a fresh clone has neither the
-                  # commit-msg nor the pre-commit hook, so commitlint and
-                  # prettier silently do not run until this does
+pnpm prepare      # points git at .githooks; pnpm install runs it for you,
+                  # so only a clone that has not installed yet is unhooked.
+                  # A linked worktree inherits it from the shared .git/config
 
 docker compose up -d   # the e2e postgres, on 5433
 pnpm e2e:db            # migrate + seed the template, clone it
@@ -33,13 +33,19 @@ pnpm e2e               # playwright; provisions the clone itself
 `pnpm e2e` is deliberately not part of `pnpm test`: it needs a database and a
 running app, and the point of the unit suite is that it needs neither.
 
+**`db:migrate` and `seed` write to whatever `.env` points at, which is the live
+Neon database.** There is no local postgres for the app — the container on 5433
+is the e2e one — so they are production commands, and they are production
+commands from inside a worktree too, because the `.env` there is a copy.
+
 Invite-only means there is no sign-up route, so `pnpm seed` is how the first
 Coach exists at all; every other one is added on `/admin`.
 
 The interactive shell here is **fish** — no heredocs, no `export FOO=bar`, no
 `VAR=x cmd` prefix, no `[[ ]]`. `.claude/settings.json` pins the harness to
-`/bin/bash`, so tool calls can use POSIX freely; anything committed to
-`scripts/` must run under `#!/usr/bin/env bash`.
+`/bin/bash`, so tool calls can use POSIX freely. `scripts/` is TypeScript run
+through `tsx`; the shell in this repo is `.githooks/*`, and anything committed
+as a shell script runs under `#!/usr/bin/env bash`, never fish.
 
 ## Architecture
 
@@ -74,7 +80,9 @@ not trim, deliberately; the reason is in the file.
 ### Layers
 
 Three, and imports flow one way only: **controller → service → repository**.
-Nothing ever imports back up.
+Nothing ever imports back up. These three are structural: a service that today
+only passes through, or a DTO whose fields match its row, is the shape working
+as intended and not the speculation step 3's review hunts.
 
 | Layer      | Lives in                                                                         | May import                                     |
 | ---------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
@@ -109,9 +117,10 @@ Nothing ever imports back up.
 ### Server routes
 
 `src/routes/api/**` is a thin surface and stays one. Today it holds only
-`/api/auth/$` (BetterAuth's own, whose shape is not ours); `/api/scan` and
-`/api/engine/move` will join it and are **actions, not resources** — POST, one
-job each, validated input, an explicit error shape and honest status codes.
+`/api/auth/$` (BetterAuth's own, whose shape is not ours) and
+`/api/engine/move`; `/api/scan` is the last one due. They are **actions, not
+resources** — POST, one job each, validated input, an explicit error shape and
+honest status codes.
 Everything else is `createServerFn` RPC by design; do not reshape it into
 resource URLs.
 
@@ -126,12 +135,15 @@ verbs in paths, no `?action=`, and never a 200 with an error inside.
 - shadcn/ui with the `base-nova` style, `neutral` base color, `@base-ui/react` primitives and Tabler icons. Add components with `pnpm dlx shadcn@latest add <name>` — they land in `src/components/ui/`.
 - Compose Tailwind classes through `cn()` (`src/lib/utils.ts`); Prettier is configured to sort classes inside `cn()` and `cva()`.
 - Prettier: no semicolons, double quotes, 80 cols. TS is `strict` with `noUnusedLocals`/`noUnusedParameters`, so unused imports fail `pnpm typecheck`.
-- **All tests live in `tests/`**, mirroring the source path — `src/lib/chess/rules.ts` is tested by `tests/lib/chess/rules.test.ts`. None beside the source. Tests import through `@/*`, never relative paths.
+- **All tests live in `tests/`**, mirroring the path of what they test — `src/lib/chess/rules.ts` by `tests/lib/chess/rules.test.ts`, `scripts/e2e-db.ts` by `tests/scripts/e2e-db.test.ts`. None beside the source. A test **imports source through `@/*`**, never a relative path. `@/*` maps only to `src/*`, so a helper in `tests/` or a script in `scripts/` is reached relatively; that is the alias's limit, not the rule being broken.
 
 ## Testing
 
-Three layers, and a behaviour belongs to exactly one of them. Testing the same
-rule twice is how a suite becomes something people switch off.
+Three layers. **A rule is asserted once, at the lowest layer that holds it** —
+and a screen may then prove it is _wired_ to that rule, with the shallowest
+assertion that would fail if it were not. Restating a rule's cases higher up is
+how a suite becomes something people switch off; proving the button is
+connected is not the same thing.
 
 | Layer | Files                 | Runs in                    | For                                              |
 | ----- | --------------------- | -------------------------- | ------------------------------------------------ |
@@ -147,9 +159,10 @@ reducer, so it is tested as a reducer, not by driving HTML. A real cookie set by
 a real server surviving a real navigation is e2e, because nothing below it can
 lie about that convincingly.
 
-**The middle layer is the one that rots.** A jsdom test of a screen that mocks
-the server function it calls asserts that a mock was reached. Those belong in
-e2e or nowhere.
+**A screen that mocks its own server function is what rots.** That test
+asserts a mock was reached; it belongs in e2e or nowhere. Where the mock sits
+is the whole distinction — a stubbed _module_ is the ban, while a callback prop
+the component is handed (`onSave`, `onMove`) is its contract and is fair game.
 
 ### Behavioural, not brittle
 
@@ -158,6 +171,9 @@ e2e or nowhere.
 messages say why. `toHaveBeenCalledWith` stays allowed: a spy on a collaborator
 you own is implementation, but a callback prop that _is_ the component's output
 (`onMove`) is its contract.
+
+`eslint.config.js` ignores `tests/e2e/**` outright, so none of those bans reach
+the layer this section pushes work into. There they are yours to keep.
 
 What lint cannot check, and review is therefore for:
 
@@ -172,7 +188,9 @@ What lint cannot check, and review is therefore for:
 - **Coverage percentage is not a target.** It is the metric an agent games
   hardest, by executing lines without asserting anything.
 - **Do not edit a test to make an implementation pass.** The failing test is
-  the spec; changing it is a separate, announced decision, not a step to green.
+  the spec; changing it is a separate decision, announced before the edit
+  rather than in the commit that carries it — and that holds for a test you
+  wrote an hour ago as much as one you inherited.
 
 ### A fixed bug leaves a test that would have caught it
 
@@ -188,7 +206,8 @@ behaviour the suite did not hold. Closing it is part of the fix, not follow-up.
   that is wrong. One repository test beats the e2e that found it.
 - **No test rather than a dishonest one.** If the behaviour cannot be held
   without coupling the suite to styling, a design token, a vendored file or a
-  mock of the thing under test, say so in the commit and fix it anyway. A test
+  mock of the thing under test, name in the commit which of those it would
+  have taken, and fix it anyway. A test
   that would have passed with the bug present is a false guarantee, and worse
   than the gap it hides.
 - **This is for defects, not for every review finding.** A cut abstraction, a
@@ -200,7 +219,7 @@ Read these before writing code. They are the product decisions, not suggestions.
 If a change contradicts one, say so and revisit it; do not silently diverge.
 
 - `CONTEXT.md` — the ubiquitous language, to be used in code, types, table names, routes and commit messages. Each entry lists rejected synonyms.
-- `docs/PLAN.md` — domain model, schema, module boundaries, interaction rules, the six screens, build order.
+- `docs/PLAN.md` — domain model, schema, module boundaries, interaction rules, the seven screens, build order.
 - `docs/adr/` — decisions with real trade-offs, and the evidence behind them.
 - `docs/TRACKER.md` — where every ticket stands, and what earlier tickets left behind with the trigger that makes each live again. Start here to pick up work.
 - `docs/BACKLOG.md` — deliberately out of scope, plus what must stay true in the MVP so it can be added later. Do not build these.
@@ -232,18 +251,22 @@ taps; it knows nothing about Goals, engines or games.
 
 **The loop for one unit of work**, in order, and the order is the point:
 
-0. **Design first.** For any non-trivial module or component, dispatch an
-   architecture subagent: module responsibilities, the interfaces between them,
-   how the domain model maps to types, judged against SOLID. It returns the
-   behaviours the change must exhibit, in the language of the domain — a ten
-   line list, not test code, because reviewing test code means reviewing it
-   after you have already built to it.
+0. **Design first.** The list of behaviours to build to is the ticket's
+   acceptance criteria — start there, because they are already written in the
+   domain's language. Dispatch an architecture subagent when the module is
+   genuinely new: responsibilities, the interfaces between them, how the
+   domain maps to types, judged against SOLID, returned as a ten line list and
+   not as test code, because reviewing test code means reviewing it after you
+   have already built to it. A screen over a reducer that exists is not that.
 1. **Write the test first**, from that list. Red before green.
    `/mattpocock-skills:tdd` drives this if you want it driven. No exemptions:
    logic in `tests/**/*.test.ts`, a component's contract in
-   `tests/**/*.test.tsx`, a journey in `tests/e2e/`.
+   `tests/**/*.test.tsx`, a journey in `tests/e2e/`. An agent in a worktree
+   cannot run the e2e suite (below), so it hands over the journey saying it is
+   unrun, and the orchestrator's run is where that one goes red.
 2. **Implement to green**, with `pnpm typecheck`, `pnpm lint` and `pnpm test`
-   passing.
+   passing — run by you, because a red run's output is what you are iterating
+   on.
 3. **`/ponytail:ponytail-review` over the diff, in a subagent.** Dispatch it
    through the Agent tool and take back its findings list, not its commentary.
    It hunts over-engineering, and deleting a speculative abstraction is cheaper
@@ -251,10 +274,16 @@ taps; it knows nothing about Goals, engines or games.
 4. **`/code-review` on what survives**, also in a subagent.
 5. **Apply the fixes**, and re-run the three checks.
 6. **Update `docs/TRACKER.md`** — the ticket's status, and one row per thing
-   the work leaves owed, with the trigger that makes it live again. A finding
-   that was declined outright goes in the ticket's `## Comments` with its
-   reason instead. Do this before the commit, so the tracker lands in the same
-   unit as the work it describes rather than in a sweep-up later.
+   the work leaves owed. **A trigger is a ticket number, a named version or a
+   measurement**; "a Coach complains" is not one, because nothing is deployed
+   and no Coach can. A debt that cannot name a real trigger is a ticket if it
+   is a defect and a `## Comments` note if it is a preference — filing a known
+   correctness bug behind a wish is how it never gets fixed. A finding
+   declined outright goes in the ticket's `## Comments` with its reason _and_
+   in the commit; what it does not get is a row here. Do this before the
+   commit, so the tracker lands in the same unit as the work — on a
+   multi-commit feature that is the trip that moves the status, plus any trip
+   that leaves something owed.
 7. **Then commit** — once, at the end, with the review's cuts already in it.
 
 **Nothing is committed mid-loop**: a commit is a unit that has been reviewed,
@@ -270,40 +299,57 @@ for every small change is the ceremony being ruled out.
 
 **A worktree has a branch by definition**, and that branch is tracked to
 closure — created, merged, deleted, in one run. That is not the ceremony above;
-it is how parallel agents avoid standing on each other.
+it is how parallel agents avoid standing on each other. **Only an orchestrator
+creates one**, and only for two or more tickets genuinely in flight at once: an
+_orchestrator_ is a session that dispatches agents and merges their work and
+writes no source itself, and if nobody put you in a worktree you are on `main`.
 
 - **Worktrees live outside the repo**, one per ticket, at
   `../learn-chess-start-worktrees/<ticket>`. Inside `.claude/worktrees/` they
   are part of the project: `pnpm lint` at the root parses every copy's own
   `eslint.config.js` and goes red on `main` for a reason no source change
-  explains.
+  explains, and a `git add -A` would commit an entire second checkout.
 - **Create from the current `main` head**, never from whatever ref a tool
   leaves lying around —
   `git worktree add -b <ticket> ../learn-chess-start-worktrees/<ticket> main`.
   A stale base is not survivable: three agents were once dispatched onto one 14
   commits behind, and all three runs were thrown away.
-- A fresh worktree has no `node_modules` and no `.env`, and its hooks are
-  unset. Copy `.env` in, then `pnpm install` and `pnpm prepare`.
+- A fresh worktree has no `node_modules` and no `.env`. Its **hooks it
+  already has**, inherited from the shared `.git/config`, so `pnpm prepare`
+  there is a no-op. Copy `.env` in and `pnpm install` — about a gigabyte per
+  worktree, which is what the parallelism costs.
+- **That copied `.env` points at the live Neon database**, and at the same
+  `E2E_DATABASE_URL` as every other worktree. Nothing local stops
+  `pnpm db:migrate` or `pnpm seed` from a worktree reaching production.
 - **The merge back is the orchestrator's**, never the agent's: `--no-ff`, with
   the subject `chore: fold <what> into main`. Then remove the worktree and
-  delete the branch, so the next run cannot start from it.
+  delete the branch, so the next run cannot start from it. Removal refuses a
+  dirty tree, and what is left behind holds a copy of `.env`, so clear it
+  rather than leave it lying there.
 
-**An orchestrator reads verdicts, not output.** Its context has to survive
-every merge, every conflict and every round of fixes, so the one thing it
-cannot spend it on is a test runner's stdout.
+**An orchestrator reads the evidence, not a summary of it.** Its context has
+to survive every merge and every round of fixes, but the way to protect it is
+not to have the checks read aloud to it.
 
-- **Run the checks in a subagent** — `pnpm typecheck`, `pnpm lint`,
-  `pnpm test`, `pnpm e2e` — and take back pass or fail, the failing test
-  names and the assertion that broke. A green suite is one line; the
-  hundreds that passed are not information.
-- **Read the diff yourself.** What is delegated is the noisy mechanical
-  half, never the judgement — an agent's account of its own work is the
-  thing being checked, and a second agent summarising it is not a check.
-- **`pnpm e2e` is single-instance**: port 3013 is hardcoded in
-  `playwright.config.ts` and `pnpm e2e:db` drops and re-clones one database
-  named in `.env`. Two worktrees running it at once tear down each other's
-  database, and the failures read like code bugs. Agents write e2e specs;
-  the orchestrator runs them, one branch at a time.
+- **Run `pnpm typecheck`, `pnpm lint` and `pnpm test` yourself.** All three
+  green cost 251 bytes together; `vite.config.ts` sets `silent: "passed-only"`
+  so that stays true. Red is the case that matters, and the failing assertion
+  is the only thing worth having — do not have it paraphrased.
+- **Read the diff yourself**, on top of the reviews in steps 3 and 4, not
+  instead of them. They find things in code you have read; an agent's account
+  of its own work is the thing being checked.
+- If a run ever is delegated, the verdict must carry the **exit code, the test
+  count and the artifact path**, or it cannot be audited: "all green" from an
+  agent that ran one directory looks exactly like a full suite.
+  `playwright.config.ts` already writes `test-results/e2e.json`, and vitest
+  takes `--reporter=json --outputFile=`.
+- **`pnpm e2e` is single-instance**, so the orchestrator runs it, one branch
+  at a time. Port 3013 is hardcoded in `playwright.config.ts` with
+  `reuseExistingServer: false`, so a second concurrent run dies on the port —
+  loudly, which is the safe failure. The dangerous one is `pnpm e2e:db` run on
+  its own: it drops **both** the run database and its template with
+  `WITH (FORCE)`, cutting the connections out from under a suite already
+  going, and every worktree's `.env` names the same two.
 
 **Commit messages are short and outcome-focused:**
 
@@ -311,7 +357,7 @@ cannot spend it on is a test runner's stdout.
 <type>: <what is now true, imperative, ≤72 chars>
 
 - <an outcome, or something the diff cannot say>
-- <at most three of these>
+- <at most three of these, plus red evidence and any declined finding>
 
 <trailers>
 ```
@@ -333,9 +379,10 @@ It cannot enforce the style, so:
   `git log`. A deploy step belongs in `docs/PLAN.md`, a library gotcha in
   `docs/learnings/`, a rule in this file. The commit names the file and stops.
 
-Comments follow the same rule. One longer than the code it explains, or
-repeating what a doc already says, is the same habit — say it once, where
-someone will look.
+Comments follow the same rule: one repeating what the code, or a doc, already
+says is the same habit — say it once, where someone will look. Length is not
+the test. The longest comments here explain why a rule exists, and they are the
+ones worth keeping.
 
 ## Agent skills
 

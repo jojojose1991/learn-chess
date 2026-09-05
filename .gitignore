@@ -21,3 +21,6 @@ test-results
 coverage
 blob-report
 .vitest-reports
+
+# A worktree belongs outside the repo; this is where a tool puts one anyway.
+.claude/worktrees/
