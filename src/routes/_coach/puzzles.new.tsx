@@ -26,13 +26,17 @@ function NewPuzzle() {
 
       <PuzzleEditor
         theme={coach.boardTheme}
-        onSave={async (draft) => {
+        onSave={async (draft, next) => {
           const written = await savePuzzle({ data: draft })
           if ("error" in written) return written
           // The Library is where a saved Puzzle now is, so that is where the
-          // Coach goes to see that it arrived.
+          // Coach goes to see that it arrived — unless they asked to play it.
           await router.invalidate()
-          await navigate({ to: "/" })
+          await navigate(
+            next === "play"
+              ? { to: "/play/$puzzleId", params: { puzzleId: written.id } }
+              : { to: "/" }
+          )
           return {}
         }}
       />

@@ -31,13 +31,17 @@ function EditPuzzle() {
         key={puzzle.id}
         puzzle={puzzle}
         theme={coach.boardTheme}
-        onSave={async (draft) => {
+        onSave={async (draft, next) => {
           const written = await savePuzzle({
             data: { ...draft, id: puzzle.id },
           })
           if ("error" in written) return written
           await router.invalidate()
-          await navigate({ to: "/" })
+          await navigate(
+            next === "play"
+              ? { to: "/play/$puzzleId", params: { puzzleId: written.id } }
+              : { to: "/" }
+          )
           return {}
         }}
       />

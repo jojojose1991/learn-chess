@@ -190,6 +190,41 @@ describe("the promotion picker", () => {
   })
 })
 
+describe("a Position that changes underneath the tap in progress", () => {
+  it("drops the piece it was holding, so Rewind and Reset cannot leave a move nobody asked for", () => {
+    const onMove = vi.fn()
+    const { rerender } = render(
+      <MoveBoard fen={START} guidance={false} onMove={onMove} />
+    )
+    tap("e2, white pawn")
+
+    // The screen took the Position back — a Rewind, a Reset, or any other
+    // owner of the moves changing its mind about which one is current.
+    rerender(<MoveBoard fen={AFTER_E4} guidance={false} onMove={onMove} />)
+
+    expect(selected()).toBeNull()
+    tap("a6, empty")
+    expect(onMove).toHaveBeenCalledTimes(0)
+  })
+})
+
+describe("whose side of the board it is", () => {
+  it("turns around for a Puzzle solved from Black's side, pieces and coordinates together", () => {
+    render(
+      <MoveBoard
+        fen={START}
+        guidance={false}
+        orientation="black"
+        onMove={vi.fn()}
+      />
+    )
+
+    expect(screen.getAllByRole("button")[0]).toHaveAccessibleName(
+      "h1, white rook"
+    )
+  })
+})
+
 function tap(name: string) {
   fireEvent.click(screen.getByRole("button", { name }))
 }

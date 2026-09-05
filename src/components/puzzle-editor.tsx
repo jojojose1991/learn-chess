@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 import { Board, pieceName, pieceSrc } from "@/components/board"
 import { Button } from "@/components/ui/button"
@@ -24,8 +24,15 @@ type PuzzleEditorProps = {
   puzzle?: PuzzleDraft
   /** The board this Coach teaches on, straight through to `Board`. */
   theme?: BoardTheme
-  /** Writes it, or says why it could not be written. */
-  onSave: (draft: PuzzleDraft) => Promise<{ error?: string }>
+  /**
+   * Writes it and goes where `next` says, or says why it could not be
+   * written. Play writes first: a Puzzle is played at the Position that was
+   * stored, never at unsaved edits the screen still holds.
+   */
+  onSave: (
+    draft: PuzzleDraft,
+    next: "library" | "play"
+  ) => Promise<{ error?: string }>
 }
 
 /**
@@ -61,6 +68,9 @@ export function PuzzleEditor({ puzzle, theme, onSave }: PuzzleEditorProps) {
   const [orientation, setOrientation] = useState<BoardOrientation>("white")
   const [error, setError] = useState<string>()
   const [busy, setBusy] = useState(false)
+  // A ref, not state: the button's own click has to be readable in the submit
+  // that follows it, and a state write is not applied by then.
+  const next = useRef<"library" | "play">("library")
 
   const validity = validatePosition(fen)
   const sideToMove = fen.split(" ")[1] as Color
@@ -70,11 +80,10 @@ export function PuzzleEditor({ puzzle, theme, onSave }: PuzzleEditorProps) {
     setBusy(true)
     setError(undefined)
     try {
-      const refusal = await onSave({
-        name,
-        fen,
-        goal: { kind: "mate_in", n: Number(goalN) },
-      })
+      const refusal = await onSave(
+        { name, fen, goal: { kind: "mate_in", n: Number(goalN) } },
+        next.current
+      )
       setError(refusal.error)
     } catch (failure) {
       // A write that never got an answer at all. Without this the Coach is
@@ -223,9 +232,25 @@ export function PuzzleEditor({ puzzle, theme, onSave }: PuzzleEditorProps) {
         <Button
           type="submit"
           className="min-h-11"
+          // Each button says where it goes, rather than one of them
+          // resetting afterwards: a submit the browser's own `required` check
+          // refuses never reaches `save`, so a Play blocked by an empty name
+          // would otherwise still be pending when Save is pressed next.
+          onClick={() => (next.current = "library")}
           disabled={!validity.ok || busy}
         >
           Save
+        </Button>
+        {/* Refused on the same grounds as Save, because a Position that
+            cannot be played is exactly the one nobody may play. */}
+        <Button
+          type="submit"
+          variant="outline"
+          className="min-h-11"
+          onClick={() => (next.current = "play")}
+          disabled={!validity.ok || busy}
+        >
+          Play
         </Button>
       </div>
 
