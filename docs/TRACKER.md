@@ -30,13 +30,13 @@ status and pointers and never a second copy of a ticket's detail.
 | 22  | `/admin` scrolls sideways at 390px  | ✅ resolved     | —              |
 | 24  | The engine's failures are logged    | ✅ resolved     | —              |
 | 09  | Play a Puzzle, local vs local       | ✅ resolved     | —              |
-| 14  | Scan a clean screenshot             | 🟢 **ready**    | 08 ✅          |
+| 14  | Scan a clean screenshot             | ✅ resolved     | —              |
 | 10  | Solved / Not this time              | 🟢 **ready**    | 09 ✅          |
 | 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
 | 13  | The engine defends, and Hint        | ⬜ ready-for-agent | 10 (12 ✅)    |
-| 15  | The four-corner warp                | ⬜ ready-for-agent | 14            |
+| 15  | The four-corner warp                | 🟢 **ready**    | 14 ✅          |
 | 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15        |
-| 17  | Position rejection detail           | ❓ needs-triage | 14             |
+| 17  | Position rejection detail           | ❓ needs-triage | 14 ✅          |
 | 23  | Engine route hardening              | ❓ needs-triage | 16             |
 
 Build order and the reasoning behind it are `docs/PLAN.md`. It is not the same
@@ -63,7 +63,10 @@ already owed by code that shipped. Do not merge them.
 
 | Owed                                                        | Trigger                                   | Detail in                           |
 | ----------------------------------------------------------- | ----------------------------------------- | ----------------------------------- |
-| A rejected Position may need more than one sentence, and Confirm & Edit now shows that list while a Coach places pieces | 08 reached it; 14 still wants it | Ticket 17 |
+| A rejected Position may need more than one sentence, and Confirm & Edit now shows that list while a Coach places pieces | 15, the first Position from an image we did not compose ourselves | Ticket 17 |
+| Nothing bounds two Scans at once: a 12 MP image peaks near 300 MB against a 1 GiB container already holding Stockfish's 377 MiB | 16, where the container's memory is real, with ticket 23's ceiling on the engine route | 14, `src/lib/scan/service.ts` |
+| The runtime image carries neither the pruned `node_modules` nor the classifier's `.onnx`, so the built server can resolve the model in dev and not in the image | 16 | 14, `Dockerfile` |
+| `onnxruntime-web` is auto-installed as fenshot's peer — 136 MB of wasm ADR-0003 rejected, in every install and every build layer | 16, if the image build time is measured; `packageExtensions` and `peerDependencyRules` were both tried and only repo-wide `autoInstallPeers: false` moves it | 14, `pnpm-lock.yaml` |
 | The real-engine test skips wherever no Stockfish is installed | a suite runs where the binary is (16)   | 12, `tests/lib/engine/service.test.ts` |
 | A failed handshake's kill and the line it now logs are untested, and eight queued searches each wait out the 5 s startup | the startup budget becomes reachable in a test | 12, 24, `src/lib/engine/service.ts` |
 | The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling | a Puzzle Link is live in production (11, 16) | Ticket 23 |
@@ -74,7 +77,6 @@ already owed by code that shipped. Do not merge them.
 | `goal_kind` has no CHECK constraint, and `describeGoal` ignores it | a second Goal kind (`win_material`) | 21, `src/lib/chess/goals.ts`        |
 | A Puzzle Link's own theme — stamped, and what a Student sees — is unproven | 11                         | Ticket 20                           |
 | A board theme write that throws is silent, on screen and in the log | a Coach reports a theme that will not stick | 20, `src/components/app-sidebar.tsx` |
-| `readPlacement` throws on a placement-only FEN, and `withSideToMove` builds a nonsense one from it | 14 | 06, 08, `src/lib/chess/rules.ts` |
 | A Puzzle stored in checkmate or stalemate opens as `open`, so Play shows a Goal over a board that refuses every tap | 10, which owns what the end of an attempt says | 09, `src/lib/chess/goals.ts` |
 | An unplayable FEN throws out of `playReducer` rather than being refused, because `applyMove` builds its `Chess` outside the `try` | 11, where a FEN reaches a URL a person can type | 09, `src/lib/chess/play.ts` |
 | Rewind takes back one ply, which is one of the Student's only while both sides are theirs | 13, where the engine answers every move | 09, `src/lib/chess/play.ts` |
