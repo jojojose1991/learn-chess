@@ -14,6 +14,7 @@ import { PNG } from "pngjs"
 
 import { getCoach } from "@/lib/auth"
 
+import { upright } from "./orientation"
 import { WARP_SIZE, warpToSquare } from "./warp"
 
 import type { BoardCorners, GrayImage } from "@scoriiu/fenshot"
@@ -112,7 +113,14 @@ export async function scan(
   const decoded = decode(image)
   if (typeof decoded === "string") return { ok: false, failure: decoded }
 
-  const gray = rgbaToGray(decoded.data, decoded.width, decoded.height)
+  // Stood up before anything measures it: a phone photograph is landscape
+  // pixels plus a tag saying which way round, the browser has already applied
+  // that tag to the picture the Coach placed handles on, and `jpeg-js` has
+  // not (docs/learnings/board-recognition.md).
+  const gray = upright(
+    rgbaToGray(decoded.data, decoded.width, decoded.height),
+    decoded.exif
+  )
   const read = quad
     ? await fromCorners(gray, quad)
     : await recognizeGray(gray, (corners) => classify(gray, corners))
@@ -177,7 +185,13 @@ async function classify(gray: GrayImage, corners: BoardCorners) {
   return probsToPlacement(answer.probs.data as Float32Array)
 }
 
-type Decoded = { data: Uint8ClampedArray; width: number; height: number }
+type Decoded = {
+  data: Uint8ClampedArray
+  width: number
+  height: number
+  /** The APP1 payload, where the file carried one. PNGs never do. */
+  exif?: Uint8Array
+}
 
 /**
  * The image as pixels, or which way it was not one. The format comes from the
@@ -245,6 +259,9 @@ function decodeJpeg(image: Uint8Array) {
       data: view(decoded.data),
       width: decoded.width,
       height: decoded.height,
+      // Handed back but not declared: `jpeg-js`'s own types stop at the
+      // pixels, and it reads APP1 as an opaque block it never acts on.
+      exif: (decoded as { exifBuffer?: Uint8Array }).exifBuffer,
     }
   } catch {
     return "unreadable"

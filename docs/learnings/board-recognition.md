@@ -362,6 +362,37 @@ on an image that had never been seen before.
 - **Mean confidence is useless as a warning.** It moved 0.955 → 0.903 across
   the same jitter that took the minimum down by more than half.
 
+## A photograph says which way up it is, and only one end listens
+
+Measured 2026-09-05 in this repo's own chromium, on a 40×10 JPEG carrying
+EXIF `Orientation = 6` (a quarter turn clockwise):
+
+| Read by                            | Says      |
+| ---------------------------------- | --------- |
+| `jpeg-js`, server side             | **40×10** |
+| chromium `naturalWidth × Height`   | **10×40** |
+| chromium, drawn                    | 10×40     |
+| chromium with `image-orientation: none`, drawn | 40×10 |
+| chromium with `image-orientation: none`, `naturalWidth` | **still 10×40** |
+
+Three consequences, and the third is a trap.
+
+- **A phone photograph reaches the two ends a quarter turn apart.** Browsers
+  have applied the tag since 2020; `jpeg-js` reads APP1 as an opaque block
+  (`decoder.js:684`) and never acts on it. So corners a Coach places in the
+  browser's frame land outside the server's, every one of them, and the
+  four-corner path answers "those are not the corners of a board" wherever the
+  handles go. `src/lib/scan/orientation.ts` turns the picture server side so
+  both ends see the same one.
+- **`jpeg-js` does hand the tag over**, as `exifBuffer` — undeclared in its
+  `.d.ts`, and offset by one: it is `appData.subarray(5)`, so the second NUL
+  of `Exif\0\0` is still in front of the TIFF header. Measured 23 bytes for a
+  22-byte TIFF.
+- **`image-orientation: none` does not fix this and makes it worse.** It
+  changes what is *drawn* and leaves `naturalWidth` turned, so the picture on
+  screen and the number the corners are scaled by stop agreeing with each
+  other as well as with the server. Do not reach for it.
+
 ## Not done
 
 - **The test scripts lived in a session scratchpad and are gone.** The numbers
