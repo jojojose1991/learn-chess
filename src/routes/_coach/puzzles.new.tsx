@@ -121,11 +121,22 @@ function NewPuzzle() {
         // left: the Coach was refining a Position, and losing it to one
         // crossed-over handle would be a punishment for adjusting.
         if (!corners) setPlacement(null)
-        setRefusal(answer.error ?? UNREADABLE)
         // Only where corners are an answer. A file that is too large or is
         // not an image at all comes back the same size however it is warped,
         // and handles under it would be an invitation to a second 413.
-        setPicking(response.ok || response.status === 422)
+        const offering = response.ok || response.status === 422
+        setPicking(offering)
+        // The screen's own sentence wherever the handles are the answer,
+        // because the server's says what was wrong and not what to try:
+        // `no_board` is what the detector answers about a *photograph*, which
+        // is the case the handles exist for, and "no board was found" leaves
+        // a Coach staring at four of them. The two the server distinguishes
+        // there — nothing found, and found but not trusted — ask for the same
+        // thing, so they say the same thing. Elsewhere it is the server's:
+        // too large or not a picture is worth naming, and offers no handles.
+        setRefusal(
+          offering && !corners ? UNREADABLE : (answer.error ?? UNREADABLE)
+        )
       } else {
         setPlacement(answer.placement)
         // The suggestion, and no further than this control: the placement is
