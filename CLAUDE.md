@@ -264,7 +264,29 @@ loop, and each leaves the three checks passing. When a finding is declined, say
 so in the commit message with the reason; a review overruled silently is a
 review nobody can audit.
 
-**Commit to `main`. Do not create branches.**
+**Commit to `main`. Do not create branches.** This is about work you are doing
+yourself, in one session: it lands on `main` directly, and a branch and a merge
+for every small change is the ceremony being ruled out.
+
+**A worktree has a branch by definition**, and that branch is tracked to
+closure — created, merged, deleted, in one run. That is not the ceremony above;
+it is how parallel agents avoid standing on each other.
+
+- **Worktrees live outside the repo**, one per ticket, at
+  `../learn-chess-start-worktrees/<ticket>`. Inside `.claude/worktrees/` they
+  are part of the project: `pnpm lint` at the root parses every copy's own
+  `eslint.config.js` and goes red on `main` for a reason no source change
+  explains.
+- **Create from the current `main` head**, never from whatever ref a tool
+  leaves lying around —
+  `git worktree add -b <ticket> ../learn-chess-start-worktrees/<ticket> main`.
+  A stale base is not survivable: three agents were once dispatched onto one 14
+  commits behind, and all three runs were thrown away.
+- A fresh worktree has no `node_modules` and no `.env`, and its hooks are
+  unset. Copy `.env` in, then `pnpm install` and `pnpm prepare`.
+- **The merge back is the orchestrator's**, never the agent's: `--no-ff`, with
+  the subject `chore: fold <what> into main`. Then remove the worktree and
+  delete the branch, so the next run cannot start from it.
 
 **Commit messages are short and outcome-focused:**
 
