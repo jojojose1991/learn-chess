@@ -24,3 +24,14 @@ export type ScanRead = {
   /** Which side the board was seen from, or null where the pixels cannot say. */
   seenFrom: SeenFrom | null
 }
+
+/** One corner of the board, in the image's own pixels. */
+export type Corner = { x: number; y: number }
+
+/**
+ * The board's four corners as they appear in the image, clockwise from its top
+ * left. Clockwise is load-bearing and not a convention: the other winding is a
+ * mirror image, which reads as a confident wrong Position no control on the
+ * screen can turn back (ADR-0002).
+ */
+export type Quad = [Corner, Corner, Corner, Corner]
