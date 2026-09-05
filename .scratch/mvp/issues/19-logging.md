@@ -24,18 +24,30 @@ were useful while building do not ship to a Student's phone.
 
 **Blocked by:** nothing.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `src/lib/log.ts` is the only place in `src/` that calls `console`, and lint keeps it that way
-- [ ] `LOG_LEVEL` sets the floor, read at call time and never at module scope; unset means `debug` in dev and `info` in prod
-- [ ] In production a line is one JSON object with a `severity` Cloud Logging recognises; in dev it is plain text a person reads without a parser
-- [ ] A line below the floor calls nothing and builds no message — an argument that is expensive to render is not rendered
-- [ ] The same module works in the browser, where the level comes from the build mode, and pulls no server import into the client bundle
-- [ ] No password, session token, secret or full request body is ever written; a credential-carrying operation logs what failed, not what was sent
-- [ ] `attempt()` logs the error it converts, before returning the admin their message
-- [ ] `withDb` logs when the retry fires, so a Neon resume is visible afterwards
-- [ ] `.env.example` documents `LOG_LEVEL` with what each level means here
-- [ ] `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
+- [x] `src/lib/log.ts` is the only place in `src/` that calls `console`, and lint keeps it that way
+- [x] `LOG_LEVEL` sets the floor, read at call time and never at module scope; unset means `debug` in dev and `info` in prod
+- [x] In production a line is one JSON object with a `severity` Cloud Logging recognises; in dev it is plain text a person reads without a parser
+- [x] A line below the floor calls nothing and builds no message — an argument that is expensive to render is not rendered
+- [x] The same module works in the browser, where the level comes from the build mode, and pulls no server import into the client bundle
+- [x] No password, session token, secret or full request body is ever written; a credential-carrying operation logs what failed, not what was sent
+- [x] `attempt()` logs the error it converts, before returning the admin their message
+- [x] `withDb` logs when the retry fires, so a Neon resume is visible afterwards
+- [x] `.env.example` documents `LOG_LEVEL` with what each level means here
+- [x] `pnpm typecheck`, `pnpm lint` and `pnpm test` pass
+
+## Comments
+
+Shipped in `cfe327b`; this file was never flipped, so the tracker said
+resolved while the ticket said otherwise for two weeks. Audited criterion by
+criterion against `main` on 2026-09-05 before ticking: `no-console` is a real
+eslint block over `src/**` that ignores `log.ts` alone, the floor is read
+per-call inside `write()`, `warn` maps to Cloud Logging's `WARNING`, and the
+thunk is provably not invoked below the floor.
+
+**Owed: the browser branch of `floor()` has no test.** `import.meta.env.PROD`
+needs a jsdom file to exercise it and `tests/lib/log.test.ts` is node-only.
 
 ## Deliberately not here
 

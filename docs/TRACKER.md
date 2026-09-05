@@ -5,39 +5,39 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**16 of 24 resolved. Two tickets are actionable right now: 10 and 14.**
+**17 of 24 resolved. Three tickets are actionable right now: 14, 11 and 13.**
 
 ## Tickets
 
 `ready` means every blocker is resolved. Status strings are the five in
 `docs/agents/triage-labels.md`, read from each ticket's own `Status:` line.
 
-| #   | Ticket                              | Status          | Blocked by     |
-| --- | ----------------------------------- | --------------- | -------------- |
-| 01  | Chess rules core                    | ✅ resolved     | —              |
-| 02  | Illegal-move explanations and Goals | ✅ resolved     | —              |
-| 03  | Schema, first migration, seed Coach | ✅ resolved     | —              |
-| 04  | Invite-only sign-in                 | ✅ resolved     | —              |
-| 05  | Library reads real Puzzles          | ✅ resolved     | —              |
-| 06  | The board renders a Position        | ✅ resolved     | —              |
-| 07  | Tap-tap, Guidance, promotion picker | ✅ resolved     | —              |
-| 18  | Admin: the accounts screen          | ✅ resolved     | —              |
-| 12  | Stockfish over UCI                  | ✅ resolved     | —              |
-| 19  | Logging, dev and prod               | ✅ resolved     | —              |
-| 21  | A Library row says what it is       | ✅ resolved     | —              |
-| 20  | A Coach picks their board theme     | ✅ resolved     | —              |
-| 08  | Confirm & Edit saves a Puzzle       | ✅ resolved     | —              |
-| 22  | `/admin` scrolls sideways at 390px  | ✅ resolved     | —              |
-| 24  | The engine's failures are logged    | ✅ resolved     | —              |
-| 09  | Play a Puzzle, local vs local       | ✅ resolved     | —              |
-| 10  | Solved / Not this time              | ✅ resolved     | —              |
-| 14  | Scan a clean screenshot             | 🟢 **ready**    | 08 ✅          |
-| 11  | Puzzle Links                        | 🟢 **ready**    | 10 ✅          |
-| 13  | The engine defends, and Hint        | 🟢 **ready**    | 10 ✅, 12 ✅   |
-| 15  | The four-corner warp                | ⬜ ready-for-agent | 14            |
-| 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15        |
-| 17  | Position rejection detail           | ❓ needs-triage | 14             |
-| 23  | Engine route hardening              | ❓ needs-triage | 16             |
+| #   | Ticket                              | Status             | Blocked by   |
+| --- | ----------------------------------- | ------------------ | ------------ |
+| 01  | Chess rules core                    | ✅ resolved        | —            |
+| 02  | Illegal-move explanations and Goals | ✅ resolved        | —            |
+| 03  | Schema, first migration, seed Coach | ✅ resolved        | —            |
+| 04  | Invite-only sign-in                 | ✅ resolved        | —            |
+| 05  | Library reads real Puzzles          | ✅ resolved        | —            |
+| 06  | The board renders a Position        | ✅ resolved        | —            |
+| 07  | Tap-tap, Guidance, promotion picker | ✅ resolved        | —            |
+| 18  | Admin: the accounts screen          | ✅ resolved        | —            |
+| 12  | Stockfish over UCI                  | ✅ resolved        | —            |
+| 19  | Logging, dev and prod               | ✅ resolved        | —            |
+| 21  | A Library row says what it is       | ✅ resolved        | —            |
+| 20  | A Coach picks their board theme     | ✅ resolved        | —            |
+| 08  | Confirm & Edit saves a Puzzle       | ✅ resolved        | —            |
+| 22  | `/admin` scrolls sideways at 390px  | ✅ resolved        | —            |
+| 24  | The engine's failures are logged    | ✅ resolved        | —            |
+| 09  | Play a Puzzle, local vs local       | ✅ resolved        | —            |
+| 10  | Solved / Not this time              | ✅ resolved        | —            |
+| 14  | Scan a clean screenshot             | 🟢 **ready**       | 08 ✅        |
+| 11  | Puzzle Links                        | 🟢 **ready**       | 10 ✅        |
+| 13  | The engine defends, and Hint        | 🟢 **ready**       | 10 ✅, 12 ✅ |
+| 15  | The four-corner warp                | ⬜ ready-for-agent | 14           |
+| 16  | Deploy to Cloud Run                 | ⬜ ready-for-agent | 13, 15       |
+| 17  | Position rejection detail           | ❓ needs-triage    | 14           |
+| 23  | Engine route hardening              | ❓ needs-triage    | 16           |
 
 Build order and the reasoning behind it are `docs/PLAN.md`. It is not the same
 as ticket order: 12 and 19 sit off the critical path on purpose, so the engine
@@ -61,44 +61,45 @@ Not the same list as `docs/BACKLOG.md`, which is what design chose not to build
 at all. A backlog entry is a feature someone might pick up; these are debts
 already owed by code that shipped. Do not merge them.
 
-| Owed                                                        | Trigger                                   | Detail in                           |
-| ----------------------------------------------------------- | ----------------------------------------- | ----------------------------------- |
-| A rejected Position may need more than one sentence, and Confirm & Edit now shows that list while a Coach places pieces | 08 reached it; 14 still wants it | Ticket 17 |
-| The real-engine test skips wherever no Stockfish is installed | a suite runs where the binary is (16)   | 12, `tests/lib/engine/service.test.ts` |
-| A failed handshake's kill and the line it now logs are untested, and eight queued searches each wait out the 5 s startup | the startup budget becomes reachable in a test | 12, 24, `src/lib/engine/service.ts` |
-| The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling | a Puzzle Link is live in production (11, 16) | Ticket 23 |
-| No `ucinewgame`, so one engine's table carries between Positions | a Puzzle's defence must be reproducible | 12                                  |
-| The image has no `CMD`: `vite build` emits a handler, not a server | 16                                      | 12, `Dockerfile`                    |
-| The Stockfish URL and its checksum are pinned by hand         | Stockfish 19, or a CVE in 18              | 12, `Dockerfile`                    |
-| The Library route pulls a 35 kB chess.js chunk for two words | the Library's weight is measured (16)     | 21, `src/lib/chess/goals.ts`        |
-| `goal_kind` has no CHECK constraint, and `describeGoal` ignores it | a second Goal kind (`win_material`) | 21, `src/lib/chess/goals.ts`        |
-| A Puzzle Link's own theme — stamped, and what a Student sees — is unproven | 11                         | Ticket 20                           |
-| A board theme write that throws is silent, on screen and in the log | a Coach reports a theme that will not stick | 20, `src/components/app-sidebar.tsx` |
-| `readPlacement` throws on a placement-only FEN, and `withSideToMove` builds a nonsense one from it | 14 | 06, 08, `src/lib/chess/rules.ts` |
-| "Try again" on a Puzzle stored in checkmate resets to the same dead Position, so the banner comes straight back | a Coach reports a Puzzle that cannot be started | 10, `src/components/play-puzzle.tsx` |
-| A board whose attempt has closed still picks pieces up and marks their squares, and swallows the tap in silence | a Student is seen tapping at a finished board | 10, `src/components/play-puzzle.tsx` |
-| An unplayable FEN now throws out of `startPlay`, on the Play route's first render rather than on the first tap, and an invalid one that parses is pronounced stalemate | 11, where a FEN reaches a URL a person can type | 09, 10, `src/lib/chess/goals.ts` |
-| Rewind takes back one ply, which is one of the Student's only while both sides are theirs | 13, where the engine answers every move | 09, `src/lib/chess/play.ts` |
-| Play writes the Puzzle before opening it, so playing one a Coach has not changed still touches `updated_at` | a Library ordered by when a Puzzle last changed | 09, `src/components/puzzle-editor.tsx` |
-| Save is `disabled` while the Position is illegal, so it is unfocusable and a screen reader never meets the reasons that explain it | a Coach who reads the screen rather than sees it | 08, `src/components/puzzle-editor.tsx` |
-| A hand-placed Position never carries castling rights, so neither side can castle in it | a Puzzle whose solution castles, or whose defender should be able to castle out of the mate net | 08, `src/lib/chess/rules.ts` |
-| `/admin/set-role` and `/admin/update-user` are refused at the route | promote and demote get a screen   | 18                                  |
-| `create-user` still accepts a `role` in its body             | a role that grants what an admin cannot   | 18                                  |
-| `shadcn`'s `field` is not installed; `Label` + `Input` do     | a form needs more than a stacked label    | 04                                  |
-| `withDb`'s retry could apply a write twice                   | a duplicate actually shows up             | `src/db/index.ts`                   |
-| Sign-in needs JavaScript                                     | a Coach on a slow connection complains    | `src/routes/sign-in.tsx`            |
-| The sidebar's collapse lasts only until reload               | a Coach asks for it                       | `src/routes/_coach.tsx`             |
-| `pnpm seed` replaces `user.role` instead of merging into it   | a second role carries product meaning     | `scripts/seed-admin.ts`             |
-| `board_theme` has no CHECK constraint                        | a writer other than our own code          | 06, `src/db/schema.ts`              |
-| `drizzle.config.ts` reads env at module scope                | a fix that is not worse than the problem  | 03                                  |
-| `public/pieces/LICENSE` has no extension, so `/credits` downloads it | revisiting ADR-0004               | 06                                  |
-| Nothing encodes castling as king-takes-rook (e1→h1)          | still nothing does: a tap on your own piece reselects it | 02, `src/components/move-board.tsx` |
-| A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
-| Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
-| The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |
-| `public/favicon.svg` keeps its own copy of the checker path   | the mark's shape changes                  | `src/assets/checker-mark.svg`       |
-| `src/assets/*.svg` is outside prettier, eslint and typecheck  | a second asset                            | `package.json`                      |
-| The checker mark is under 3:1 and leans on the words beside it | the sidebar goes `collapsible="icon"`   | ADR-0005, `src/components/checker-mark.tsx` |
+| Owed                                                                                                                                                                   | Trigger                                                                                         | Detail in                                   |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| A rejected Position may need more than one sentence, and Confirm & Edit now shows that list while a Coach places pieces                                                | 08 reached it; 14 still wants it                                                                | Ticket 17                                   |
+| The real-engine test skips wherever no Stockfish is installed                                                                                                          | a suite runs where the binary is (16)                                                           | 12, `tests/lib/engine/service.test.ts`      |
+| A failed handshake's kill and the line it now logs are untested, and eight queued searches each wait out the 5 s startup                                               | the startup budget becomes reachable in a test                                                  | 12, 24, `src/lib/engine/service.ts`         |
+| The browser branch of `log`'s floor is untested: `import.meta.env.PROD` needs a jsdom file, and the log tests are node-only                                            | 16, where the prod build is what ships                                                          | 19, `src/lib/log.ts`                        |
+| The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling                                                                                | a Puzzle Link is live in production (11, 16)                                                    | Ticket 23                                   |
+| No `ucinewgame`, so one engine's table carries between Positions                                                                                                       | a Puzzle's defence must be reproducible                                                         | 12                                          |
+| The image has no `CMD`: `vite build` emits a handler, not a server                                                                                                     | 16                                                                                              | 12, `Dockerfile`                            |
+| The Stockfish URL and its checksum are pinned by hand                                                                                                                  | Stockfish 19, or a CVE in 18                                                                    | 12, `Dockerfile`                            |
+| The Library route pulls a 35 kB chess.js chunk for two words                                                                                                           | the Library's weight is measured (16)                                                           | 21, `src/lib/chess/goals.ts`                |
+| `goal_kind` has no CHECK constraint, and `describeGoal` ignores it                                                                                                     | a second Goal kind (`win_material`)                                                             | 21, `src/lib/chess/goals.ts`                |
+| A Puzzle Link's own theme — stamped, and what a Student sees — is unproven                                                                                             | 11                                                                                              | Ticket 20                                   |
+| A board theme write that throws is silent, on screen and in the log                                                                                                    | a Coach reports a theme that will not stick                                                     | 20, `src/components/app-sidebar.tsx`        |
+| `readPlacement` throws on a placement-only FEN, and `withSideToMove` builds a nonsense one from it                                                                     | 14                                                                                              | 06, 08, `src/lib/chess/rules.ts`            |
+| "Try again" on a Puzzle stored in checkmate resets to the same dead Position, so the banner comes straight back                                                        | a Coach reports a Puzzle that cannot be started                                                 | 10, `src/components/play-puzzle.tsx`        |
+| A board whose attempt has closed still picks pieces up and marks their squares, and swallows the tap in silence                                                        | a Student is seen tapping at a finished board                                                   | 10, `src/components/play-puzzle.tsx`        |
+| An unplayable FEN now throws out of `startPlay`, on the Play route's first render rather than on the first tap, and an invalid one that parses is pronounced stalemate | 11, where a FEN reaches a URL a person can type                                                 | 09, 10, `src/lib/chess/goals.ts`            |
+| Rewind takes back one ply, which is one of the Student's only while both sides are theirs                                                                              | 13, where the engine answers every move                                                         | 09, `src/lib/chess/play.ts`                 |
+| Play writes the Puzzle before opening it, so playing one a Coach has not changed still touches `updated_at`                                                            | a Library ordered by when a Puzzle last changed                                                 | 09, `src/components/puzzle-editor.tsx`      |
+| Save is `disabled` while the Position is illegal, so it is unfocusable and a screen reader never meets the reasons that explain it                                     | a Coach who reads the screen rather than sees it                                                | 08, `src/components/puzzle-editor.tsx`      |
+| A hand-placed Position never carries castling rights, so neither side can castle in it                                                                                 | a Puzzle whose solution castles, or whose defender should be able to castle out of the mate net | 08, `src/lib/chess/rules.ts`                |
+| `/admin/set-role` and `/admin/update-user` are refused at the route                                                                                                    | promote and demote get a screen                                                                 | 18                                          |
+| `create-user` still accepts a `role` in its body                                                                                                                       | a role that grants what an admin cannot                                                         | 18                                          |
+| `shadcn`'s `field` is not installed; `Label` + `Input` do                                                                                                              | a form needs more than a stacked label                                                          | 04                                          |
+| `withDb`'s retry could apply a write twice                                                                                                                             | a duplicate actually shows up                                                                   | `src/db/index.ts`                           |
+| Sign-in needs JavaScript                                                                                                                                               | a Coach on a slow connection complains                                                          | `src/routes/sign-in.tsx`                    |
+| The sidebar's collapse lasts only until reload                                                                                                                         | a Coach asks for it                                                                             | `src/routes/_coach.tsx`                     |
+| `pnpm seed` replaces `user.role` instead of merging into it                                                                                                            | a second role carries product meaning                                                           | `scripts/seed-admin.ts`                     |
+| `board_theme` has no CHECK constraint                                                                                                                                  | a writer other than our own code                                                                | 06, `src/db/schema.ts`                      |
+| `drizzle.config.ts` reads env at module scope                                                                                                                          | a fix that is not worse than the problem                                                        | 03                                          |
+| `public/pieces/LICENSE` has no extension, so `/credits` downloads it                                                                                                   | revisiting ADR-0004                                                                             | 06                                          |
+| Nothing encodes castling as king-takes-rook (e1→h1)                                                                                                                    | still nothing does: a tap on your own piece reselects it                                        | 02, `src/components/move-board.tsx`         |
+| A promotion with no piece chosen shares the generic reason                                                                                                             | something needing the two told apart                                                            | 01                                          |
+| Nothing holds the auto-dark opt-out; CDP emulation cannot observe it                                                                                                   | a headless browser that can                                                                     | `docs/learnings/frontend-stack.md`          |
+| The twelve piece sprites are URL-referenced, never imported                                                                                                            | a piece needs recolouring per theme                                                             | ADR-0004, `src/components/board.tsx`        |
+| `public/favicon.svg` keeps its own copy of the checker path                                                                                                            | the mark's shape changes                                                                        | `src/assets/checker-mark.svg`               |
+| `src/assets/*.svg` is outside prettier, eslint and typecheck                                                                                                           | a second asset                                                                                  | `package.json`                              |
+| The checker mark is under 3:1 and leans on the words beside it                                                                                                         | the sidebar goes `collapsible="icon"`                                                           | ADR-0005, `src/components/checker-mark.tsx` |
 
 `grep -rn "ponytail:" src scripts` is the code half of this list.
 
