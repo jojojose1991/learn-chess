@@ -11,8 +11,9 @@ export type Ply = PlayedMove & { from: Square; to: Square }
 /**
  * A Puzzle being played. `start` is the Puzzle's own Position, which is what
  * makes Reset a move of the game rather than something the screen re-derives.
- * `refusal` is the last illegal attempt's reason — feedback, not history, so
- * it never joins `moves` and never outlives the next thing that happens.
+ * `refusal` is the last illegal attempt's reason and `engineFailure` the last
+ * thing the engine could not do — both feedback, not history, so neither joins
+ * `moves` and neither outlives the next thing that happens.
  */
 export type PlayState = {
   start: string
@@ -21,10 +22,30 @@ export type PlayState = {
   goal: Goal
   status: GoalOutcome
   refusal: string | null
+  engineFailure: string | null
 }
 
 export type PlayAction =
   | { type: "move"; from: Square; to: Square; promotion?: PromotionPiece }
+  /**
+   * The defender's answer, and the Position it was asked about — which is what
+   * lets a reply to a Position the Student has since left be dropped rather
+   * than played somewhere it was never meant for.
+   */
+  | {
+      type: "engine_move"
+      fen: string
+      from: Square
+      to: Square
+      promotion?: PromotionPiece
+    }
+  /**
+   * The engine did not answer about that Position — which the Position is
+   * part of for the same reason a reply carries one: a timeout for a
+   * Position the game has left would unlock the board mid-think and blame a
+   * request that is still running.
+   */
+  | { type: "engine_failed"; fen: string; reason: string }
   | { type: "rewind" }
   | { type: "reset" }
 
@@ -37,13 +58,29 @@ export function startPlay(puzzle: { fen: string; goal: Goal }): PlayState {
     goal: puzzle.goal,
     status: evaluateGoal(puzzle.goal, puzzle.fen, []),
     refusal: null,
+    engineFailure: null,
   }
 }
 
 /**
+ * Whether the loop is waiting on the defending engine, which is what stops the
+ * board taking taps meant for a side that is not the Student's.
+ *
+ * The Student moves first, so the odd-numbered plies are the engine's — the
+ * same parity `evaluateGoal` counts the budget by, and the reason a reply is
+ * free. An engine that has already failed is not thought about any longer: the
+ * board goes back to the person at it, who can play the reply themselves.
+ */
+export const engineThinking = (state: PlayState) =>
+  state.status.status === "open" &&
+  state.moves.length % 2 === 1 &&
+  state.engineFailure === null
+
+/**
  * The game loop: a Position, the moves played from it, and what the Goal makes
- * of them. Both sides are moved by the person at the board, so every ply here
- * is theirs — which is why Rewind takes back one.
+ * of them. The Student moves and the engine answers, so Rewind takes back the
+ * pair — landing on a Position the Student is to move in, whether or not the
+ * answer arrived.
  *
  * A legal but losing move is played like any other. Nothing interrupts it:
  * saying it was wrong needs an analysis engine, and it robs the Student of
@@ -57,32 +94,67 @@ export function playReducer(state: PlayState, action: PlayAction): PlayState {
       // stored in checkmate answers every tap with "That would leave your king
       // in danger", which is a reason for a move nobody is still allowed.
       if (state.status.status !== "open") return state
+      // The engine's turn is not the Student's to take, and the board is
+      // locked while it thinks — this is the same rule where the loop keeps it.
+      if (engineThinking(state)) return state
 
-      const played = applyMove(
-        state.fen,
-        action.from,
-        action.to,
-        action.promotion
-      )
-      if (!played.ok) {
-        // `applyMove`'s own reason is coordinates; a Student gets the sentence.
-        return {
+      return (
+        advanced(state, action) ?? {
+          // `applyMove`'s own reason is coordinates; a Student gets a sentence.
           ...state,
           refusal: explainIllegal(state.fen, action.from, action.to),
         }
-      }
-      return atMoves(state, [
-        ...state.moves,
-        { fen: played.fen, san: played.san, from: action.from, to: action.to },
-      ])
+      )
     }
+    case "engine_move": {
+      // Not waiting for one, or waiting for one about a Position that has
+      // since been rewound or reset: a late reply belongs to a game that has
+      // moved on, and playing it here would answer the wrong board.
+      if (!engineThinking(state) || state.fen !== action.fen) return state
+
+      // Legality is the client's to say (ADR-0003), so this is where a corrupt
+      // reply stops — and it stops as the engine failing, which hands the
+      // board back rather than leaving it waiting on a move that never comes.
+      return (
+        advanced(state, action) ?? {
+          ...state,
+          engineFailure: "The engine sent a move that cannot be played.",
+        }
+      )
+    }
+    case "engine_failed":
+      if (state.fen !== action.fen) return state
+      return { ...state, engineFailure: action.reason }
     case "rewind":
-      // `slice` on an empty list is an empty list, so a Puzzle nobody has
-      // played rewinds to itself rather than past its own start.
-      return atMoves(state, state.moves.slice(0, -1))
+      // Back to the Student's own last turn: their move and the engine's
+      // answer to it go together, because taking back one would hand them a
+      // Position that is the engine's to move. An unanswered move is one ply,
+      // an answered one is two — and `slice` past the front of a short list is
+      // an empty list, so a Puzzle nobody has played rewinds to itself.
+      return atMoves(
+        state,
+        state.moves.slice(0, state.moves.length % 2 ? -1 : -2)
+      )
     case "reset":
       return atMoves(state, [])
   }
+}
+
+/**
+ * The Puzzle with that move played onto the line, or `null` if it cannot be
+ * played at all. Whose move it was is the caller's to say, and so is what a
+ * refusal means — that is the only difference between the two that call this.
+ */
+function advanced(
+  state: PlayState,
+  move: { from: Square; to: Square; promotion?: PromotionPiece }
+): PlayState | null {
+  const played = applyMove(state.fen, move.from, move.to, move.promotion)
+  if (!played.ok) return null
+  return atMoves(state, [
+    ...state.moves,
+    { fen: played.fen, san: played.san, from: move.from, to: move.to },
+  ])
 }
 
 /**
@@ -96,5 +168,6 @@ function atMoves(state: PlayState, moves: Array<Ply>): PlayState {
     moves,
     status: evaluateGoal(state.goal, state.start, moves),
     refusal: null,
+    engineFailure: null,
   }
 }

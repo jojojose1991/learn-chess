@@ -64,16 +64,19 @@ describe("the Play screen", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
-  it("keeps the line played in notation, and Rewind and Reset are the same line's", () => {
+  // Rewind and Reset differ only past the Student's first move, which needs
+  // the engine's reply on the board — held in `tests/lib/chess/play.test.ts`
+  // until the screen can reach two plies.
+  it("keeps the line played in notation, and puts it back to the Puzzle's start", () => {
     render(<PlayPuzzle puzzle={TWO_MOVES} />)
 
     play("g1, white queen", "g8, empty")
-    play("h8, black king", "g8, white queen")
-    expect(moves()).toEqual(["Qg8+", "Kxg8"])
-
-    fireEvent.click(screen.getByRole("button", { name: "Rewind" }))
     expect(moves()).toEqual(["Qg8+"])
 
+    fireEvent.click(screen.getByRole("button", { name: "Rewind" }))
+    expect(moves()).toEqual([])
+
+    play("g1, white queen", "g8, empty")
     fireEvent.click(screen.getByRole("button", { name: "Reset" }))
     expect(moves()).toEqual([])
     expect(screen.getByText("White to move")).toBeVisible()

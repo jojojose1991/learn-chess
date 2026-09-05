@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { playReducer, startPlay } from "@/lib/chess/play"
+import { engineThinking, playReducer, startPlay } from "@/lib/chess/play"
 
 import type { Square } from "chess.js"
 import type { PlayAction, PlayState } from "@/lib/chess/play"
@@ -18,6 +18,9 @@ const PROMOTING = "4k3/P7/8/8/8/8/8/4K3 w - - 0 1"
  */
 const FOOLS = "rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1"
 
+/** White to move, with Black's pawn one square from queening on the reply. */
+const DEFENDER_PROMOTES = "4k3/8/8/8/8/8/p7/4K2R w K - 0 1"
+
 const opened = (fen: string, n = 1) =>
   startPlay({ fen, goal: { kind: "mate_in", n } })
 
@@ -33,6 +36,29 @@ const move = (
 ): PlayAction => ({ type: "move", from, to, promotion })
 
 const sans = (state: PlayState) => state.moves.map((played) => played.san)
+
+/** The Puzzle after the engine answers, from wherever the Position stands. */
+const answered = (
+  state: PlayState,
+  from: Square,
+  to: Square,
+  promotion?: PromotionPiece
+) =>
+  playReducer(state, {
+    type: "engine_move",
+    fen: state.fen,
+    from,
+    to,
+    promotion,
+  })
+
+/** The Puzzle after the engine failed to answer about where it stands. */
+const wentQuiet = (state: PlayState) =>
+  playReducer(state, {
+    type: "engine_failed",
+    fen: state.fen,
+    reason: "The engine is not answering.",
+  })
 
 describe("starting a Puzzle", () => {
   it("opens at the Position the Puzzle was stored with, nothing played", () => {
@@ -93,32 +119,9 @@ describe("playing a move", () => {
 
     expect(state.moves.at(-1)).toMatchObject({ from: "g1", to: "g7" })
   })
-
-  it("counts only the Student's own moves against the budget, however the mate is reached", () => {
-    const state = run(
-      opened(FOOLS, 2),
-      move("e7", "e5"),
-      move("g2", "g4"),
-      move("d8", "h4")
-    )
-
-    expect(sans(state)).toEqual(["e5", "g4", "Qh4#"])
-    expect(state.status).toEqual({ status: "solved" })
-  })
 })
 
 describe("Rewind and Reset", () => {
-  it("takes back the last move played, because in local play every move is the Student's", () => {
-    const state = run(opened(FOOLS, 2), move("e7", "e5"), move("g2", "g4"), {
-      type: "rewind",
-    })
-
-    expect(sans(state)).toEqual(["e5"])
-    expect(state.fen).toBe(
-      "rnbqkbnr/pppp1ppp/8/4p3/8/5P2/PPPPP1PP/RNBQKBNR w KQkq - 0 2"
-    )
-  })
-
   it("rewinds a Puzzle with nothing played to itself, rather than past its start", () => {
     const state = run(opened(MATE_IN_ONE), { type: "rewind" })
 
@@ -139,9 +142,10 @@ describe("Rewind and Reset", () => {
   })
 
   it("returns to the stored Position with an empty move list on Reset", () => {
-    const state = run(opened(FOOLS, 2), move("e7", "e5"), move("g2", "g4"), {
-      type: "reset",
-    })
+    const state = run(
+      answered(run(opened(FOOLS, 2), move("e7", "e5")), "g2", "g4"),
+      { type: "reset" }
+    )
 
     expect(state.fen).toBe(FOOLS)
     expect(state.moves).toEqual([])
@@ -182,9 +186,166 @@ describe("the end of an attempt", () => {
   it("plays nothing more once the budget is spent, so the Puzzle waits to be tried again", () => {
     const spent = run(opened(FOOLS, 1), move("e7", "e5"))
 
-    const after = run(spent, move("g2", "g4"))
+    const after = answered(spent, "g2", "g4")
 
     expect(sans(after)).toEqual(["e5"])
     expect(after.fen).toBe(spent.fen)
+  })
+})
+
+describe("the defending engine", () => {
+  it("appends the engine's reply to the line, so the Student sees what it defended with", () => {
+    const state = answered(run(opened(FOOLS, 2), move("e7", "e5")), "g2", "g4")
+
+    expect(sans(state)).toEqual(["e5", "g4"])
+    expect(state.fen).toBe(
+      "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2"
+    )
+  })
+
+  it("is thinking from the Student's move until the reply lands, and not before or after", () => {
+    const opening = opened(FOOLS, 2)
+    expect(engineThinking(opening)).toBe(false)
+
+    const played = run(opening, move("e7", "e5"))
+    expect(engineThinking(played)).toBe(true)
+
+    expect(engineThinking(answered(played, "g2", "g4"))).toBe(false)
+  })
+
+  it("takes no move from the Student while it is the engine's to make", () => {
+    const waiting = run(opened(FOOLS, 2), move("e7", "e5"))
+
+    const after = run(waiting, move("g2", "g4"))
+
+    expect(sans(after)).toEqual(["e5"])
+    expect(after.refusal).toBeNull()
+  })
+
+  it("solves the Puzzle when the mate lands against the defence, inside the budget", () => {
+    const state = run(
+      answered(run(opened(FOOLS, 2), move("e7", "e5")), "g2", "g4"),
+      move("d8", "h4")
+    )
+
+    expect(sans(state)).toEqual(["e5", "g4", "Qh4#"])
+    expect(state.status).toEqual({ status: "solved" })
+  })
+
+  it("drops a reply to a Position the Puzzle has left, rather than answering the wrong board", () => {
+    const askedAboutE5 = run(opened(FOOLS, 2), move("e7", "e5"))
+    // The Student took that move back and played another; g4 was chosen
+    // against a Position that is no longer on the board, and is still legal
+    // on this one, which is exactly what makes it dangerous.
+    const askedAboutD5 = run(askedAboutE5, { type: "rewind" }, move("d7", "d5"))
+
+    const after = playReducer(askedAboutD5, {
+      type: "engine_move",
+      fen: askedAboutE5.fen,
+      from: "g2",
+      to: "g4",
+    })
+
+    expect(sans(after)).toEqual(["d5"])
+    expect(engineThinking(after)).toBe(true)
+  })
+
+  it("drops a failure about a Position the Puzzle has left, so a live search is not blamed", () => {
+    const askedAboutE5 = run(opened(FOOLS, 2), move("e7", "e5"))
+    const askedAboutD5 = run(askedAboutE5, { type: "rewind" }, move("d7", "d5"))
+
+    // The timeout belongs to the abandoned search; the one about this Position
+    // is still running, and the board must stay waiting on it.
+    const after = playReducer(askedAboutD5, {
+      type: "engine_failed",
+      fen: askedAboutE5.fen,
+      reason: "The engine is not answering.",
+    })
+
+    expect(after.engineFailure).toBeNull()
+    expect(engineThinking(after)).toBe(true)
+  })
+
+  it("plays the piece a promoting defender chose, rather than refusing its reply", () => {
+    const state = answered(
+      run(opened(DEFENDER_PROMOTES, 2), move("h1", "h2")),
+      "a2",
+      "a1",
+      "q"
+    )
+
+    expect(sans(state)).toEqual(["Rh2", "a1=Q+"])
+  })
+
+  it("refuses a reply that is not a legal move, because legality is the client's to say", () => {
+    const waiting = run(opened(FOOLS, 2), move("e7", "e5"))
+
+    const after = answered(waiting, "g2", "g6")
+
+    expect(sans(after)).toEqual(["e5"])
+    expect(after.engineFailure).toBe(
+      "The engine sent a move that cannot be played."
+    )
+  })
+
+  it("hands the board back when the engine goes quiet, rather than waiting on it forever", () => {
+    const waiting = run(opened(FOOLS, 2), move("e7", "e5"))
+
+    const quiet = wentQuiet(waiting)
+
+    expect(quiet.engineFailure).toBe("The engine is not answering.")
+    expect(engineThinking(quiet)).toBe(false)
+    // The Position is not lost, and the reply can be played by hand.
+    expect(quiet.fen).toBe(waiting.fen)
+    expect(sans(run(quiet, move("g2", "g4")))).toEqual(["e5", "g4"])
+  })
+
+  it("forgets the engine's silence once play moves on, because it was feedback and not history", () => {
+    const quiet = wentQuiet(run(opened(FOOLS, 2), move("e7", "e5")))
+
+    for (const action of [
+      move("g2", "g4"),
+      { type: "rewind" },
+      { type: "reset" },
+    ] as Array<PlayAction>) {
+      expect(playReducer(quiet, action).engineFailure).toBeNull()
+    }
+  })
+})
+
+describe("Rewind against a defender", () => {
+  it("takes back the engine's reply with the Student's move, so it is the Student's turn again", () => {
+    const answeredOnce = answered(
+      run(opened(FOOLS, 2), move("e7", "e5")),
+      "g2",
+      "g4"
+    )
+
+    const state = run(answeredOnce, { type: "rewind" })
+
+    expect(sans(state)).toEqual([])
+    expect(state.fen).toBe(FOOLS)
+  })
+
+  it("takes back only the Student's move when the engine has not answered yet", () => {
+    const waiting = run(opened(FOOLS, 2), move("e7", "e5"))
+
+    const state = run(waiting, { type: "rewind" })
+
+    expect(sans(state)).toEqual([])
+    expect(state.fen).toBe(FOOLS)
+  })
+
+  it("leaves the Student to move whatever it takes back, so Rewind is never a pass", () => {
+    const deep = run(
+      answered(run(opened(FOOLS, 4), move("e7", "e5")), "g2", "g4"),
+      move("d7", "d5")
+    )
+    expect(sans(deep)).toEqual(["e5", "g4", "d5"])
+
+    const state = run(deep, { type: "rewind" })
+
+    expect(sans(state)).toEqual(["e5", "g4"])
+    expect(engineThinking(state)).toBe(false)
   })
 })
