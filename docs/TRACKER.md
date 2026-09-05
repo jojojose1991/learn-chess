@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**18 of 24 resolved. Three tickets are actionable right now: 11, 13 and 15.**
+**21 of 24 resolved. One ticket is actionable right now: 16.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -20,32 +20,32 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 
 <!-- tracker:tickets -->
 
-| #   | Ticket                                                       | Status             | Blocked by   |
-| --- | ------------------------------------------------------------ | ------------------ | ------------ |
-| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved        | —            |
-| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved        | —            |
-| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved        | —            |
-| 04  | Invite-only sign-in                                          | ✅ resolved        | —            |
-| 05  | Library reads real Puzzles                                   | ✅ resolved        | —            |
-| 06  | The board renders a Position                                 | ✅ resolved        | —            |
-| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved        | —            |
-| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved        | —            |
-| 09  | Play a Puzzle, local versus local                            | ✅ resolved        | —            |
-| 10  | Solved / Not this time                                       | ✅ resolved        | —            |
-| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved        | —            |
-| 14  | Scan a clean screenshot                                      | ✅ resolved        | —            |
-| 18  | Admin: the accounts screen                                   | ✅ resolved        | —            |
-| 19  | Logging, in development and in production                    | ✅ resolved        | —            |
-| 20  | A Coach picks their board theme                              | ✅ resolved        | —            |
-| 21  | A Library row says what the Puzzle is                        | ✅ resolved        | —            |
-| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved        | —            |
-| 24  | The engine's failures are visible somewhere                  | ✅ resolved        | —            |
-| 11  | Puzzle Links                                                 | 🟢 **ready**       | 10 ✅        |
-| 13  | The engine defends, and Hint                                 | 🟢 **ready**       | 10 ✅, 12 ✅ |
-| 15  | The four-corner warp on the unreliable path                  | 🟢 **ready**       | 14 ✅        |
-| 16  | Deploy to Cloud Run                                          | ⬜ ready-for-agent | 13, 15       |
-| 17  | Does a rejected Position need to say more than one sentence? | ❓ needs-triage    | 14 ✅        |
-| 23  | What stops a stranger holding the engine open?               | ❓ needs-triage    | 16           |
+| #   | Ticket                                                       | Status          | Blocked by   |
+| --- | ------------------------------------------------------------ | --------------- | ------------ |
+| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved     | —            |
+| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved     | —            |
+| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved     | —            |
+| 04  | Invite-only sign-in                                          | ✅ resolved     | —            |
+| 05  | Library reads real Puzzles                                   | ✅ resolved     | —            |
+| 06  | The board renders a Position                                 | ✅ resolved     | —            |
+| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved     | —            |
+| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved     | —            |
+| 09  | Play a Puzzle, local versus local                            | ✅ resolved     | —            |
+| 10  | Solved / Not this time                                       | ✅ resolved     | —            |
+| 11  | Puzzle Links                                                 | ✅ resolved     | —            |
+| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved     | —            |
+| 13  | The engine defends, and Hint                                 | ✅ resolved     | —            |
+| 14  | Scan a clean screenshot                                      | ✅ resolved     | —            |
+| 15  | The four-corner warp on the unreliable path                  | ✅ resolved     | —            |
+| 18  | Admin: the accounts screen                                   | ✅ resolved     | —            |
+| 19  | Logging, in development and in production                    | ✅ resolved     | —            |
+| 20  | A Coach picks their board theme                              | ✅ resolved     | —            |
+| 21  | A Library row says what the Puzzle is                        | ✅ resolved     | —            |
+| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved     | —            |
+| 24  | The engine's failures are visible somewhere                  | ✅ resolved     | —            |
+| 16  | Deploy to Cloud Run                                          | 🟢 **ready**    | 13 ✅, 15 ✅ |
+| 17  | Does a rejected Position need to say more than one sentence? | ❓ needs-triage | 14 ✅        |
+| 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16           |
 
 <!-- /tracker:tickets -->
 
