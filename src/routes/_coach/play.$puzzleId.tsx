@@ -24,7 +24,7 @@ function Play() {
     // beside the board. `p-4` before `sm`: at 390px, `p-6` leaves each square
     // 42.75px, under the 44px a five-year-old's finger needs (docs/PLAN.md).
     <main className="mx-auto flex max-w-5xl flex-col gap-6 p-4 sm:p-6">
-      <h1 className="text-2xl">{puzzle.name}</h1>
+      <h1 className="text-2xl break-words">{puzzle.name}</h1>
 
       <PlayPuzzle
         // Keyed by id so opening another Puzzle starts from its own Position

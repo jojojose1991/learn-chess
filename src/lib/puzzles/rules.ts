@@ -25,3 +25,14 @@ export const GOAL_N_MAX = 10
 
 /** Long enough for a name, short enough to stay one line of the Library. */
 export const NAME_MAX = 100
+
+/**
+ * A Puzzle id is a uuid, and postgres raises on a uuid column compared
+ * against anything else — so every service checks the shape before handing
+ * one over, or a mistyped URL is a 500 where it has to be a refusal.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export function isPuzzleId(value: string): boolean {
+  return UUID.test(value)
+}

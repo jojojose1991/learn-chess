@@ -6,7 +6,7 @@ import {
 } from "@/db/repositories/puzzles"
 import { getCoach } from "@/lib/auth"
 import { validatePosition } from "@/lib/chess/rules"
-import { GOAL_N_MAX, GOAL_N_MIN, NAME_MAX } from "./rules"
+import { GOAL_N_MAX, GOAL_N_MIN, NAME_MAX, isPuzzleId } from "./rules"
 
 import type { PuzzleDraft } from "./rules"
 
@@ -17,12 +17,6 @@ type LibraryPuzzle = { id: string; name: string; goal: Goal }
 
 /** One Puzzle as Confirm & Edit reopens it: a draft that is already written. */
 export type EditablePuzzle = PuzzleDraft & { id: string }
-
-/**
- * A Puzzle id is a uuid, and postgres raises on anything else — so a mistyped
- * URL would be a 500 where it has to be a 404.
- */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * Why this draft cannot be saved, in a sentence for the Coach, or null.
@@ -98,7 +92,7 @@ export async function readPuzzle(
   headers: Headers
 ): Promise<EditablePuzzle | null> {
   const coach = await getCoach(headers)
-  if (!coach || !UUID.test(puzzleId)) return null
+  if (!coach || !isPuzzleId(puzzleId)) return null
 
   // `.at`, not destructuring: the tuple type says a row is always there and
   // an empty result is exactly the case this has to answer null to.
@@ -139,7 +133,7 @@ export async function savePuzzle(
     return { id: written.id }
   }
 
-  if (!UUID.test(draft.id)) return { error: "That puzzle no longer exists." }
+  if (!isPuzzleId(draft.id)) return { error: "That puzzle no longer exists." }
   const written = (await updatePuzzleByCoach(draft.id, coach.id, fields)).at(0)
   // No row matched: someone else's Puzzle, or one that has gone. Either way
   // nothing was written, and saying so beats a Save that quietly did nothing.

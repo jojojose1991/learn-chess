@@ -120,7 +120,14 @@ highlights the piece that should move and never the move itself.
    which ends every session that Coach had; revoking and restoring. Nothing is
    ever deleted. A Coach who is not the Admin gets a 404, not a hidden link.
 
-A Puzzle Link lands straight on **Play** — no sign-in, no library, no navigation.
+A Puzzle Link lands straight on **Play** — no sign-in, no library, no
+navigation. Its URL is `/p/<slug>`, eight characters drawn from an alphabet
+with no `1`, `i`, `l` or `o` in it, and the route lives outside the
+auth-guarded layout, which is what makes it sessionless. One open link per
+Puzzle: minting again hands back the one that exists, and revoking ends every
+link to that Puzzle at once. A Coach's later edits reach the Student, because
+the slug resolves the Puzzle by id; only the board theme is frozen, stamped on
+at minting so a Coach who changes theirs does not repaint a link already sent.
 
 Layout: the board is the hero and always square. The move list sits to its right
 from ~900px up, and collapses to a horizontally-scrolling strip beneath it on
