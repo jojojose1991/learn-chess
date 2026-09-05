@@ -16,6 +16,11 @@ try {
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   server: { port: Number(process.env.PORT) || 3012 },
+  // `@scoriiu/fenshot`'s own relative imports carry no extensions, which a
+  // bundler resolves and Node does not. Left external it is Node that loads
+  // it — in the server build and under Vitest alike — and the first import
+  // throws ERR_MODULE_NOT_FOUND (docs/learnings/testing.md).
+  ssr: { noExternal: ["@scoriiu/fenshot"] },
   plugins: [devtools(), tailwindcss(), tanstackStart(), viteReact()],
   test: {
     // Agents read this output: a passing run costs a summary, and console

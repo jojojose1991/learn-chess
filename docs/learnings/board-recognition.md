@@ -26,10 +26,10 @@ modality-equivalence domain but reports no image→FEN transcription metric.
 Measured on **ChessReD** (10,800 real smartphone photos,
 [dataset](https://data.4tu.nl/datasets/99b5c721-280b-450b-b058-b2900b69a90f)):
 
-| System | Whole-board accuracy |
-|---|---|
+| System                                                                                                                                      | Whole-board accuracy                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | End-to-End Chess Recognition, ResNeXt-101 32×8d, 88.8M params ([arXiv 2310.04086](https://arxiv.org/html/2310.04086v1), VISAPP 2024) — SOTA | **15.26%** (3.40 mean wrong squares) |
-| chesscog pipeline ([arXiv 2104.14963](https://arxiv.org/pdf/2104.14963)) | **2.30%** (42.87 mean wrong squares) |
+| chesscog pipeline ([arXiv 2104.14963](https://arxiv.org/pdf/2104.14963))                                                                    | **2.30%** (42.87 mean wrong squares) |
 
 chesscog scores 93.86% on its own synthetic Blender set — a **40× in/out-of-domain
 gap**. CVChess ([arXiv 2511.11522](https://arxiv.org/pdf/2511.11522), Nov 2025)
@@ -68,7 +68,12 @@ exists.
 
 ```ts
 // packages/fenshot/src/detect.ts:26
-export interface BoardCorners { x0: number; y0: number; x1: number; y1: number }
+export interface BoardCorners {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+}
 ```
 
 `extractBoardImage` (`tiles.ts:26`) is a bilinear **crop and independent x/y
@@ -89,8 +94,8 @@ Two consequences:
   prediction, and a rotated line smears its peak across `width · sin θ` rows. On
   a 1000 px board, ~0.3° already spreads the peak over 5 px. There is no deskew
   and no rotation search; `snapCorners` only translates (±tile/3, whole pixels).
-  The README says so outright: *"The board must be roughly axis-aligned
-  (screenshots are; photos of physical boards at an angle are not this tool)."*
+  The README says so outright: _"The board must be roughly axis-aligned
+  (screenshots are; photos of physical boards at an angle are not this tool)."_
 - **Body text is a competing signal.** Because rows and columns are summed
   globally, evenly spaced text lines produce exactly the periodic peaks
   `getAllSequences` hunts for. Nothing localises the search to a region first.
@@ -117,8 +122,15 @@ two-colour boards in random colour pairs (generalising to any site's flat theme)
 
 ```ts
 // generate-corpus.ts:71 — "Book/print diagram board: white squares, diagonally hatched dark squares."
-const PRINT_SETS = ["lichess-alpha", "lichess-cburnett", "lichess-merida",
-  "lichess-leipzig", "lichess-chess7", "lichess-companion", "lichess-fantasy"]
+const PRINT_SETS = [
+  "lichess-alpha",
+  "lichess-cburnett",
+  "lichess-merida",
+  "lichess-leipzig",
+  "lichess-chess7",
+  "lichess-companion",
+  "lichess-fantasy",
+]
 ```
 
 Merida, Leipzig, Alpha and Chess7 are the diagram fonts used by Chess Informant,
@@ -128,7 +140,7 @@ force a print set. chess.com's `newspaper`, `book` and `letter` sets are also
 present.
 
 So **book and newspaper piece art is in-distribution.** What is out of
-distribution is a *photograph* of it: perspective, paper grain, show-through,
+distribution is a _photograph_ of it: perspective, paper grain, show-through,
 shadow gradient, glare, and halftone at odd sampling ratios. The corpus applies
 JPEG q35–95, blur σ 0.3–0.8, resize round-trips and corner jitter of only ±3 px —
 no halftone, no paper grain, no warp.
@@ -177,13 +189,25 @@ detect multiple boards in one image, #3 scan algebraic notation from book PDFs.
 
 **Its `dist/` does not load in plain Node ESM.** Relative imports are
 extensionless (`from "./recognize"`), which bundlers resolve and Node does not —
-`import "@scoriiu/fenshot"` throws `ERR_MODULE_NOT_FOUND`. One-line fix for a
-Node harness: `sed -i '' -E 's#(from ")(\./[a-z]+)(")#\1\2.js\3#g' dist/*.js`.
-Never surfaces under Vite.
+`import "@scoriiu/fenshot"` throws `ERR_MODULE_NOT_FOUND`.
+
+**It surfaces under Vite too, which an earlier note here denied.** Vite
+externalises `node_modules` on the SSR side, so it is Node that loads the
+package in a Vitest run and in the server build alike, and the first import
+throws. The fix is one line in `vite.config.ts` and not a `sed` over the
+installed package:
+
+```ts
+ssr: {
+  noExternal: ["@scoriiu/fenshot"]
+}
+```
 
 The `onnxruntime-web` peer dependency is irrelevant on the low-level path —
 `recognizeGray` takes an injected classifier, so `onnxruntime-node` works
-directly against the shipped model.
+directly against the shipped model. pnpm installs it anyway, because
+auto-installed peers are the default: 136 MB of wasm on disk that nothing
+imports and no bundle carries.
 
 ## Measured experiment, 2026-09-02
 
@@ -198,12 +222,12 @@ Ground truth was read independently and agreed on all 256 squares.
 
 ### Full pipeline (detector + CNN)
 
-| | Detector box | Correct? | Placement | After `resolveOrientation` | `reliable` | mean | min |
-|---|---|---|---|---|---|---|---|
-| 1 (1080×1095) | `0,12 → 1079,1091` | **exact** | 38/64 | **64/64** | true | 0.957 | 0.916 |
-| 2 (1080×1131) | `64,137 → 1008,1082` | **exact** | **64/64** | 54/64 ❌ | true | 0.952 | 0.930 |
-| 3 (899×1599) | `372,92 → 784,504` | **no** | 37/64 | 37/64 | **false** | 0.893 | **0.375** |
-| 4 (1000×1050) | `96,33 → 959,896` | **exact** | **64/64** | **64/64** | true | 0.952 | 0.896 |
+|               | Detector box         | Correct?  | Placement | After `resolveOrientation` | `reliable` | mean  | min       |
+| ------------- | -------------------- | --------- | --------- | -------------------------- | ---------- | ----- | --------- |
+| 1 (1080×1095) | `0,12 → 1079,1091`   | **exact** | 38/64     | **64/64**                  | true       | 0.957 | 0.916     |
+| 2 (1080×1131) | `64,137 → 1008,1082` | **exact** | **64/64** | 54/64 ❌                   | true       | 0.952 | 0.930     |
+| 3 (899×1599)  | `372,92 → 784,504`   | **no**    | 37/64     | 37/64                      | **false**  | 0.893 | **0.375** |
+| 4 (1000×1050) | `96,33 → 959,896`    | **exact** | **64/64** | **64/64**                  | true       | 0.952 | 0.896     |
 
 Image 3's box is nowhere near the board — the board occupies x 7.4–93.6%,
 y 13.3–59.1% of the frame; the detector returned x 41.4–87.2%, y 5.8–31.5%, a
@@ -213,11 +237,11 @@ a near-empty position and scored 37/64 by luck of empty squares. But
 
 ### Bypass path (manual corners → homography → warp → `extractTiles` → ORT)
 
-| | Quad | Accuracy | mean | min | `reliable` |
-|---|---|---|---|---|---|
-| 1 | exact, axis-aligned | **64/64** | 0.956 | 0.898 | true |
-| **3 (phone photo)** | keystoned, 4 manual points | **64/64** | 0.959 | **0.920** | **true** |
-| 4 | exact, axis-aligned | **64/64** | 0.951 | 0.915 | true |
+|                     | Quad                       | Accuracy  | mean  | min       | `reliable` |
+| ------------------- | -------------------------- | --------- | ----- | --------- | ---------- |
+| 1                   | exact, axis-aligned        | **64/64** | 0.956 | 0.898     | true       |
+| **3 (phone photo)** | keystoned, 4 manual points | **64/64** | 0.959 | **0.920** | **true**   |
+| 4                   | exact, axis-aligned        | **64/64** | 0.951 | 0.915     | true       |
 
 Image 3's quad is genuinely keystoned — `(66.7,212.7) (841.7,218.3) (778.3,945)
 (112.7,927.7)`, top edge 775 px against bottom edge 666 px, a ~14% taper plus
@@ -229,11 +253,11 @@ was.
 
 Ablations on image 3:
 
-| Approach | Accuracy | min conf |
-|---|---|---|
-| Exact bounding box of the quad, no perspective correction | **49/64** | 0.159 |
-| Rough manual crop, then let the detector re-run | **56/64** | 0.226 (`reliable: false`) |
-| Full four-point perspective warp | **64/64** | 0.920 |
+| Approach                                                  | Accuracy  | min conf                  |
+| --------------------------------------------------------- | --------- | ------------------------- |
+| Exact bounding box of the quad, no perspective correction | **49/64** | 0.159                     |
+| Rough manual crop, then let the detector re-run           | **56/64** | 0.226 (`reliable: false`) |
+| Full four-point perspective warp                          | **64/64** | 0.920                     |
 
 "Let the user crop and retry" is not a fix.
 
@@ -241,17 +265,17 @@ Ablations on image 3:
 
 Image 3, 8 random jitters per level; one tile ≈ 90 px in the source photo:
 
-| Jitter | % of a tile | Accuracy | Perfect runs | min conf |
-|---|---|---|---|---|
-| ±0–6 px | ≤7% | 64/64 | 8/8 | 0.79 |
-| ±10 px | 11% | 64/64 | 8/8 | 0.35 |
-| ±15 px | 17% | 58–64 | 3/8 | 0.16 |
-| ±20 px | 22% | 56–64 | 2/8 | 0.26 |
-| ±30 px | 33% | 45–61 | 0/8 | 0.13 |
-| ±45 px | 50% | 41–51 | 0/8 | 0.18 |
+| Jitter  | % of a tile | Accuracy | Perfect runs | min conf |
+| ------- | ----------- | -------- | ------------ | -------- |
+| ±0–6 px | ≤7%         | 64/64    | 8/8          | 0.79     |
+| ±10 px  | 11%         | 64/64    | 8/8          | 0.35     |
+| ±15 px  | 17%         | 58–64    | 3/8          | 0.16     |
+| ±20 px  | 22%         | 56–64    | 2/8          | 0.26     |
+| ±30 px  | 33%         | 45–61    | 0/8          | 0.13     |
+| ±45 px  | 50%         | 41–51    | 0/8          | 0.18     |
 
 **Roughly ±10% of a tile of slop before accuracy breaks** — so the handles need
-a zoom loupe. Usefully, min confidence collapses (0.92 → 0.35) *before* accuracy
+a zoom loupe. Usefully, min confidence collapses (0.92 → 0.35) _before_ accuracy
 does, making it a conservative early warning for misplaced corners.
 
 Warp resolution is a non-issue: N = 256/512/1024 all give 64/64; only N=128 drops
@@ -265,7 +289,7 @@ is also what took image 2's **already-perfect** read and rotated it 180°, down 
 
 Root cause is the pawn-direction heuristic, not the CNN. Image 2's white pawns
 sit on e7 and f6 (mean rank 6.5) and the only black pawn on h5 (rank 5) — white's
-pawns are *further advanced*, so the heuristic concludes the board is flipped.
+pawns are _further advanced_, so the heuristic concludes the board is flipped.
 Confirmed directly: `resolveOrientation("4k3/4P3/4KP2/7p/8/8/8/8")` returns
 `orientation: "black"`.
 
@@ -275,11 +299,11 @@ flip toggle, or skip it entirely when either side has fewer than ~3 pawns.
 
 ### Timing (onnxruntime-node, Apple Silicon, local model file)
 
-| | |
-|---|---|
-| Model load, cold `InferenceSession.create` | **65–83 ms** |
-| Warm warp + 64-tile inference (bypass path) | **4.4 ms** |
-| Full pipeline, warm, 899×1599 | **129 ms** |
+|                                             |              |
+| ------------------------------------------- | ------------ |
+| Model load, cold `InferenceSession.create`  | **65–83 ms** |
+| Warm warp + 64-tile inference (bypass path) | **4.4 ms**   |
+| Full pipeline, warm, 899×1599               | **129 ms**   |
 
 The detector dominates; the CNN is ~4 ms for all 64 tiles. Expect 2–5× slower
 under wasm in a browser. Warm the session on boot and nobody waits.
@@ -301,8 +325,36 @@ wraps **OpenCV.js at ~8 MB**, six times the entire model.
 
 - **The test scripts lived in a session scratchpad and are gone.** The numbers
   above are the record. Re-deriving needs `@scoriiu/fenshot` + `onnxruntime-node`
-  + `sharp`, the extensionless-import fix, and manual corner picking.
-- **The four sample images are not in the repo.** Save them as test fixtures
-  when the Scan phase starts — they are the only real regression set we have,
-  and they cover Black-perspective, captioned, photographed and flat-themed
-  boards.
+  - `sharp`, the extensionless-import fix, and manual corner picking.
+- **The four sample images are not in the repo**, and are still the only
+  photographed board we have ever measured. Ticket 14 built its own fixtures
+  instead — `pnpm tsx scripts/scan-fixture.ts` screenshots the app's own
+  Cburnett art on its own green theme through chromium, giving a clean
+  screenshot, the same board from Black's side, and one three degrees off
+  square. They reproduce the numbers above (64/64 at 0.918 minimum confidence
+  white-perspective; the Black-perspective read comes back mirrored with
+  `resolveOrientation` saying "black"), and they are a script rather than
+  three PNGs someone once had. What they cannot stand in for is a photograph,
+  which is what ticket 15 needs.
+
+## Measured again, 2026-09-05, on the fixtures above
+
+Reproduced with `pngjs` decoding into `rgbaToGray` → `recognizeGray` → an
+`onnxruntime-node` session on the shipped model.
+
+|                                | Accuracy                | `reliable` | min   | ms  |
+| ------------------------------ | ----------------------- | ---------- | ----- | --- |
+| Clean screenshot, White's side | **64/64**               | true       | 0.918 | 32  |
+| Same board from Black's side   | **64/64** mirrored      | true       | 0.931 | 21  |
+| Same board as JPEG q80         | **64/64**               | true       | 0.941 | 23  |
+| The same screenshot at 11 MP   | **64/64**               | true       | 0.904 | 221 |
+| Board rotated 3°               | garbage                 | **false**  | 0.420 | 20  |
+| A page of text, no board       | garbage                 | **false**  | 0.185 | 110 |
+| A blank image                  | `null` — no board found | —          | —     | —   |
+
+Two things this settles. A page of text does **not** return `null`; it returns
+a placement with `reliable: false`, so "no board in the image" and "a board
+read badly" are the same answer to a caller and want the same sentence. And
+`MAX_DETECT_DIM` is the library's browser path, not `recognizeGray`'s — an
+11 MP image is read at full size in 221 ms, so the cap on a Scan is memory
+(about 8 bytes a pixel) rather than time.

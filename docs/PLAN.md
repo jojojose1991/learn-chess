@@ -60,8 +60,12 @@ This is what the suite in `tests/` leans on hardest.
   "That's not your piece").
 - `evaluateGoal(goal, moves)` → `open | solved | failed`.
 
-`src/lib/scan/` — server only. `scan(bytes)` and `scanWithCorners(bytes, quad)`,
-both returning `{ placement, reliable, meanConfidence, minConfidence }`. The
+`src/lib/scan/` — server only. `scan(readImage, headers)` and, with ticket 15,
+`scanWithCorners(…, quad)`, returning `{ placement, reliable, meanConfidence,
+minConfidence, seenFrom }`. Two departures from what this paragraph first said,
+both deliberate: `headers`, because a service is where who-may-do-this lives
+and the image is read only after the session is; and `seenFrom`, which is the
+orientation *suggestion* ADR-0002 requires be offered and never applied. The
 pipeline is ADR-0002; the warp is an 8×8 linear solve plus an inverse-sample
 loop into a 256×256 grayscale buffer.
 

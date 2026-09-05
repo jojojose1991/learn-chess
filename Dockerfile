@@ -27,11 +27,24 @@ WORKDIR /app
 # also leaves the Node distribution at 25 (docs/learnings/deployment.md).
 RUN npm install --global pnpm@11.21.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Belt to `--ignore-scripts`' braces and to `allowBuilds`' own `false`: the
+# postinstall would download CUDA and TensorRT providers this CPU service never
+# runs (docs/learnings/board-recognition.md).
+ENV ONNXRUNTIME_NODE_INSTALL=skip
 # `--ignore-scripts`: `prepare` points git at .githooks, and there is no git
 # and no repository here.
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm build
+# `onnxruntime-node` ships every platform it supports: 283 MB unpacked, of
+# which the 43 MB under linux/x64 is the only one this image can load. Pruned
+# after the build, so a build host that is not linux/x64 keeps its own binding
+# while `pnpm build` runs. `set -eu` and the test are what make an unmatched
+# glob fail here rather than quietly leave the 240 MB behind.
+RUN set -eu \
+  && ORT="$(echo node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6)" \
+  && test -d "$ORT/linux/x64" \
+  && rm -rf "$ORT/darwin" "$ORT/win32" "$ORT/linux/arm64"
 
 # Pinned, and BuildKit's advice against a constant platform is declined here:
 # the engine binary is x86_64 glibc, so an image built for anything else has a
@@ -47,6 +60,8 @@ COPY --from=stockfish /usr/local/bin/stockfish /usr/local/bin/stockfish
 # layer for anyone who pulls it.
 ENV STOCKFISH_PATH=/usr/local/bin/stockfish
 ENV ENGINE_MOVETIME_MS=200
+# Not yet the pruned `node_modules`, nor the classifier's `.onnx` — both are
+# ticket 16's, with the entry point that would prove them.
 COPY --from=build /app/dist ./dist
 USER node
 # No CMD: `vite build` emits a fetch handler, not a server that listens. The

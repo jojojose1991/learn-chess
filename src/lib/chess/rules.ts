@@ -4,13 +4,27 @@ import type { Color, Piece, PieceSymbol, Square } from "chess.js"
 
 type SquareContent = { square: Square; piece: Piece | null }
 
+/** What follows the placement in a Position nothing has yet been played in. */
+const UNPLAYED = ["w", "-", "-", "0", "1"]
+
+/**
+ * A FEN with the fields it left out filled in. A Scan reads where the pieces
+ * stand and nothing else — no side to move, no castling — so a placement on
+ * its own is a Position here, rather than the string that throws one function
+ * down and builds `… w undefined - 0 1` in the next.
+ */
+export function completeFen(fen: string): string {
+  const fields = fen.trim().split(/\s+/)
+  return [...fields, ...UNPLAYED.slice(fields.length - 1)].join(" ")
+}
+
 /**
  * Every square of a Position, a8 to h1 — the order the board renders in.
  * Skips validation so Confirm & Edit can draw an invalid Position while
  * refusing to play it.
  */
 export function readPlacement(fen: string): Array<SquareContent> {
-  return new Chess(fen, { skipValidation: true })
+  return new Chess(completeFen(fen), { skipValidation: true })
     .board()
     .flat()
     .map((piece, index) => ({ square: SQUARES[index], piece }))
@@ -59,8 +73,29 @@ export function withPiece(
  * every flip, so a Coach toggling twice would not land back where they were.
  */
 export function withSideToMove(fen: string, color: Color): string {
-  const [placement, , castling] = fen.split(" ")
+  const [placement, , castling] = completeFen(fen).split(" ")
   return `${placement} ${color} ${castling} - 0 1`
+}
+
+/**
+ * The Position with the board turned round: every piece keeps its colour and
+ * lands on the square diagonally opposite, so a1 becomes h8. What a Scan of a
+ * board photographed from Black's side needs, and the only transform that
+ * makes that read a Position anyone can play.
+ *
+ * Castling and en passant go, because a board that has been turned round has
+ * no move history left to justify either. A run-length digit is one character,
+ * so reversing a rank's text reverses its squares exactly.
+ */
+export function withPlacementRotated(fen: string): string {
+  const [placement, turn] = completeFen(fen).split(" ")
+  const rotated = placement
+    .split("/")
+    .reverse()
+    .map((rank) => [...rank].reverse().join(""))
+    .join("/")
+  // Whose turn it is survives: turning the board round says nothing about it.
+  return `${rotated} ${turn} - - 0 1`
 }
 
 /** A Position is legal, or it is not, with reasons a person can read. */

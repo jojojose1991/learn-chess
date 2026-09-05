@@ -11,6 +11,7 @@ import {
   readPlacement,
   validatePosition,
   withPiece,
+  withPlacementRotated,
   withSideToMove,
 } from "@/lib/chess/rules"
 
@@ -329,6 +330,19 @@ describe("readPlacement", () => {
     expect(squares[56]).toBe("a1")
     expect(squares[63]).toBe("h1")
   })
+
+  it("draws a placement with no fields after it, because a Scan reads where the pieces stand and says nothing about the rest", () => {
+    const placement = new Map(
+      readPlacement(START.split(" ")[0]).map(({ square, piece }) => [
+        square,
+        piece,
+      ])
+    )
+
+    expect(placement.size).toBe(64)
+    expect(placement.get("a1")).toMatchObject({ type: "r", color: "w" })
+    expect(placement.get("e8")).toMatchObject({ type: "k", color: "b" })
+  })
 })
 
 describe("legalTargets and a pinned piece", () => {
@@ -454,6 +468,34 @@ describe("editing a Position", () => {
   it("keeps castling rights, which whose turn it is says nothing about", () => {
     expect(withSideToMove(CASTLING, "b")).toBe(
       "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R b KQkq - 0 1"
+    )
+  })
+
+  it("turns a Position round, so a board a Scan read from Black's side is the Position it shows", () => {
+    // Every piece keeps its colour and lands on the square diagonally
+    // opposite: the board was turned round, not the pieces swapped.
+    const seenFromBlack =
+      "RN1K1BNR/PPP1PPPP/2Q5/3P1B2/3p4/2n2n2/ppp1pppp/r1bkqb1r"
+
+    expect(withPlacementRotated(seenFromBlack)).toBe(
+      "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w - - 0 1"
+    )
+  })
+
+  it("takes castling and en passant off a Position it turns round, because a board that has been turned has no history to justify either", () => {
+    // The king was on e1 and comes back on d8: a1 turns into h8, so every
+    // file is mirrored as well as every rank.
+    expect(withPlacementRotated(CASTLING)).toBe(
+      "R2K3R/PPPPPPPP/8/8/8/8/pppppppp/r2k3r w - - 0 1"
+    )
+  })
+
+  it("gives a bare placement a whole Position to be, so a Scan's read is playable rather than a FEN with `undefined` in it", () => {
+    const scanned = withSideToMove(START.split(" ")[0], "b")
+
+    expect(validatePosition(scanned)).toEqual({ ok: true })
+    expect(scanned).toBe(
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b - - 0 1"
     )
   })
 })

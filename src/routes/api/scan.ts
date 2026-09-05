@@ -1,0 +1,91 @@
+import { createFileRoute } from "@tanstack/react-router"
+
+import { log } from "@/lib/log"
+import { scan } from "@/lib/scan/service"
+
+/**
+ * The placement read out of an image of a board — an action, not a resource:
+ * POST, one job, the image as the body and nothing kept afterwards. A Scan
+ * always answers a draft for a Coach to check, so an unreliable read is an
+ * answer with `reliable: false` in it and not an error.
+ */
+export const Route = createFileRoute("/api/scan")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        try {
+          // The body is read by the service, and only once it knows who is
+          // asking — a thunk rather than bytes, so an upload from a stranger
+          // costs no memory at all.
+          const outcome = await scan(() => readImage(request), request.headers)
+          if (outcome.ok) return Response.json(outcome.scan)
+
+          switch (outcome.failure) {
+            // Not a 404: this route guards nothing an unlisted URL would give
+            // away, and the caller has to be told to sign in again.
+            case "unauthenticated":
+              return fail(401, "Sign in to scan an image.")
+            case "too_large":
+              return fail(
+                413,
+                `That image is too large. ${MAX_MEGABYTES} megabytes is the most.`
+              )
+            case "not_an_image":
+              return fail(415, "That file is not a PNG or a JPEG image.")
+            case "too_many_pixels":
+              return fail(413, "That image has too many pixels to read.")
+            case "unreadable":
+              return fail(422, "That image could not be read.")
+            case "no_board":
+              return fail(422, "No board was found in that image.")
+          }
+        } catch (failure) {
+          // Every way a Scan can fail is an outcome above, so anything thrown
+          // is a bug in here or a caller who hung up mid-upload. Either still
+          // owes the one error shape. The line names no filename and no
+          // bytes: an uploaded image is not ours to write down.
+          log.error(() => `a Scan failed: ${stack(failure)}`)
+          return fail(500, "That image could not be scanned.")
+        }
+      },
+    },
+  },
+})
+
+/**
+ * The most an upload may weigh. Generous enough for a 5K screenshot and for
+ * the phone photo ticket 15 will send down the same route.
+ */
+const MAX_MEGABYTES = 12
+const MAX_UPLOAD_BYTES = MAX_MEGABYTES * 1024 * 1024
+
+/**
+ * The body, counted as it arrives, or `"too_large"` past the cap.
+ *
+ * Counted rather than buffered whole: `arrayBuffer()` reads everything before
+ * anyone can object, and `content-length` is the caller's own claim — so an
+ * upload with neither an honest length nor an end would be held in the
+ * container's memory in full.
+ */
+async function readImage(request: Request): Promise<Uint8Array | "too_large"> {
+  if (!request.body) return new Uint8Array()
+
+  const chunks: Array<Uint8Array> = []
+  let size = 0
+  for await (const chunk of request.body as unknown as AsyncIterable<Uint8Array>) {
+    size += chunk.byteLength
+    if (size > MAX_UPLOAD_BYTES) return "too_large"
+    chunks.push(chunk)
+  }
+  return Buffer.concat(chunks)
+}
+
+/** What a thrown thing has to say, with its frames if it brought any. */
+const stack = (failure: unknown) =>
+  failure instanceof Error
+    ? (failure.stack ?? failure.message)
+    : String(failure)
+
+/** One error envelope, and a status that says which kind of wrong it was. */
+const fail = (status: number, error: string) =>
+  Response.json({ error }, { status })
