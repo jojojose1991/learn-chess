@@ -46,10 +46,12 @@ test("the seeded admin can reach Accounts", async ({ page }) => {
   await page.getByRole("link", { name: "Accounts" }).click()
 
   await expect(page.getByRole("heading", { name: "Accounts" })).toBeVisible()
-  // Scoped to the table: the email also appears in a screen-reader label on
+  // Scoped to the list: the email also appears in a screen-reader label on
   // the set-password field, and "is this Coach listed" is the behaviour here.
   await expect(
-    page.getByRole("table").getByText(E2E_ADMIN.email, { exact: true })
+    page
+      .getByRole("list", { name: "Accounts" })
+      .getByText(E2E_ADMIN.email, { exact: true })
   ).toBeVisible()
 })
 

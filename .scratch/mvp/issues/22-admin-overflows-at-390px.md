@@ -19,14 +19,14 @@ backlog.
 
 **Blocked by:** None — it fails today.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `/admin` reaches 0px past the viewport at 390px, 820px and 1280px
-- [ ] Every account's name, email, Puzzle count and access state is still
+- [x] `/admin` reaches 0px past the viewport at 390px, 820px and 1280px
+- [x] Every account's name, email, Puzzle count and access state is still
       readable at 390px without sideways scrolling
-- [ ] The per-account actions are still reachable, each at least 44px on a side
-- [ ] `pnpm e2e responsive.spec.ts` passes, and was seen red before the fix
-- [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+- [x] The per-account actions are still reachable, each at least 44px on a side
+- [x] `pnpm e2e responsive.spec.ts` passes, and was seen red before the fix
+- [x] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
 
 ## Comments
 

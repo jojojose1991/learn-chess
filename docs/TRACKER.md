@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**13 of 24 resolved. Four tickets are actionable right now: 09, 14, 22
+**14 of 24 resolved. Three tickets are actionable right now: 09, 14
 and 24.**
 
 ## Tickets
@@ -28,7 +28,7 @@ and 24.**
 | 21  | A Library row says what it is       | ✅ resolved     | —              |
 | 20  | A Coach picks their board theme     | ✅ resolved     | —              |
 | 08  | Confirm & Edit saves a Puzzle       | ✅ resolved     | —              |
-| 22  | `/admin` scrolls sideways at 390px  | 🟢 **ready**    | none           |
+| 22  | `/admin` scrolls sideways at 390px  | ✅ resolved     | —              |
 | 24  | The engine's failures are logged    | 🟢 **ready**    | none           |
 | 09  | Play a Puzzle, local vs local       | 🟢 **ready**    | 08 ✅          |
 | 14  | Scan a clean screenshot             | 🟢 **ready**    | 08 ✅          |
@@ -95,7 +95,6 @@ already owed by code that shipped. Do not merge them.
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
 | A selection outlives the Position changing under it, so the next tap emits a move the screen drops in silence | 09, where Rewind and Reset change it | `src/components/move-board.tsx` |
 | `MoveBoard` passes the board neither orientation nor theme   | 09                                        | `src/components/move-board.tsx`     |
-| `/admin` scrolls sideways at 390px by 120px, so `responsive.spec.ts` is red | now: it fails on `main` too | Ticket 22 |
 | Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
 | The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |
 | `public/favicon.svg` keeps its own copy of the checker path   | the mark's shape changes                  | `src/assets/checker-mark.svg`       |
