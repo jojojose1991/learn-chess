@@ -55,6 +55,9 @@ describe("the validity check, which is visible and blocking", () => {
 
     expect(screen.getByText("White has no king.")).toBeVisible()
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled()
+    // Play is refused on the same grounds and not on Save's alone: a Position
+    // that cannot be played is exactly the one nobody may play (docs/PLAN.md).
+    expect(screen.getByRole("button", { name: "Play" })).toBeDisabled()
   })
 
   it("lets the Puzzle be saved once nothing is wrong with the Position", () => {
@@ -100,11 +103,63 @@ describe("saving", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: "Save" }))
 
-    expect(onSave).toHaveBeenCalledExactlyOnceWith({
-      name: "  Back rank mate  ",
-      fen: MATE_IN_ONE,
-      goal: { kind: "mate_in", n: 2 },
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(
+      {
+        name: "  Back rank mate  ",
+        fen: MATE_IN_ONE,
+        goal: { kind: "mate_in", n: 2 },
+      },
+      "library"
+    )
+  })
+
+  it("writes the Puzzle before playing it, so Play never opens a Position the Coach has moved on from", () => {
+    const onSave = saved()
+    render(<PuzzleEditor onSave={onSave} />)
+
+    place("white king", "f6")
+    place("black king", "h8")
+    place("white queen", "g1")
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Back rank mate" },
     })
+    fireEvent.click(screen.getByRole("button", { name: "Play" }))
+
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(
+      {
+        name: "Back rank mate",
+        fen: MATE_IN_ONE,
+        goal: { kind: "mate_in", n: 1 },
+      },
+      "play"
+    )
+  })
+
+  it("does not carry a Play the browser refused over into the next Save", () => {
+    const onSave = saved()
+    render(<PuzzleEditor onSave={onSave} />)
+
+    place("white king", "f6")
+    place("black king", "h8")
+    place("white queen", "g1")
+    // No name yet, so the browser's own `required` refuses this submit before
+    // the editor ever sees it.
+    fireEvent.click(screen.getByRole("button", { name: "Play" }))
+    expect(onSave).toHaveBeenCalledTimes(0)
+
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Back rank mate" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Save" }))
+
+    expect(onSave).toHaveBeenCalledExactlyOnceWith(
+      {
+        name: "Back rank mate",
+        fen: MATE_IN_ONE,
+        goal: { kind: "mate_in", n: 1 },
+      },
+      "library"
+    )
   })
 
   it("shows what the server refused, rather than looking as though it saved", async () => {

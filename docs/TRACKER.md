@@ -5,7 +5,7 @@ tickets themselves are `.scratch/mvp/issues/NN-slug.md` and stay the source of
 truth for scope and criteria — this file is the index over them, so it carries
 status and pointers and never a second copy of a ticket's detail.
 
-**13 of 24 resolved. Four tickets are actionable right now: 09, 14, 22
+**14 of 24 resolved. Four tickets are actionable right now: 10, 14, 22
 and 24.**
 
 ## Tickets
@@ -30,9 +30,9 @@ and 24.**
 | 08  | Confirm & Edit saves a Puzzle       | ✅ resolved     | —              |
 | 22  | `/admin` scrolls sideways at 390px  | 🟢 **ready**    | none           |
 | 24  | The engine's failures are logged    | 🟢 **ready**    | none           |
-| 09  | Play a Puzzle, local vs local       | 🟢 **ready**    | 08 ✅          |
+| 09  | Play a Puzzle, local vs local       | ✅ resolved     | —              |
 | 14  | Scan a clean screenshot             | 🟢 **ready**    | 08 ✅          |
-| 10  | Solved / Not this time              | ⬜ ready-for-agent | 09            |
+| 10  | Solved / Not this time              | 🟢 **ready**    | 09 ✅          |
 | 11  | Puzzle Links                        | ⬜ ready-for-agent | 10            |
 | 13  | The engine defends, and Hint        | ⬜ ready-for-agent | 10 (12 ✅)    |
 | 15  | The four-corner warp                | ⬜ ready-for-agent | 14            |
@@ -78,11 +78,11 @@ already owed by code that shipped. Do not merge them.
 | `readPlacement` throws on a placement-only FEN, and `withSideToMove` builds a nonsense one from it | 14 | 06, 08, `src/lib/chess/rules.ts` |
 | A Puzzle stored in checkmate or stalemate opens as `open`, so Play shows a Goal over a board that refuses every tap | 10, which owns what the end of an attempt says | 09, `src/lib/chess/goals.ts` |
 | An unplayable FEN throws out of `playReducer` rather than being refused, because `applyMove` builds its `Chess` outside the `try` | 11, where a FEN reaches a URL a person can type | 09, `src/lib/chess/play.ts` |
+| Rewind takes back one ply, which is one of the Student's only while both sides are theirs | 13, where the engine answers every move | 09, `src/lib/chess/play.ts` |
+| Play writes the Puzzle before opening it, so playing one a Coach has not changed still touches `updated_at` | a Library ordered by when a Puzzle last changed | 09, `src/components/puzzle-editor.tsx` |
+| Play still announces whose turn it is after a checkmate, because the screen reads the FEN and nothing knows the game is over | 10, which owns the end of an attempt | 09, `src/components/play-puzzle.tsx` |
 | Save is `disabled` while the Position is illegal, so it is unfocusable and a screen reader never meets the reasons that explain it | a Coach who reads the screen rather than sees it | 08, `src/components/puzzle-editor.tsx` |
-| `MoveBoard` is mounted on no screen, so Guidance, the promotion picker's browser half and the 44px picker buttons lost their e2e | 09 | 08, `tests/e2e/board.spec.ts` |
-| Confirm & Edit has no Play control, so "blocks play" is proven for Save alone | 09 | Ticket 08 |
 | A hand-placed Position never carries castling rights, so neither side can castle in it | a Puzzle whose solution castles, or whose defender should be able to castle out of the mate net | 08, `src/lib/chess/rules.ts` |
-| "Never shrinks beside the move list" is untested             | 09                                        | 06                                  |
 | `/admin/set-role` and `/admin/update-user` are refused at the route | promote and demote get a screen   | 18                                  |
 | `create-user` still accepts a `role` in its body             | a role that grants what an admin cannot   | 18                                  |
 | `shadcn`'s `field` is not installed; `Label` + `Input` do     | a form needs more than a stacked label    | 04                                  |
@@ -95,8 +95,6 @@ already owed by code that shipped. Do not merge them.
 | `public/pieces/LICENSE` has no extension, so `/credits` downloads it | revisiting ADR-0004               | 06                                  |
 | Nothing encodes castling as king-takes-rook (e1→h1)          | still nothing does: a tap on your own piece reselects it | 02, `src/components/move-board.tsx` |
 | A promotion with no piece chosen shares the generic reason    | something needing the two told apart      | 01                                  |
-| A selection outlives the Position changing under it, so the next tap emits a move the screen drops in silence | 09, where Rewind and Reset change it | `src/components/move-board.tsx` |
-| `MoveBoard` passes the board neither orientation nor theme   | 09                                        | `src/components/move-board.tsx`     |
 | `/admin` scrolls sideways at 390px by 120px, so `responsive.spec.ts` is red | now: it fails on `main` too | Ticket 22 |
 | Nothing holds the auto-dark opt-out; CDP emulation cannot observe it | a headless browser that can       | `docs/learnings/frontend-stack.md`  |
 | The twelve piece sprites are URL-referenced, never imported   | a piece needs recolouring per theme       | ADR-0004, `src/components/board.tsx` |
