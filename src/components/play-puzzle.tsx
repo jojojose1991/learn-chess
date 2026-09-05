@@ -4,6 +4,7 @@ import { MoveBoard } from "@/components/move-board"
 import { Button } from "@/components/ui/button"
 import { describeGoal } from "@/lib/chess/goals"
 import { playReducer, startPlay } from "@/lib/chess/play"
+import { cn } from "@/lib/utils"
 
 import type { BoardTheme } from "@/db/schema"
 import type { PuzzleDraft } from "@/lib/puzzles/rules"
@@ -27,6 +28,7 @@ const whiteToMove = (fen: string) => fen.split(" ")[1] === "w"
 export function PlayPuzzle({ puzzle, theme }: PlayPuzzleProps) {
   const [game, dispatch] = useReducer(playReducer, puzzle, startPlay)
   const [guidance, setGuidance] = useState(true)
+  const outcome = game.status
 
   return (
     // 900px is `docs/PLAN.md`'s own number for where the list moves beside the
@@ -50,9 +52,45 @@ export function PlayPuzzle({ puzzle, theme }: PlayPuzzleProps) {
           }
         />
 
-        <p aria-live="polite">
-          {whiteToMove(game.fen) ? "White" : "Black"} to move
-        </p>
+        {/* The end of an attempt takes the turn line's place: a board nobody
+            may move on has no side to move. */}
+        <div
+          className={cn(
+            "flex flex-col items-start gap-3",
+            outcome.status !== "open" && "rounded-lg border p-4"
+          )}
+        >
+          {/* One region, mounted from the first render: a live region that
+              appears with its text already in it is not reliably announced,
+              so the element stays and its contents change. The button is a
+              sibling, so a turn change never reads it out. */}
+          <div role="status" className="flex flex-col gap-1">
+            {outcome.status === "open" ? (
+              <p>{whiteToMove(game.fen) ? "White" : "Black"} to move</p>
+            ) : (
+              <>
+                <p className="text-lg font-medium">
+                  {outcome.status === "solved" ? "Solved!" : "Not this time"}
+                </p>
+                {outcome.status === "failed" ? (
+                  <p className="text-sm text-muted-foreground">
+                    {outcome.reason}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+
+          {outcome.status === "failed" ? (
+            <Button
+              type="button"
+              className="min-h-11"
+              onClick={() => dispatch({ type: "reset" })}
+            >
+              Try again
+            </Button>
+          ) : null}
+        </div>
 
         {game.refusal ? (
           <p role="alert" className="text-sm text-destructive">

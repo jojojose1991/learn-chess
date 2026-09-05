@@ -35,7 +35,7 @@ export function startPlay(puzzle: { fen: string; goal: Goal }): PlayState {
     fen: puzzle.fen,
     moves: [],
     goal: puzzle.goal,
-    status: evaluateGoal(puzzle.goal, []),
+    status: evaluateGoal(puzzle.goal, puzzle.fen, []),
     refusal: null,
   }
 }
@@ -47,11 +47,17 @@ export function startPlay(puzzle: { fen: string; goal: Goal }): PlayState {
  *
  * A legal but losing move is played like any other. Nothing interrupts it:
  * saying it was wrong needs an analysis engine, and it robs the Student of
- * finding out why it failed (docs/PLAN.md).
+ * finding out why it failed (docs/PLAN.md) — until the Goal closes, after
+ * which the loop takes no more moves and Rewind or Reset is the way on.
  */
 export function playReducer(state: PlayState, action: PlayAction): PlayState {
   switch (action.type) {
     case "move": {
+      // An attempt that has ended takes no more moves. Without this a Position
+      // stored in checkmate answers every tap with "That would leave your king
+      // in danger", which is a reason for a move nobody is still allowed.
+      if (state.status.status !== "open") return state
+
       const played = applyMove(
         state.fen,
         action.from,
@@ -88,7 +94,7 @@ function atMoves(state: PlayState, moves: Array<Ply>): PlayState {
     ...state,
     fen: moves.at(-1)?.fen ?? state.start,
     moves,
-    status: evaluateGoal(state.goal, moves),
+    status: evaluateGoal(state.goal, state.start, moves),
     refusal: null,
   }
 }

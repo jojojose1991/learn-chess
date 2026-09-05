@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { describeGoal, evaluateGoal } from "@/lib/chess/goals"
 
+import type { Goal } from "@/lib/chess/goals"
 import type { PlayedMove } from "@/lib/chess/rules"
 
 /** The Student moves first, so odd-numbered plies here are the Student's. */
@@ -10,6 +11,10 @@ function play(fen: string, ...sans: Array<string>): Array<PlayedMove> {
   const game = new Chess(fen)
   return sans.map((san) => ({ san: game.move(san).san, fen: game.fen() }))
 }
+
+/** What the Goal makes of that Position with those moves played from it. */
+const outcome = (goal: Goal, fen: string, ...sans: Array<string>) =>
+  evaluateGoal(goal, fen, play(fen, ...sans))
 
 const MATE_IN_1 = { kind: "mate_in", n: 1 } as const
 const MATE_IN_2 = { kind: "mate_in", n: 2 } as const
@@ -24,48 +29,45 @@ const FOOLS = "rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1"
 
 describe("evaluateGoal", () => {
   it("is open before anything has been played", () => {
-    expect(evaluateGoal(MATE_IN_2, [])).toEqual({ status: "open" })
+    expect(outcome(MATE_IN_2, FOOLS)).toEqual({ status: "open" })
   })
 
   it("is open while moves remain in the budget", () => {
-    expect(evaluateGoal(MATE_IN_2, play(FOOLS, "e5", "g4"))).toEqual({
-      status: "open",
-    })
+    expect(outcome(MATE_IN_2, FOOLS, "e5", "g4")).toEqual({ status: "open" })
   })
 
   it("accepts two different mating lines from the same Position", () => {
-    expect(evaluateGoal(MATE_IN_1, play(TWO_ROUTES, "Ra8#"))).toEqual({
+    expect(outcome(MATE_IN_1, TWO_ROUTES, "Ra8#")).toEqual({
       status: "solved",
     })
-    expect(evaluateGoal(MATE_IN_1, play(TWO_ROUTES, "Rb8#"))).toEqual({
+    expect(outcome(MATE_IN_1, TWO_ROUTES, "Rb8#")).toEqual({
       status: "solved",
     })
   })
 
   it("counts only the Student's own moves against the budget", () => {
     // Three plies played, two of them the Student's, so mate in 2 is solved.
-    expect(evaluateGoal(MATE_IN_2, play(FOOLS, "e5", "g4", "Qh4#"))).toEqual({
+    expect(outcome(MATE_IN_2, FOOLS, "e5", "g4", "Qh4#")).toEqual({
       status: "solved",
     })
   })
 
   it("fails a mate that arrives after the budget is spent", () => {
-    const outcome = evaluateGoal(MATE_IN_1, play(FOOLS, "e5", "g4", "Qh4#"))
-    expect(outcome).toEqual({
+    expect(outcome(MATE_IN_1, FOOLS, "e5", "g4", "Qh4#")).toEqual({
       status: "failed",
       reason: "That is checkmate, but it took more than 1 move.",
     })
   })
 
   it("fails a spent budget with no checkmate", () => {
-    expect(evaluateGoal(MATE_IN_1, play(FOOLS, "e5"))).toEqual({
+    expect(outcome(MATE_IN_1, FOOLS, "e5")).toEqual({
       status: "failed",
       reason: "That is 1 move played, and no checkmate.",
     })
   })
 
   it("counts what was actually played, not what the budget allowed", () => {
-    expect(evaluateGoal(MATE_IN_1, play(FOOLS, "e5", "g4", "d6"))).toEqual({
+    expect(outcome(MATE_IN_1, FOOLS, "e5", "g4", "d6")).toEqual({
       status: "failed",
       reason: "That is 2 moves played, and no checkmate.",
     })
@@ -73,34 +75,52 @@ describe("evaluateGoal", () => {
 
   it("fails when the Student is the one checkmated", () => {
     // The Student is White here, and walks into the Fool's Mate themselves.
-    const mated = play(
-      "rnbqkbnr/pppp1ppp/8/4p3/8/5P2/PPPPP1PP/RNBQKBNR w KQkq e6 0 2",
-      "g4",
-      "Qh4#"
-    )
-    expect(evaluateGoal(MATE_IN_2, mated)).toEqual({
+    expect(
+      outcome(
+        MATE_IN_2,
+        "rnbqkbnr/pppp1ppp/8/4p3/8/5P2/PPPPP1PP/RNBQKBNR w KQkq e6 0 2",
+        "g4",
+        "Qh4#"
+      )
+    ).toEqual({
       status: "failed",
       reason: "Your own king has been checkmated.",
     })
   })
 
   it("fails a stalemate, and says so", () => {
-    expect(
-      evaluateGoal(MATE_IN_2, play("k7/8/8/1Q6/8/8/8/K7 w - - 0 1", "Qb6"))
-    ).toEqual({
+    expect(outcome(MATE_IN_2, "k7/8/8/1Q6/8/8/8/K7 w - - 0 1", "Qb6")).toEqual({
       status: "failed",
       reason:
-        "That is stalemate: the other side has no legal move, but is not in check. The game is a draw.",
+        "That is stalemate: the player to move has no legal move, but is not in check. The game is a draw.",
     })
   })
 
   it("fails a draw by insufficient material, and says so", () => {
     expect(
-      evaluateGoal(MATE_IN_2, play("7k/8/8/8/8/8/6b1/K6B w - - 0 1", "Bxg2"))
+      outcome(MATE_IN_2, "7k/8/8/8/8/8/6b1/K6B w - - 0 1", "Bxg2")
     ).toEqual({
       status: "failed",
       reason:
         "Neither side has enough pieces left to give checkmate. The game is a draw.",
+    })
+  })
+
+  // A Coach can save a Position that is already over — nothing rejects one —
+  // and Play must say so rather than show a Goal over a board that refuses
+  // every tap.
+  it("fails a Puzzle stored in checkmate, before the Student has moved", () => {
+    expect(outcome(MATE_IN_2, "7k/6Q1/5K2/8/8/8/8/8 b - - 1 1")).toEqual({
+      status: "failed",
+      reason: "Your own king has been checkmated.",
+    })
+  })
+
+  it("fails a Puzzle stored in stalemate, before the Student has moved", () => {
+    expect(outcome(MATE_IN_2, "k7/8/1Q6/8/8/8/8/K7 b - - 0 1")).toEqual({
+      status: "failed",
+      reason:
+        "That is stalemate: the player to move has no legal move, but is not in check. The game is a draw.",
     })
   })
 })
