@@ -79,6 +79,22 @@ describe("moving a piece by tapping", () => {
     expect(onMove).toHaveBeenCalledTimes(0)
   })
 
+  it("takes no tap at all while it is locked, because a board waiting on the engine is not the Student's", () => {
+    const onMove = vi.fn()
+    render(<MoveBoard fen={START} guidance locked onMove={onMove} />)
+
+    tap("e2, white pawn")
+    tap("e4, empty")
+
+    expect(selected()).toBeNull()
+    expect(onMove).toHaveBeenCalledTimes(0)
+    // And says so where a Student who reads the screen meets it, rather than
+    // only in the line above the board.
+    expect(
+      screen.getByRole("button", { name: "e2, white pawn" })
+    ).toHaveAttribute("aria-disabled", "true")
+  })
+
   it("emits an illegal attempt too and moves nothing itself, because refusing it belongs to the screen", () => {
     const onMove = vi.fn()
     render(<MoveBoard fen={START} guidance={false} onMove={onMove} />)

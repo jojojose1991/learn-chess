@@ -19,6 +19,14 @@ type MoveBoardProps = {
   fen: string
   /** On, a picked-up piece marks where it may go. Off, the Student finds out. */
   guidance: boolean
+  /**
+   * The board is not the person at it's to move — waiting on the engine, or
+   * an attempt that has ended. Every tap does nothing, rather than picking a
+   * piece up and emitting a move the screen will silently drop.
+   */
+  locked?: boolean
+  /** The piece a Hint is pointing at, straight through to `Board`. */
+  hint?: Square | null
   /** Whose side is nearest, straight through to `Board`. */
   orientation?: BoardOrientation
   /** The board this Coach teaches on, straight through to `Board`. */
@@ -53,6 +61,8 @@ const PROMOTIONS: Array<{ piece: PromotionPiece; name: string }> = [
 export function MoveBoard({
   fen,
   guidance,
+  hint = null,
+  locked = false,
   orientation,
   theme,
   lastMove = null,
@@ -85,7 +95,7 @@ export function MoveBoard({
   }, [fen])
 
   function tap(square: Square) {
-    if (!playable) return
+    if (!playable || locked) return
     // The same square twice puts the piece back down.
     if (square === selected) {
       setSelected(null)
@@ -126,10 +136,12 @@ export function MoveBoard({
         orientation={orientation}
         theme={theme}
         selected={selected}
+        hint={hint}
         targets={
           guidance && playable && selected ? legalTargets(fen, selected) : []
         }
         lastMove={lastMove}
+        locked={locked}
         onSquareTap={tap}
       />
 

@@ -9,8 +9,8 @@ import type { BoardTheme } from "@/db/schema"
 
 export type BoardOrientation = "white" | "black"
 
-/** What a square has to say. One colour, three shapes; nothing else is marked. */
-type Mark = "selected" | "target" | "last"
+/** What a square has to say. One colour, four shapes; nothing else is marked. */
+type Mark = "selected" | "hint" | "target" | "last"
 
 type BoardProps = {
   /** The Position to draw. Legal or not — Confirm & Edit draws an invalid one. */
@@ -22,8 +22,16 @@ type BoardProps = {
   selected?: Square | null
   /** Guidance's marks: where the picked-up piece may go. */
   targets?: ReadonlyArray<Square>
+  /** The piece a Hint is pointing at. Never where it would go. */
+  hint?: Square | null
   /** The move just played, marked on both of its squares. */
   lastMove?: { from: Square; to: Square } | null
+  /**
+   * Nothing on this board can be moved. Said on the squares rather than
+   * `disabled` on them, which would take all 64 out of the tab order and
+   * leave a Student who reads the screen unable to reach the position at all.
+   */
+  locked?: boolean
   /** The only thing the board says. It has no opinion on what a tap means. */
   onSquareTap: (square: Square) => void
 }
@@ -40,6 +48,7 @@ const PIECE_NAME: Record<PieceSymbol, string> = {
 /** What each mark adds to the square's name, for a Student who cannot see it. */
 const MARK_NAME: Record<Mark, string> = {
   selected: "selected",
+  hint: "try this piece",
   target: "can move here",
   last: "last move",
 }
@@ -68,8 +77,10 @@ export function Board({
   orientation = "white",
   theme = "green",
   selected = null,
+  hint = null,
   targets = [],
   lastMove = null,
+  locked = false,
   onSquareTap,
 }: BoardProps) {
   const squares = readPlacement(fen)
@@ -80,6 +91,9 @@ export function Board({
   /** One mark to a square, and the live one wins over the one just played. */
   function markOn(square: Square): Mark | null {
     if (square === selected) return "selected"
+    // Ahead of Guidance's marks: a hinted piece a Student then picks up says
+    // "selected" instead, which is the more immediate of the two.
+    if (square === hint) return "hint"
     if (targets.includes(square)) return "target"
     if (square === lastMove?.from || square === lastMove?.to) return "last"
     return null
@@ -103,6 +117,7 @@ export function Board({
           <button
             key={square}
             type="button"
+            aria-disabled={locked}
             onClick={() => onSquareTap(square)}
             aria-label={`${square}, ${pieceName(piece)}${
               mark ? `, ${MARK_NAME[mark]}` : ""
@@ -162,6 +177,13 @@ export function Board({
 function markShape(mark: Mark, occupied: boolean) {
   if (mark === "selected") {
     return "inset-0 border-4 border-board-mark bg-board-mark/45"
+  }
+  // Dashed, and no wash: a suggestion rather than a piece in hand. It has to
+  // read apart from `selected` on sight, because a hinted piece and a
+  // picked-up one can stand on the board at the same time, and only the
+  // square's name would otherwise tell them apart.
+  if (mark === "hint") {
+    return "inset-0 border-4 border-dashed border-board-mark"
   }
   if (mark === "last") {
     return "inset-0 border-2 border-board-mark bg-board-mark/45"
