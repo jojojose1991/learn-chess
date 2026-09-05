@@ -7,7 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { seenFrom } from "@/lib/scan/service"
 
+import { KEYSTONE, outBy } from "../../fixtures/keystone"
+
 import type * as auth from "@/lib/auth"
+import type { Quad } from "@/lib/scan/rules"
 
 /** The board every fixture is a screenshot of, as the classifier should read it. */
 const POSITION = "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR"
@@ -39,6 +42,15 @@ function asCoach(coach: { id: string } | null = { id: "c1" }) {
 
 beforeEach(() => vi.resetModules())
 afterEach(() => vi.doUnmock("@/lib/auth"))
+
+/**
+ * Each test re-imports the service under `resetModules`, so each pays its own
+ * `InferenceSession.create` — 65-83 ms, plus a full board recognition. Slowest
+ * measured 2.6 s with the machine moderately busy and over 5 s with three
+ * builds sharing it, which is what vitest's default budget is for a pure
+ * function rather than for this.
+ */
+vi.setConfig({ testTimeout: 15_000 })
 
 describe("scanning an image of a board", () => {
   it("reads every square of a clean screenshot, so a Coach confirms a Position rather than builds one", async () => {
@@ -110,6 +122,96 @@ describe("scanning an image of a board", () => {
     }, new Headers())
 
     expect(outcome).toEqual({ ok: false, failure: "unauthenticated" })
+  })
+})
+
+/**
+ * The recovery path. A photograph defeats the detector, which follows whole
+ * rows and columns and so has a rotation tolerance under a degree — but the
+ * classifier was never the half that failed (ADR-0002), and four corners plus
+ * our own warp hand it a square board to read.
+ */
+describe("scanning a board a Coach has put four corners on", () => {
+  it("reads every square of a board seen from off to one side, which is the whole reason the four corners exist", async () => {
+    const { scan } = await asCoach()
+
+    const outcome = await scan(
+      supplying(fixture("board-keystone", "jpg")),
+      new Headers(),
+      KEYSTONE.corners
+    )
+
+    expect(outcome).toMatchObject({
+      ok: true,
+      scan: { placement: POSITION, reliable: true },
+    })
+    // Measured 0.915 — higher than any clean screenshot in this suite.
+    expect(outcome.ok && outcome.scan.minConfidence).toBeGreaterThan(0.9)
+  })
+
+  it("cannot read the same image on its own, so the four corners are a recovery and not a preference", async () => {
+    const { scan } = await asCoach()
+
+    const outcome = await scan(
+      supplying(fixture("board-keystone", "jpg")),
+      new Headers()
+    )
+
+    // Not a bad read — no read. The detector follows whole rows and columns
+    // and a keystone has none, so there is nothing for it to lock onto.
+    expect(outcome).toEqual({ ok: false, failure: "no_board" })
+  })
+
+  it("loses its confidence when every corner is 25px out on both axes, which is what makes a warning about them possible", async () => {
+    const { scan } = await asCoach()
+
+    const outcome = await scan(
+      supplying(fixture("board-keystone", "jpg")),
+      new Headers(),
+      outBy(25)
+    )
+
+    // Measured 0.239 against 0.915 for the same picture placed properly.
+    // Minimum confidence collapses well before accuracy does, which is what
+    // makes it an early warning rather than a report of a wrong Position.
+    expect(outcome).toMatchObject({ ok: true, scan: { reliable: false } })
+    expect(outcome.ok && outcome.scan.minConfidence).toBeLessThan(0.5)
+  })
+
+  it("says there is no board rather than a confidently empty one when the corners bound almost nothing", async () => {
+    const { scan } = await asCoach()
+    // Convex, clockwise, and every point on the picture, so the warp takes
+    // it — and one flat colour blown up to 256 square reads as sixty-four
+    // empty squares at 0.95. That is the one wrong answer the confidence
+    // floor cannot catch, which is why the detector refuses an empty read on
+    // the other path and this one has to say the same thing.
+    const sliver: Quad = [
+      { x: 400, y: 400 },
+      { x: 401, y: 400 },
+      { x: 401, y: 401 },
+      { x: 400, y: 401 },
+    ]
+
+    const outcome = await scan(
+      supplying(fixture("board-keystone", "jpg")),
+      new Headers(),
+      sliver
+    )
+
+    expect(outcome).toEqual({ ok: false, failure: "no_board" })
+  })
+
+  it("refuses four corners that are not four corners of anything rather than warping a board out of them", async () => {
+    const { scan } = await asCoach()
+    const collapsed = KEYSTONE.corners.map(() => ({ x: 10, y: 10 })) as Quad
+
+    const outcome = await scan(
+      supplying(fixture("board-keystone", "jpg")),
+      new Headers(),
+      collapsed
+    )
+
+    expect(outcome).toEqual({ ok: false, failure: "bad_corners" })
   })
 })
 
