@@ -89,3 +89,10 @@ _Avoid_: Share link, public link, permalink, slug
 The assist that marks a selected piece's legal destination squares. Switched
 off, the Student must find legal moves unaided.
 _Avoid_: Hints, help mode, training wheels, assist, highlighting
+
+**Hint**:
+The escape hatch a stuck Student reaches for: it marks the piece that should
+move, and never the move itself — no destination square, no arrow, no
+notation. Not the same thing as Guidance, which marks where a piece the
+Student has already chosen may go.
+_Avoid_: Clue, tip, solution, answer, show me, help

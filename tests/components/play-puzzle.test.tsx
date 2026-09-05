@@ -224,6 +224,111 @@ describe("the Play screen", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Black to move")
   })
 
+  it("hints the piece the engine would move, and never where it would move it", async () => {
+    render(
+      <PlayPuzzle puzzle={MATE_IN_ONE} askEngine={answering("g1", "g7")} />
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }))
+
+    expect(
+      await screen.findByRole("button", {
+        name: "g1, white queen, try this piece",
+      })
+    ).toBeVisible()
+    // One square in the whole board and no move played: a Student who is
+    // stuck is given the piece, and finds the rest themselves.
+    expect(
+      screen.getAllByRole("button", { name: /, try this piece$/ })
+    ).toHaveLength(1)
+    expect(moves()).toEqual([])
+  })
+
+  it("drops the hint once the Position moves on, so it cannot point at the wrong board", async () => {
+    render(
+      <PlayPuzzle puzzle={MATE_IN_ONE} askEngine={answering("g1", "g7")} />
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }))
+    await screen.findByRole("button", { name: /, try this piece$/ })
+
+    play("g1, white queen", "g7, empty")
+
+    expect(
+      screen.queryByRole("button", { name: /, try this piece$/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it("does not bring the hint back with the Position, so a fresh attempt starts unaided", async () => {
+    render(
+      <PlayPuzzle puzzle={MATE_IN_ONE} askEngine={answering("g1", "g7")} />
+    )
+
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }))
+    await screen.findByRole("button", { name: /, try this piece$/ })
+
+    // Qg8+ is legal and it is check, but not mate: the attempt is over, and
+    // Try again lands back on the very Position the hint was asked about.
+    play("g1, white queen", "g8, empty")
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+
+    expect(
+      screen.queryByRole("button", { name: /, try this piece$/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it("drops a hint that lands after the Student moved on, rather than marking the new board", async () => {
+    const asked: Array<(move: { from: Square; to: Square }) => void> = []
+    const askEngine = () =>
+      new Promise<{ from: Square; to: Square }>((resolve) =>
+        asked.push(resolve)
+      )
+    render(<PlayPuzzle puzzle={TWO_MOVES} askEngine={askEngine} />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }))
+    play("g1, white queen", "g8, empty")
+
+    // The engine names g1 — where the queen stood before the Student moved it.
+    await act(async () => asked[0]({ from: "g1", to: "g7" }))
+
+    expect(
+      screen.queryByRole("button", { name: /, try this piece$/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it("offers no Hint while the board is not the Student's to move on", () => {
+    render(<PlayPuzzle puzzle={TWO_MOVES} askEngine={stillThinking} />)
+    const hint = () => screen.getByRole("button", { name: "Hint" })
+    expect(hint()).toBeEnabled()
+
+    // The engine's turn: the piece it would name is not one they may touch.
+    play("g1, white queen", "g8, empty")
+
+    expect(hint()).toBeDisabled()
+  })
+
+  it("offers no Hint once the attempt is over, because there is no move left to make", () => {
+    render(<PlayPuzzle puzzle={MATE_IN_ONE} askEngine={stillThinking} />)
+
+    play("g1, white queen", "g7, empty")
+
+    expect(screen.getByRole("status")).toHaveTextContent("Solved!")
+    expect(screen.getByRole("button", { name: "Hint" })).toBeDisabled()
+  })
+
+  it("says plainly when the engine cannot pick a piece, rather than marking a guess", async () => {
+    render(<PlayPuzzle puzzle={MATE_IN_ONE} askEngine={unreachable} />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The engine could not pick a piece"
+    )
+    expect(
+      screen.queryByRole("button", { name: /, try this piece$/ })
+    ).not.toBeInTheDocument()
+  })
+
   it("puts Black's side nearest when the Puzzle is Black's to solve", () => {
     render(<PlayPuzzle puzzle={BLACKS_TO_SOLVE} />)
 

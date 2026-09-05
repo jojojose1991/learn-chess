@@ -5,6 +5,13 @@ import type { Square } from "chess.js"
 import type { Goal, GoalOutcome } from "./goals"
 import type { PlayedMove, PromotionPiece } from "./rules"
 
+/**
+ * Said when the defender cannot be reached. The board goes back to the person
+ * at it, which is the only thing left that keeps the Puzzle playable.
+ */
+const ENGINE_QUIET =
+  "The engine is not answering. Play its move yourself, or start again."
+
 /** A move that was played, and the two squares it was played between. */
 export type Ply = PlayedMove & { from: Square; to: Square }
 
@@ -45,7 +52,7 @@ export type PlayAction =
    * Position the game has left would unlock the board mid-think and blame a
    * request that is still running.
    */
-  | { type: "engine_failed"; fen: string; reason: string }
+  | { type: "engine_failed"; fen: string }
   | { type: "rewind" }
   | { type: "reset" }
 
@@ -124,7 +131,7 @@ export function playReducer(state: PlayState, action: PlayAction): PlayState {
     }
     case "engine_failed":
       if (state.fen !== action.fen) return state
-      return { ...state, engineFailure: action.reason }
+      return { ...state, engineFailure: ENGINE_QUIET }
     case "rewind":
       // Back to the Student's own last turn: their move and the engine's
       // answer to it go together, because taking back one would hand them a

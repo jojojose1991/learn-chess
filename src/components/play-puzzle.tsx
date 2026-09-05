@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 
 import type { Square } from "chess.js"
 import type { BoardTheme } from "@/db/schema"
+import type { PlayAction } from "@/lib/chess/play"
 import type { PromotionPiece } from "@/lib/chess/rules"
 import type { PuzzleDraft } from "@/lib/puzzles/rules"
 
@@ -33,9 +34,8 @@ type PlayPuzzleProps = {
 
 const whiteToMove = (fen: string) => fen.split(" ")[1] === "w"
 
-/** Said out loud when the engine cannot be reached, and not in the move list. */
-const ENGINE_QUIET =
-  "The engine is not answering. Play its move yourself, or start again."
+/** The same silence as the defender's, where a Hint was what was asked for. */
+const HINT_QUIET = "The engine could not pick a piece. Try again."
 
 /**
  * The engine over HTTP: a Position goes in and a move comes back (ADR-0003).
@@ -67,9 +67,26 @@ export function PlayPuzzle({
 }: PlayPuzzleProps) {
   const [game, dispatch] = useReducer(playReducer, puzzle, startPlay)
   const [guidance, setGuidance] = useState(true)
+  /**
+   * The Hint asked for, and the Position it was asked about — paired, so an
+   * answer that arrives after the board has moved on is never drawn on it.
+   * Neither field filled means the engine is still deciding.
+   */
+  const [hint, setHint] = useState<{
+    fen: string
+    square?: Square
+    failure?: string
+  } | null>(null)
   const outcome = game.status
   const thinking = engineThinking(game)
   const { fen } = game
+
+  /** The Hint as it stands for the Position on the board, if it is for this one. */
+  const shown = hint?.fen === fen ? hint : null
+  /** One is out and nothing has come back — the engine is deciding. */
+  const asking = shown !== null && !shown.square && !shown.failure
+  /** The one thing said about the engine, whichever of the two asked it. */
+  const engineSaid = game.engineFailure ?? shown?.failure
 
   useEffect(() => {
     if (!thinking) return
@@ -85,13 +102,40 @@ export function PlayPuzzle({
         if (live) dispatch({ type: "engine_move", fen, from, to, promotion })
       },
       () => {
-        if (live) dispatch({ type: "engine_failed", fen, reason: ENGINE_QUIET })
+        if (live) dispatch({ type: "engine_failed", fen })
       }
     )
     return () => {
       live = false
     }
   }, [thinking, fen, askEngine])
+
+  /**
+   * A move of the game, and the Hint that was about the Position before it.
+   * Filtering by Position is not enough on its own: Reset and Try again land
+   * back on the very Position a hint was asked about, and it would reappear
+   * on a fresh attempt nobody asked it for.
+   */
+  function make(action: PlayAction) {
+    setHint(null)
+    dispatch(action)
+  }
+
+  /**
+   * The piece the engine would move here, marked and never said out loud —
+   * the destination is dropped on this line and reaches nothing.
+   *
+   * It is the screen's and not the loop's: it changes no rule, no history and
+   * no Goal, and a failed Hint is not the defender falling silent, so it never
+   * touches the board's lock.
+   */
+  function askForHint() {
+    setHint({ fen })
+    askEngine(fen).then(
+      ({ from }) => setHint({ fen, square: from }),
+      () => setHint({ fen, failure: HINT_QUIET })
+    )
+  }
 
   return (
     // 900px is `docs/PLAN.md`'s own number for where the list moves beside the
@@ -105,6 +149,7 @@ export function PlayPuzzle({
         <MoveBoard
           fen={game.fen}
           guidance={guidance}
+          hint={shown?.square ?? null}
           // A board nobody may move on takes no taps: the engine's turn, or an
           // attempt that has ended and is waiting to be tried again.
           locked={thinking || outcome.status !== "open"}
@@ -114,7 +159,7 @@ export function PlayPuzzle({
           theme={theme}
           lastMove={game.moves.at(-1)}
           onMove={(from, to, promotion) =>
-            dispatch({ type: "move", from, to, promotion })
+            make({ type: "move", from, to, promotion })
           }
         />
 
@@ -155,7 +200,7 @@ export function PlayPuzzle({
             <Button
               type="button"
               className="min-h-11"
-              onClick={() => dispatch({ type: "reset" })}
+              onClick={() => make({ type: "reset" })}
             >
               Try again
             </Button>
@@ -171,9 +216,9 @@ export function PlayPuzzle({
         {/* Not destructive, and not a refusal: the Student did nothing wrong
             and nothing they can do is being refused. Announced all the same,
             because the board has just gone back to being theirs. */}
-        {game.engineFailure ? (
+        {engineSaid ? (
           <p role="alert" className="text-sm text-muted-foreground">
-            {game.engineFailure}
+            {engineSaid}
           </p>
         ) : null}
 
@@ -182,7 +227,7 @@ export function PlayPuzzle({
             type="button"
             variant="outline"
             className="min-h-11"
-            onClick={() => dispatch({ type: "rewind" })}
+            onClick={() => make({ type: "rewind" })}
           >
             Rewind
           </Button>
@@ -190,9 +235,22 @@ export function PlayPuzzle({
             type="button"
             variant="outline"
             className="min-h-11"
-            onClick={() => dispatch({ type: "reset" })}
+            onClick={() => make({ type: "reset" })}
           >
             Reset
+          </Button>
+          {/* Enabled exactly when the board is: a piece nobody may pick up
+              is not an escape hatch, and a Position that is over has no move
+              to name. Also while one Hint is out, which is the only sign a
+              five-year-old gets that the engine is deciding. */}
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11"
+            disabled={thinking || outcome.status !== "open" || asking}
+            onClick={askForHint}
+          >
+            Hint
           </Button>
           {/* The whole label is the target, so a five-year-old's finger has
               the 44px it needs rather than whatever a checkbox happens to be. */}

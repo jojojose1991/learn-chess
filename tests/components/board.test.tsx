@@ -54,6 +54,18 @@ describe("the board", () => {
     expect(piece).toHaveAttribute("draggable", "false")
   })
 
+  it("marks the hinted piece and says what the mark means, because a Hint is never the move", () => {
+    render(<Board fen={START} hint="g1" onSquareTap={() => {}} />)
+
+    expect(
+      screen.getByRole("button", { name: "g1, white knight, try this piece" })
+    ).toBeVisible()
+    // One square in the whole board: a Hint names a piece and stops there.
+    expect(
+      screen.getAllByRole("button", { name: /, try this piece$/ })
+    ).toHaveLength(1)
+  })
+
   it("draws each coordinate on the square it names, so a flip cannot desync them", () => {
     const { unmount } = render(<Board fen={START} onSquareTap={() => {}} />)
 

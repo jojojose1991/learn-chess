@@ -54,11 +54,7 @@ const answered = (
 
 /** The Puzzle after the engine failed to answer about where it stands. */
 const wentQuiet = (state: PlayState) =>
-  playReducer(state, {
-    type: "engine_failed",
-    fen: state.fen,
-    reason: "The engine is not answering.",
-  })
+  playReducer(state, { type: "engine_failed", fen: state.fen })
 
 describe("starting a Puzzle", () => {
   it("opens at the Position the Puzzle was stored with, nothing played", () => {
@@ -259,7 +255,6 @@ describe("the defending engine", () => {
     const after = playReducer(askedAboutD5, {
       type: "engine_failed",
       fen: askedAboutE5.fen,
-      reason: "The engine is not answering.",
     })
 
     expect(after.engineFailure).toBeNull()
@@ -293,7 +288,7 @@ describe("the defending engine", () => {
 
     const quiet = wentQuiet(waiting)
 
-    expect(quiet.engineFailure).toBe("The engine is not answering.")
+    expect(quiet.engineFailure).toMatch(/The engine is not answering/)
     expect(engineThinking(quiet)).toBe(false)
     // The Position is not lost, and the reply can be played by hand.
     expect(quiet.fen).toBe(waiting.fen)
