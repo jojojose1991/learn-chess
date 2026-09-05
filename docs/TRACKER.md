@@ -76,6 +76,8 @@ already owed by code that shipped. Do not merge them.
 | A Puzzle Link's own theme — stamped, and what a Student sees — is unproven | 11                         | Ticket 20                           |
 | A board theme write that throws is silent, on screen and in the log | a Coach reports a theme that will not stick | 20, `src/components/app-sidebar.tsx` |
 | `readPlacement` throws on a placement-only FEN, and `withSideToMove` builds a nonsense one from it | 14 | 06, 08, `src/lib/chess/rules.ts` |
+| A Puzzle stored in checkmate or stalemate opens as `open`, so Play shows a Goal over a board that refuses every tap | 10, which owns what the end of an attempt says | 09, `src/lib/chess/goals.ts` |
+| An unplayable FEN throws out of `playReducer` rather than being refused, because `applyMove` builds its `Chess` outside the `try` | 11, where a FEN reaches a URL a person can type | 09, `src/lib/chess/play.ts` |
 | Save is `disabled` while the Position is illegal, so it is unfocusable and a screen reader never meets the reasons that explain it | a Coach who reads the screen rather than sees it | 08, `src/components/puzzle-editor.tsx` |
 | `MoveBoard` is mounted on no screen, so Guidance, the promotion picker's browser half and the 44px picker buttons lost their e2e | 09 | 08, `tests/e2e/board.spec.ts` |
 | Confirm & Edit has no Play control, so "blocks play" is proven for Save alone | 09 | Ticket 08 |
