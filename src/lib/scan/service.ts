@@ -1,6 +1,7 @@
 import { createRequire } from "node:module"
 
 import {
+  CONFIDENCE_FLOOR,
   extractTiles,
   probsToPlacement,
   recognizeGray,
@@ -13,7 +14,11 @@ import { PNG } from "pngjs"
 
 import { getCoach } from "@/lib/auth"
 
-import type { ScanRead, SeenFrom } from "./rules"
+import { upright } from "./orientation"
+import { WARP_SIZE, warpToSquare } from "./warp"
+
+import type { BoardCorners, GrayImage } from "@scoriiu/fenshot"
+import type { Quad, ScanRead, SeenFrom } from "./rules"
 
 /**
  * A Scan: an image of a board in, a draft placement out. Server only — the
@@ -39,6 +44,7 @@ export type ScanOutcome =
         | "too_many_pixels"
         | "unreadable"
         | "no_board"
+        | "bad_corners"
     }
 
 /**
@@ -88,10 +94,14 @@ export function seenFrom(placement: string): SeenFrom | null {
  * read before a body is: an upload is megabytes of a shared container's
  * memory, and who is asking is the cheapest refusal there is. Everything after
  * it is arithmetic on a header, and only then an allocation.
+ *
+ * `quad` is the recovery path: four corners a Coach placed, warped square
+ * here, and the detector — the half that failed — left out (ADR-0002).
  */
 export async function scan(
   readImage: () => Promise<Uint8Array | "too_large">,
-  headers: Headers
+  headers: Headers,
+  quad?: Quad
 ): Promise<ScanOutcome> {
   if (!(await getCoach(headers))) {
     return { ok: false, failure: "unauthenticated" }
@@ -103,24 +113,27 @@ export async function scan(
   const decoded = decode(image)
   if (typeof decoded === "string") return { ok: false, failure: decoded }
 
-  const gray = rgbaToGray(decoded.data, decoded.width, decoded.height)
-  const read = await recognizeGray(gray, async (corners) => {
-    // The model's own input and output, one name each: 64 tiles of 32×32
-    // grayscale in, 13 class probabilities a tile out.
-    const answer = await (
-      await classifier()
-    ).run({
-      tiles: new ort.Tensor("float32", extractTiles(gray, corners), [64, 1024]),
-    })
-    return probsToPlacement(answer.probs.data as Float32Array)
-  })
+  // Stood up before anything measures it: a phone photograph is landscape
+  // pixels plus a tag saying which way round, the browser has already applied
+  // that tag to the picture the Coach placed handles on, and `jpeg-js` has
+  // not (docs/learnings/board-recognition.md).
+  const gray = upright(
+    rgbaToGray(decoded.data, decoded.width, decoded.height),
+    decoded.exif
+  )
+  const read = quad
+    ? await fromCorners(gray, quad)
+    : await recognizeGray(gray, (corners) => classify(gray, corners))
+  if (read === "bad_corners") return { ok: false, failure: "bad_corners" }
   if (!read) return { ok: false, failure: "no_board" }
 
   return {
     ok: true,
     scan: {
       placement: read.placement,
-      reliable: read.reliable,
+      // Ours to say, on fenshot's floor: the corner path has no detector to
+      // have worked it out on the way past, so both paths answer it here.
+      reliable: read.minConfidence >= CONFIDENCE_FLOOR,
       meanConfidence: read.meanConfidence,
       minConfidence: read.minConfidence,
       seenFrom: seenFrom(read.placement),
@@ -128,7 +141,57 @@ export async function scan(
   }
 }
 
-type Decoded = { data: Uint8ClampedArray; width: number; height: number }
+/** Sixty-four empty squares, which is never the board anybody meant. */
+const NO_PIECES = "8/8/8/8/8/8/8/8"
+
+/**
+ * The board those four corners bound, read as one square image — `null` where
+ * there was no board in them, the same answer the detector gives.
+ *
+ * ponytail: no `snapCorners` arbitration. It corrects a quarter-tile detector
+ * error and there is no detector here; add it if a real photograph ever comes
+ * back a quarter tile off.
+ */
+async function fromCorners(gray: GrayImage, quad: Quad) {
+  const board = warpToSquare(gray, quad)
+  if (!board) return "bad_corners" as const
+
+  // Already square and already the size `extractTiles` resizes to, so its own
+  // resample is the identity and there is nothing left to crop.
+  const read = await classify(board, {
+    x0: 0,
+    y0: 0,
+    x1: WARP_SIZE,
+    y1: WARP_SIZE,
+  })
+
+  // An empty square classifies at 0.95, so four corners round a patch of
+  // tablecloth come back as an empty board the confidence floor is happy
+  // with — the one wrong answer it cannot catch. `recognizeGray` refuses an
+  // empty read on the other path; this is the same refusal.
+  return read.placement === NO_PIECES ? null : read
+}
+
+/**
+ * The model's own input and output, one name each: 64 tiles of 32×32
+ * grayscale in, 13 class probabilities a tile out.
+ */
+async function classify(gray: GrayImage, corners: BoardCorners) {
+  const answer = await (
+    await classifier()
+  ).run({
+    tiles: new ort.Tensor("float32", extractTiles(gray, corners), [64, 1024]),
+  })
+  return probsToPlacement(answer.probs.data as Float32Array)
+}
+
+type Decoded = {
+  data: Uint8ClampedArray
+  width: number
+  height: number
+  /** The APP1 payload, where the file carried one. PNGs never do. */
+  exif?: Uint8Array
+}
 
 /**
  * The image as pixels, or which way it was not one. The format comes from the
@@ -196,6 +259,9 @@ function decodeJpeg(image: Uint8Array) {
       data: view(decoded.data),
       width: decoded.width,
       height: decoded.height,
+      // Handed back but not declared: `jpeg-js`'s own types stop at the
+      // pixels, and it reads APP1 as an opaque block it never acts on.
+      exif: (decoded as { exifBuffer?: Uint8Array }).exifBuffer,
     }
   } catch {
     return "unreadable"

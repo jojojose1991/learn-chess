@@ -36,3 +36,28 @@ arrives from outside our own editor.
 Raised out of ticket 01's code review rather than a report from use — no one
 has hit it. See `src/lib/chess/rules.ts` (`structuralReasons`) and
 `docs/learnings/chess-libraries.md` for the full list of 1.4.0 error strings.
+
+**Ticket 15 fired the trigger, and did not bring the photograph.** The four-
+corner warp shipped, so a Coach can now put a Position in front of the editor
+that our own detector never approved — and, for the first time, one the
+classifier itself is *not* confident about, because an unreliable corner read
+opens as a draft with a warning rather than being refused (measured: minimum
+confidence collapses while the read is still perfect, so refusing it would
+throw away correct Positions). That is as far outside our own editor as an
+MVP Position gets.
+
+It still cannot trip an unmapped error. Both Scan paths end in fenshot's
+`probsToPlacement`, which always emits eight well-formed ranks, and the rest
+of the FEN is our own constant `w - - 0 1` — so castling, en-passant and both
+counters are ours and are always valid. A wrong read is a *wrong* Position,
+not a malformed one: too many kings and pawns on the edge rows, which
+`structuralReasons` already maps to sentences. Deliberately misplaced corners
+were measured reading `8/2p5/8/4n3/2R1B3/5Q2/2PP1PPP/1NN1K1NR` — nonsense, and
+nonsense of exactly the mapped kind.
+
+What 15 did **not** produce is a photograph. Its fixture is a browser
+rendering of a keystoned board, so glare, paper grain and halftone are still
+unmeasured, and the tracker carries that separately. If the decision is
+waiting on evidence that the classifier can emit a structurally odd rank
+under photographic degradation, it is still waiting; if it is waiting on
+whether *our composition* can, that is answered, and the answer is no.

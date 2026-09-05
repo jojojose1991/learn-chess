@@ -20,16 +20,28 @@ const POSITION = "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR"
 
 const OUT = new URL("../tests/fixtures/", import.meta.url)
 
+/** The size of every fixture, and so the pixels its corners are measured in. */
+const VIEWPORT = { width: 800, height: 860 }
+
 const FIXTURES = [
-  { file: "board-white.png", flip: false, rotate: 0 },
-  { file: "board-black.png", flip: true, rotate: 0 },
+  { file: "board-white.png", flip: false, transform: "none" },
+  { file: "board-black.png", flip: true, transform: "none" },
   // The same board as a JPEG, which is what a screenshot becomes once it has
   // been through a messaging app on the way to the Coach.
-  { file: "board-white.jpg", flip: false, rotate: 0 },
+  { file: "board-white.jpg", flip: false, transform: "none" },
   // Three degrees off square. The detector follows whole rows and columns, so
   // its rotation tolerance is under a degree — this is the clean-screenshot
   // pipeline failing, without a photograph to fail it with.
-  { file: "board-askew.png", flip: false, rotate: 3 },
+  { file: "board-askew.png", flip: false, transform: "rotate(3deg)" },
+  // Keystone: as close to a phone photograph of a screen as a browser gets,
+  // and how close that is, is measured in docs/learnings/board-recognition.md.
+  // `corners` writes the four it landed on beside it.
+  {
+    file: "board-keystone.jpg",
+    flip: false,
+    transform: "perspective(1000px) rotateY(-17deg) rotateX(7deg)",
+    corners: true,
+  },
 ]
 
 /** One square of the drawn board, top-left first in whichever order it is drawn. */
@@ -38,10 +50,10 @@ type Cell = { piece: string; light: boolean }
 async function main() {
   await mkdir(OUT, { recursive: true })
   const browser = await chromium.launch()
-  const page = await browser.newPage({ viewport: { width: 800, height: 860 } })
+  const page = await browser.newPage({ viewport: VIEWPORT })
 
-  for (const { file, flip, rotate } of FIXTURES) {
-    await page.setContent(document(POSITION, flip, rotate))
+  for (const { file, flip, transform, corners: marked } of FIXTURES) {
+    await page.setContent(document(POSITION, flip, transform, marked))
     const path = new URL(file, OUT)
     const jpeg = file.endsWith(".jpg")
     await writeFile(
@@ -49,13 +61,48 @@ async function main() {
       await page.screenshot(jpeg ? { type: "jpeg", quality: 80 } : {})
     )
     process.stdout.write(`${path.pathname}\n`)
+
+    if (marked) {
+      // Measured, rather than worked out from the transform a second time.
+      const corners = await page.$$eval(".corner", (marks) =>
+        marks.map((mark) => {
+          const box = mark.getBoundingClientRect()
+          return { x: box.left, y: box.top }
+        })
+      )
+      const beside = new URL(file.replace(/\.\w+$/, ".json"), OUT)
+      await writeFile(
+        beside,
+        `${JSON.stringify({ ...VIEWPORT, corners }, null, 2)}\n`
+      )
+      process.stdout.write(`${beside.pathname}\n`)
+    }
   }
 
   await browser.close()
 }
 
+/**
+ * Zero-size marks at the board's four corners, clockwise from the top left.
+ * They ride the same transform the board does, so each one's rect is where
+ * that corner of the board ended up on screen.
+ */
+const CORNERS = [
+  "left:0;top:0",
+  "left:100%;top:0",
+  "left:100%;top:100%",
+  "left:0;top:100%",
+]
+  .map((at) => `<span class="corner" style="position:absolute;${at}"></span>`)
+  .join("")
+
 /** The page a screenshot is taken of: a board, and something around it. */
-function document(placement: string, flip: boolean, rotate: number) {
+function document(
+  placement: string,
+  flip: boolean,
+  transform: string,
+  marked = false
+) {
   const board = cells(placement)
   const cellsHtml = (flip ? [...board].reverse() : board)
     .map(({ piece, light }) => {
@@ -70,9 +117,9 @@ function document(placement: string, flip: boolean, rotate: number) {
     font:16px system-ui;display:flex;flex-direction:column;align-items:center;
     gap:24px;padding:40px">
     <p style="margin:0">White to play and win.</p>
-    <div style="display:grid;grid-template-columns:repeat(8,80px);
-      grid-template-rows:repeat(8,80px);transform:rotate(${rotate}deg)"
-      >${cellsHtml}</div>
+    <div style="position:relative;display:grid;grid-template-columns:repeat(8,80px);
+      grid-template-rows:repeat(8,80px);transform:${transform}"
+      >${cellsHtml}${marked ? CORNERS : ""}</div>
   </body></html>`
 }
 

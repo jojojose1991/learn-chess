@@ -3,21 +3,39 @@ import { createFileRoute } from "@tanstack/react-router"
 import { log } from "@/lib/log"
 import { scan } from "@/lib/scan/service"
 
+import type { Quad } from "@/lib/scan/rules"
+
 /**
  * The placement read out of an image of a board — an action, not a resource:
  * POST, one job, the image as the body and nothing kept afterwards. A Scan
  * always answers a draft for a Coach to check, so an unreliable read is an
  * answer with `reliable: false` in it and not an error.
+ *
+ * `?corners=x,y,x,y,x,y,x,y` is the recovery path for a photograph: the four
+ * the Coach dragged onto the board, clockwise from its top left. They ride the
+ * query string because the body is already the image and no multipart parser
+ * is installed for a second field — the same action, told where to look.
  */
 export const Route = createFileRoute("/api/scan")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
+          const corners = quadFrom(
+            new URL(request.url).searchParams.get("corners")
+          )
+          if (corners === "malformed") {
+            return fail(400, "Those corner positions were not four points.")
+          }
+
           // The body is read by the service, and only once it knows who is
           // asking — a thunk rather than bytes, so an upload from a stranger
           // costs no memory at all.
-          const outcome = await scan(() => readImage(request), request.headers)
+          const outcome = await scan(
+            () => readImage(request),
+            request.headers,
+            corners
+          )
           if (outcome.ok) return Response.json(outcome.scan)
 
           switch (outcome.failure) {
@@ -38,6 +56,11 @@ export const Route = createFileRoute("/api/scan")({
               return fail(422, "That image could not be read.")
             case "no_board":
               return fail(422, "No board was found in that image.")
+            case "bad_corners":
+              return fail(
+                422,
+                "Those four corners are not the corners of a board. Put one on each, going clockwise from the top left."
+              )
           }
         } catch (failure) {
           // Every way a Scan can fail is an outcome above, so anything thrown
@@ -51,6 +74,23 @@ export const Route = createFileRoute("/api/scan")({
     },
   },
 })
+
+/**
+ * Eight numbers a Coach's browser sent, as a quad — or `"malformed"`, which is
+ * a badly formed request rather than a badly placed corner.
+ */
+function quadFrom(corners: string | null): Quad | "malformed" | undefined {
+  if (corners === null) return undefined
+
+  const numbers = corners.split(",").map(Number)
+  if (numbers.length !== 8 || !numbers.every(Number.isFinite)) {
+    return "malformed"
+  }
+  return [0, 2, 4, 6].map((at) => ({
+    x: numbers[at],
+    y: numbers[at + 1],
+  })) as Quad
+}
 
 /**
  * The most an upload may weigh. Generous enough for a 5K screenshot and for

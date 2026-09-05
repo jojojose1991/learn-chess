@@ -321,6 +321,78 @@ divs with `touch-action: none`.
 Avoid `jscanify` (1.4.3) unless you also want automatic corner detection — it
 wraps **OpenCV.js at ~8 MB**, six times the entire model.
 
+## The four corners, measured 2026-09-05
+
+Ticket 15's own fixture: the same board, drawn through a CSS
+`perspective(1000px) rotateY(-17deg) rotateX(7deg)` and screenshotted as a
+JPEG at q80 — `pnpm tsx scripts/scan-fixture.ts` makes it and writes the four
+projected corners beside it as `board-keystone.json`, measured by the browser
+that drew them. Its top edge is 597 px against a bottom edge of 640 px and its
+left side 581 px against a right side of 702 px, so a tile is about 77 px.
+
+**It is not a photograph** — only real projective distortion and real lossy
+compression. What it stands in for is keystone; what it cannot is a camera.
+
+Every jitter below moves each corner on **both** axes, so ±8 px is 11 px of
+displacement — about a seventh of a tile — and ±25 px is 35 px, near half.
+
+| Four corners                   | Accuracy       | `reliable` | min       | mean  | ms  |
+| ------------------------------ | -------------- | ---------- | --------- | ----- | --- |
+| exact, from the browser        | **64/64**      | true       | **0.915** | 0.955 | 79  |
+| ±8 px on each axis             | **64/64**      | **false**  | 0.375     | 0.903 | 32  |
+| ±25 px on each axis            | 41/64          | false      | 0.239     | 0.808 | 29  |
+| none — the detector left to it | no board found | —          | —         | —     | 34  |
+
+Four things this settles, and the first two reproduce the 2026-09-02 numbers
+on an image that had never been seen before.
+
+- **On this image the detector returns `null`**, so the automatic path is not
+  a bad read, it is no read at all.
+- **The screen must show an unreliable corner read as a draft plus a
+  warning**, never as a refusal. At a seventh of a tile of slop the read is
+  still perfect and `reliable` is already false, so refusing one would throw
+  away correct Positions.
+- **An empty read is the one wrong answer the confidence floor cannot
+  catch.** Four corners round a blank patch warp to one flat colour, which
+  classifies as sixty-four empty squares at 0.95 and `reliable: true`. The
+  detector's own path already refuses an all-empty read by masking and
+  rescanning; the corner path has to refuse it too, or a collapsed quad — a
+  client measuring handles in display pixels rather than the picture's own —
+  answers 200 with an empty board on it.
+- **Mean confidence is useless as a warning.** It moved 0.955 → 0.903 across
+  the same jitter that took the minimum down by more than half.
+
+## A photograph says which way up it is, and only one end listens
+
+Measured 2026-09-05 in this repo's own chromium, on a 40×10 JPEG carrying
+EXIF `Orientation = 6` (a quarter turn clockwise):
+
+| Read by                            | Says      |
+| ---------------------------------- | --------- |
+| `jpeg-js`, server side             | **40×10** |
+| chromium `naturalWidth × Height`   | **10×40** |
+| chromium, drawn                    | 10×40     |
+| chromium with `image-orientation: none`, drawn | 40×10 |
+| chromium with `image-orientation: none`, `naturalWidth` | **still 10×40** |
+
+Three consequences, and the third is a trap.
+
+- **A phone photograph reaches the two ends a quarter turn apart.** Browsers
+  have applied the tag since 2020; `jpeg-js` reads APP1 as an opaque block
+  (`decoder.js:684`) and never acts on it. So corners a Coach places in the
+  browser's frame land outside the server's, every one of them, and the
+  four-corner path answers "those are not the corners of a board" wherever the
+  handles go. `src/lib/scan/orientation.ts` turns the picture server side so
+  both ends see the same one.
+- **`jpeg-js` does hand the tag over**, as `exifBuffer` — undeclared in its
+  `.d.ts`, and offset by one: it is `appData.subarray(5)`, so the second NUL
+  of `Exif\0\0` is still in front of the TIFF header. Measured 23 bytes for a
+  22-byte TIFF.
+- **`image-orientation: none` does not fix this and makes it worse.** It
+  changes what is *drawn* and leaves `naturalWidth` turned, so the picture on
+  screen and the number the corners are scaled by stop agreeing with each
+  other as well as with the server. Do not reach for it.
+
 ## Not done
 
 - **The test scripts lived in a session scratchpad and are gone.** The numbers
@@ -335,7 +407,9 @@ wraps **OpenCV.js at ~8 MB**, six times the entire model.
   white-perspective; the Black-perspective read comes back mirrored with
   `resolveOrientation` saying "black"), and they are a script rather than
   three PNGs someone once had. What they cannot stand in for is a photograph,
-  which is what ticket 15 needs.
+  which is what ticket 15 needs — and 15 did not get one either. Its keystone
+  fixture above is a rendering, so glare, paper grain and halftone remain
+  unmeasured on every path.
 
 ## Measured again, 2026-09-05, on the fixtures above
 
