@@ -288,6 +288,23 @@ it is how parallel agents avoid standing on each other.
   the subject `chore: fold <what> into main`. Then remove the worktree and
   delete the branch, so the next run cannot start from it.
 
+**An orchestrator reads verdicts, not output.** Its context has to survive
+every merge, every conflict and every round of fixes, so the one thing it
+cannot spend it on is a test runner's stdout.
+
+- **Run the checks in a subagent** — `pnpm typecheck`, `pnpm lint`,
+  `pnpm test`, `pnpm e2e` — and take back pass or fail, the failing test
+  names and the assertion that broke. A green suite is one line; the
+  hundreds that passed are not information.
+- **Read the diff yourself.** What is delegated is the noisy mechanical
+  half, never the judgement — an agent's account of its own work is the
+  thing being checked, and a second agent summarising it is not a check.
+- **`pnpm e2e` is single-instance**: port 3013 is hardcoded in
+  `playwright.config.ts` and `pnpm e2e:db` drops and re-clones one database
+  named in `.env`. Two worktrees running it at once tear down each other's
+  database, and the failures read like code bugs. Agents write e2e specs;
+  the orchestrator runs them, one branch at a time.
+
 **Commit messages are short and outcome-focused:**
 
 ```
