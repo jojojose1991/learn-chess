@@ -84,91 +84,88 @@ function Accounts() {
         </p>
       ) : null}
 
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b text-muted-foreground">
-            <th className="pb-2 font-medium">Coach</th>
-            <th className="pb-2 font-medium">Puzzles</th>
-            <th className="pb-2 font-medium">Access</th>
-            <th className="pb-2 font-medium">
-              <span className="sr-only">Actions</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {accounts.map((account) => (
-            <tr key={account.id} className="border-b align-middle">
-              <td className="py-3 pr-4">
-                <div>{account.name}</div>
-                <div className="text-muted-foreground">{account.email}</div>
-              </td>
-              <td className="py-3 pr-4 tabular-nums">{account.puzzles}</td>
-              <td className="py-3 pr-4">
-                {account.revoked ? "Revoked" : "Active"}
-              </td>
-              <td className="py-3">
-                <div className="flex flex-wrap items-center justify-end gap-2">
-                  <form
-                    onSubmit={(event) => submitPassword(event, account.id)}
-                    className="flex items-center gap-2"
-                  >
-                    <Label
-                      htmlFor={`password-${account.id}`}
-                      className="sr-only"
-                    >
-                      New password for {account.email}
-                    </Label>
-                    <Input
-                      id={`password-${account.id}`}
-                      name="password"
-                      type="password"
-                      autoComplete="new-password"
-                      placeholder={
-                        account.id === coach.id
-                          ? "New password — signs you out"
-                          : "New password"
-                      }
-                      minLength={MIN_PASSWORD}
-                      required
-                      className="w-52"
-                    />
-                    <Button
-                      type="submit"
-                      variant="outline"
-                      size="sm"
-                      disabled={busy}
-                    >
-                      Set
-                    </Button>
-                  </form>
+      {/* A list, not a table: a table lays out at its content's intrinsic
+          width whatever `w-full` says, and four columns holding an email and
+          a password form are wider than a phone. `role` for the reason in
+          `_coach/index.tsx`. */}
+      <ul
+        role="list"
+        aria-label="Accounts"
+        className="flex flex-col divide-y border-y text-sm"
+      >
+        {accounts.map((account) => (
+          <li
+            key={account.id}
+            className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:gap-4"
+          >
+            <div className="min-w-0 sm:flex-1">
+              <div>{account.name}</div>
+              <div className="break-all text-muted-foreground">
+                {account.email}
+              </div>
+            </div>
+            <p className="text-muted-foreground sm:w-40 sm:shrink-0">
+              {account.puzzles} {account.puzzles === 1 ? "Puzzle" : "Puzzles"}
+              {" · "}
+              {account.revoked ? "Revoked" : "Active"}
+            </p>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <form
+                onSubmit={(event) => submitPassword(event, account.id)}
+                className="flex w-full items-center gap-2 sm:w-auto"
+              >
+                <Label htmlFor={`password-${account.id}`} className="sr-only">
+                  New password for {account.email}
+                </Label>
+                <Input
+                  id={`password-${account.id}`}
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder={
+                    account.id === coach.id
+                      ? "New password — signs you out"
+                      : "New password"
+                  }
+                  minLength={MIN_PASSWORD}
+                  required
+                  className="min-h-11 sm:w-52"
+                />
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="min-h-11"
+                  disabled={busy}
+                >
+                  Set
+                </Button>
+              </form>
 
-                  {account.id === coach.id ? (
-                    <span className="text-muted-foreground">This is you</span>
-                  ) : (
-                    <Button
-                      variant={account.revoked ? "outline" : "ghost"}
-                      size="sm"
-                      disabled={busy}
-                      onClick={() =>
-                        run(() =>
-                          setAccess({
-                            data: {
-                              coachId: account.id,
-                              revoked: !account.revoked,
-                            },
-                          })
-                        )
-                      }
-                    >
-                      {account.revoked ? "Restore" : "Revoke"}
-                    </Button>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              {account.id === coach.id ? (
+                <span className="text-muted-foreground">This is you</span>
+              ) : (
+                <Button
+                  variant={account.revoked ? "outline" : "ghost"}
+                  className="min-h-11"
+                  disabled={busy}
+                  onClick={() =>
+                    run(() =>
+                      setAccess({
+                        data: {
+                          coachId: account.id,
+                          revoked: !account.revoked,
+                        },
+                      })
+                    )
+                  }
+                >
+                  {account.revoked ? "Restore" : "Revoke"}
+                </Button>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <section className="flex flex-col gap-4">
         <h2 className="text-lg">Add a Coach</h2>
