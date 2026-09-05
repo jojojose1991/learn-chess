@@ -15,6 +15,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as CoachIndexRouteImport } from './routes/_coach/index'
 import { Route as CoachAdminRouteImport } from './routes/_coach/admin'
 import { Route as ApiScanRouteImport } from './routes/api/scan'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as CoachPlayPuzzleIdRouteImport } from './routes/_coach/play.$puzzleId'
 import { Route as CoachPuzzlesPuzzleIdRouteImport } from './routes/_coach/puzzles.$puzzleId'
 import { Route as CoachPuzzlesNewRouteImport } from './routes/_coach/puzzles.new'
@@ -50,6 +51,11 @@ const ApiScanRoute = ApiScanRouteImport.update({
   path: '/api/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CoachPlayPuzzleIdRoute = CoachPlayPuzzleIdRouteImport.update({
   id: '/play/$puzzleId',
   path: '/play/$puzzleId',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/admin': typeof CoachAdminRoute
   '/api/scan': typeof ApiScanRoute
+  '/p/$slug': typeof PSlugRoute
   '/play/$puzzleId': typeof CoachPlayPuzzleIdRoute
   '/puzzles/$puzzleId': typeof CoachPuzzlesPuzzleIdRoute
   '/puzzles/new': typeof CoachPuzzlesNewRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/admin': typeof CoachAdminRoute
   '/api/scan': typeof ApiScanRoute
+  '/p/$slug': typeof PSlugRoute
   '/': typeof CoachIndexRoute
   '/play/$puzzleId': typeof CoachPlayPuzzleIdRoute
   '/puzzles/$puzzleId': typeof CoachPuzzlesPuzzleIdRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/_coach/admin': typeof CoachAdminRoute
   '/api/scan': typeof ApiScanRoute
+  '/p/$slug': typeof PSlugRoute
   '/_coach/': typeof CoachIndexRoute
   '/_coach/play/$puzzleId': typeof CoachPlayPuzzleIdRoute
   '/_coach/puzzles/$puzzleId': typeof CoachPuzzlesPuzzleIdRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/admin'
     | '/api/scan'
+    | '/p/$slug'
     | '/play/$puzzleId'
     | '/puzzles/$puzzleId'
     | '/puzzles/new'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/admin'
     | '/api/scan'
+    | '/p/$slug'
     | '/'
     | '/play/$puzzleId'
     | '/puzzles/$puzzleId'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/_coach/admin'
     | '/api/scan'
+    | '/p/$slug'
     | '/_coach/'
     | '/_coach/play/$puzzleId'
     | '/_coach/puzzles/$puzzleId'
@@ -159,6 +171,7 @@ export interface RootRouteChildren {
   CreditsRoute: typeof CreditsRoute
   SignInRoute: typeof SignInRoute
   ApiScanRoute: typeof ApiScanRoute
+  PSlugRoute: typeof PSlugRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiEngineMoveRoute: typeof ApiEngineMoveRoute
 }
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       path: '/api/scan'
       fullPath: '/api/scan'
       preLoaderRoute: typeof ApiScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_coach/play/$puzzleId': {
@@ -268,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreditsRoute: CreditsRoute,
   SignInRoute: SignInRoute,
   ApiScanRoute: ApiScanRoute,
+  PSlugRoute: PSlugRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiEngineMoveRoute: ApiEngineMoveRoute,
 }

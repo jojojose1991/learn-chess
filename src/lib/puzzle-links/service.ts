@@ -123,6 +123,10 @@ export async function revokeLink(
  * so neither answer says which Puzzles exist. **No headers**: this is the one
  * read in the product that a Student makes with no session at all, and the
  * slug is the whole of the authority it carries.
+ *
+ * ponytail: 40 bits and nothing throttling guesses at them, on the one route
+ * a stranger reaches without signing in — ticket 23 is where an
+ * unauthenticated route's ceiling is decided, and this belongs behind it.
  */
 export async function openLink(slug: string): Promise<OpenedPuzzle | null> {
   const link = (await findOpenLinkBySlug(slug)).at(0)
