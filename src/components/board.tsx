@@ -24,6 +24,12 @@ type BoardProps = {
   targets?: ReadonlyArray<Square>
   /** The move just played, marked on both of its squares. */
   lastMove?: { from: Square; to: Square } | null
+  /**
+   * Nothing on this board can be moved. Said on the squares rather than
+   * `disabled` on them, which would take all 64 out of the tab order and
+   * leave a Student who reads the screen unable to reach the position at all.
+   */
+  locked?: boolean
   /** The only thing the board says. It has no opinion on what a tap means. */
   onSquareTap: (square: Square) => void
 }
@@ -70,6 +76,7 @@ export function Board({
   selected = null,
   targets = [],
   lastMove = null,
+  locked = false,
   onSquareTap,
 }: BoardProps) {
   const squares = readPlacement(fen)
@@ -103,6 +110,7 @@ export function Board({
           <button
             key={square}
             type="button"
+            aria-disabled={locked}
             onClick={() => onSquareTap(square)}
             aria-label={`${square}, ${pieceName(piece)}${
               mark ? `, ${MARK_NAME[mark]}` : ""

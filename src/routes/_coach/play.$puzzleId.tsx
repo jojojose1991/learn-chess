@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_coach/play/$puzzleId")({
   component: Play,
 })
 
-/** Screen 5, local versus local. A Puzzle Link lands on the same board (11). */
+/** Screen 5. A Puzzle Link lands on the same board (11). */
 function Play() {
   const puzzle = Route.useLoaderData()
   const { coach } = Route.useRouteContext()
