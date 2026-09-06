@@ -13,7 +13,7 @@ export type GoalOutcome =
   | { status: "solved" }
   | { status: "failed"; reason: string }
 
-const moveWord = (n: number) => (n === 1 ? "move" : "moves")
+export const moveWord = (n: number) => (n === 1 ? "move" : "moves")
 
 const failed = (reason: string): GoalOutcome => ({ status: "failed", reason })
 
@@ -76,4 +76,70 @@ export function evaluateGoal(
   }
 
   return { status: "open" }
+}
+
+/**
+ * How deep the search will look. Beyond this the answer is "we do not know",
+ * never "there is no mate" — see `hasNoMateWithin`.
+ *
+ * Two, because the search is full width and Save is a request a Coach waits
+ * on. Searching only checking moves would go deeper cheaply and is wrong: a
+ * mate whose first move is quiet — take the opposition, step a rook onto the
+ * file — is the commonest shape a Coach sets, and pruning to checks called 12
+ * of 334 random mates-in-2 unsolvable. The measured cost of full width on a
+ * busy Position with no mate in it is ~230ms at n=2 and ~5.9s at n=3, so this
+ * is where the line falls today.
+ *
+ * "Mate in 2" is docs/PLAN.md's own example, so the Goals this actually checks
+ * are the ones most Puzzles use; deeper ones are taken on the Coach's word.
+ *
+ * Raising this is not just a cost decision. `mateWithin` threads one board
+ * down the search, so `isGameOver()` there sees move history — and threefold
+ * repetition, unlike the draws guarded below, is path-dependent and cannot be
+ * read off a FEN. It needs eight plies to arise and this searches at most
+ * four, so it cannot bite at two; a ceiling of four or more has to handle it.
+ */
+const SEARCH_CEILING = 2
+
+/**
+ * Whether this Position is known to have no mate within `n` of the side to
+ * move's own moves — which is the only answer a caller can act on. A Goal is
+ * still a predicate and no line is stored (ADR-0001); this only proves whether
+ * one exists, so an unsolvable Puzzle is refused at Save rather than found by
+ * a Student on a board that has stopped taking taps.
+ *
+ * False, not true, past `SEARCH_CEILING`: a Goal too deep to search is taken
+ * on the Coach's word rather than called unsolvable on a search that never
+ * ran, because refusing a correct Puzzle is the worse of the two failures.
+ */
+export function hasNoMateWithin(fen: string, n: number): boolean {
+  if (n > SEARCH_CEILING) return false
+  return !mateWithin(new Chess(fen, { skipValidation: true }), n)
+}
+
+/**
+ * Forced, not merely available: the attacker needs one move that works against
+ * *every* reply, which is what alternates `some` and `every` here.
+ */
+function mateWithin(board: Chess, n: number): boolean {
+  if (n <= 0 || board.isGameOver()) return false
+
+  return board.moves().some((move) => {
+    board.move(move)
+    try {
+      if (board.isCheckmate()) return true
+      // A reply that draws is a refutation, not a step on the way.
+      if (board.isStalemate() || board.isInsufficientMaterial()) return false
+      return board.moves().every((reply) => {
+        board.move(reply)
+        try {
+          return mateWithin(board, n - 1)
+        } finally {
+          board.undo()
+        }
+      })
+    } finally {
+      board.undo()
+    }
+  })
 }
