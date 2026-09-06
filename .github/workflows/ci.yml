@@ -1,10 +1,5 @@
-# Is this branch correct? Runs on every pull request, and again on main as the
-# gate `deploy.yml` waits for.
-#
-# Nothing here holds a credential. The unit suite is pure functions and jsdom,
-# and the e2e suite builds its own database in a service container, so a fork's
-# pull request runs the whole thing and a mistake in this file cannot leak a
-# secret. Secrets start in `deploy.yml` and stay there.
+# Holds no credential: the unit suite is pure functions and jsdom, and e2e
+# builds its own database. A fork's pull request runs the whole thing.
 name: CI
 
 on:
@@ -12,7 +7,6 @@ on:
   push:
     branches: [main]
 
-# A superseded run on the same branch is wasted minutes, not evidence.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -30,10 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Before setup-node, not after: `cache: pnpm` shells out to
-      # `pnpm store path` and fails if pnpm is not installed yet.
-      # No `version:` — the action reads `packageManager` from package.json,
-      # which is the only place this repo names a pnpm version.
+      # Before setup-node: `cache: pnpm` shells out to `pnpm store path`.
+      # No `version:` — the action reads `packageManager` from package.json.
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
@@ -41,18 +33,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
 
-      # The same three belts the image uses: onnxruntime-node's postinstall
-      # fetches CUDA and TensorRT providers nothing here runs.
+      # `onnxruntime-node`'s postinstall fetches CUDA providers nothing runs.
       - run: pnpm install --frozen-lockfile --ignore-scripts
         env:
           ONNXRUNTIME_NODE_INSTALL: skip
 
-      # Here too, not only in e2e: the lowest layer holding "the engine returns
-      # a move this Position allows" is a unit test, and it skips itself
-      # without a binary.
+      # The engine's own test skips itself without a binary.
       - uses: ./.github/actions/stockfish
 
-      # Each named, so a red run says which one without opening the log.
       - name: Types
         run: pnpm typecheck
 
@@ -73,10 +61,8 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      # Matches docker-compose.yml, down to the port, so E2E_DATABASE_URL reads
-      # the same here as it does on a laptop. The PGDATA move in postgres 18
-      # that compose works around cannot bite: a service container mounts no
-      # volume and is destroyed with the job.
+      # Port 5433 matches docker-compose.yml, so E2E_DATABASE_URL reads the
+      # same here as on a laptop.
       postgres:
         image: postgres:18-alpine
         env:
@@ -91,8 +77,6 @@ jobs:
           --health-retries 20
 
     env:
-      # `scripts/e2e-db.ts` drops and rebuilds this database every run, and
-      # refuses to name the maintenance one.
       E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5433/learn-chess-e2e
       STOCKFISH_PATH: /usr/local/bin/stockfish
       ENGINE_MOVETIME_MS: 200
@@ -101,8 +85,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # No `version:` — the action reads `packageManager` from package.json,
-      # which is the only place this repo names a pnpm version.
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
@@ -116,15 +98,12 @@ jobs:
 
       - uses: ./.github/actions/stockfish
 
-      # Not cached: Playwright's own CI guidance is that restoring costs about
-      # what downloading costs, and the apt libraries `--with-deps` installs
-      # are not in that cache anyway.
+      # Not cached: Playwright's docs say restoring costs about what
+      # downloading costs, and `--with-deps`' apt libraries are not cacheable.
       - name: Install Playwright
         run: pnpm exec playwright install --with-deps chromium
 
-      # Provisioning is playwright.config.ts's own job — it runs `pnpm e2e:db`
-      # inside `webServer.command`, because Playwright starts the server before
-      # globalSetup and the database has to exist by then.
+      # `playwright.config.ts` provisions the database in `webServer.command`.
       - name: End-to-end tests
         run: pnpm e2e
 

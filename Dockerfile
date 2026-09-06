@@ -22,12 +22,8 @@ RUN tar -xf /tmp/stockfish.tar -C /tmp \
 FROM --platform=$BUILDPLATFORM node:24-slim AS build
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# From `packageManager` in the file just copied, so the image, CI and a laptop
-# cannot drift apart — a version pinned here as well would be a second answer
-# to a question `package.json` already answers. Not `corepack enable pnpm`:
-# corepack 0.34 cannot fetch pnpm 12 at all (it looks for a `bin/pnpm.cjs`
-# that a self-contained release does not ship), and corepack is gone from the
-# Node distribution at 25 (docs/learnings/deployment.md).
+# From `packageManager`, so the image, CI and a laptop cannot drift apart. Not
+# corepack: it cannot fetch pnpm 12 (docs/learnings/deployment.md).
 RUN npm install --global "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
 # Belt to `--ignore-scripts`' braces and to `allowBuilds`' own `false`: the
 # postinstall would download CUDA and TensorRT providers this CPU service never
@@ -38,24 +34,15 @@ ENV ONNXRUNTIME_NODE_INSTALL=skip
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm build
-# A tree the runtime stage can copy on its own: still symlinked, but into a
-# `.pnpm` store of its own inside `/runtime`, so the links resolve after the
-# COPY. `node_modules` as it stands here points at a store that stage has not
-# got. `--prod` drops the dev half; without `--filter=.` pnpm selects nothing
-# (`packages: []`) and without `--legacy` it refuses a non-injected workspace.
+# A self-contained tree: still symlinked, but into a `.pnpm` store of its own,
+# so the links resolve after the COPY. Without `--filter=.` pnpm selects
+# nothing (`packages: []`); without `--legacy` it refuses this workspace.
 RUN pnpm --filter=. deploy --prod --legacy --ignore-scripts /runtime
 
-# Pruned *after* the deploy, never before: `pnpm deploy` re-resolves every
-# dependency out of the store, so anything deleted from `node_modules` first
-# is faithfully restored into the tree that ships.
-#
-# Neither is loadable in this image: `onnxruntime-node` carries a binding per
-# platform, and `onnxruntime-web` is the wasm runtime ADR-0003 rejected, here
-# only as a peer nothing imports (docs/superpowers/specs, for the half of that
-# still owed at install time).
-#
-# `set -eu` and the `test` are what make an unmatched glob fail here rather
-# than quietly leave the hundreds of megabytes behind.
+# After the deploy, never before: `pnpm deploy` re-resolves from the store and
+# restores anything cut first. Neither is loadable here — a binding per
+# platform, and the wasm runtime ADR-0003 rejected, present only as a peer.
+# The `test` is what makes an unmatched glob fail rather than prune nothing.
 RUN set -eu \
   && ORT="$(echo /runtime/node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6)" \
   && test -d "$ORT/linux/x64" \
@@ -78,13 +65,11 @@ COPY --from=stockfish /usr/local/bin/stockfish /usr/local/bin/stockfish
 # layer for anyone who pulls it.
 ENV STOCKFISH_PATH=/usr/local/bin/stockfish
 ENV ENGINE_MOVETIME_MS=200
-# The server resolves its native binding and the classifier's model at runtime,
-# so the store ships beside `dist/` (ADR-0006). Second, because it changes far
-# less often than the bundle above it.
+# The server resolves its native binding and the model at runtime, so the store
+# ships beside `dist/` (ADR-0006). First, because it changes less than `dist`.
 COPY --from=build /runtime/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 USER node
-# ADR-0006 is why this is srvx rather than Nitro, and why `--static` is
-# absolute rather than relative.
+# ADR-0006: why srvx rather than Nitro, and why `--static` must be absolute.
 CMD ["node", "node_modules/srvx/bin/srvx.mjs", "serve", "--prod", \
   "--entry=/app/dist/server/server.js", "--static=/app/dist/client"]
