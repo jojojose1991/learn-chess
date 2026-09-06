@@ -66,13 +66,13 @@ this repo's own history, agent-written bodies split cleanly:
 
 The bloat is line *count*, and commitlint has no rule for it, so a total
 character cap is the only available proxy. 600 sits in the empty gap between
-334 and 827, and fits the three bullets CLAUDE.md asks for — 400 did not, and
+334 and 827, and fits the three bullets AGENTS.md asks for — 400 did not, and
 rejected two honest messages.
 
 **The cost, stated plainly.** Capping the body can squeeze out reasoning the
 convention would have kept. That is only acceptable because this repo routes
 durable knowledge elsewhere: a deploy step to `docs/PLAN.md`, a library gotcha
-to this directory, a rule to `CLAUDE.md`. Remove that habit and the cap starts
+to this directory, a rule to `AGENTS.md`. Remove that habit and the cap starts
 destroying information.
 
 ## Not checked

@@ -58,4 +58,4 @@ them by hand.
 - [docs/adr/](./docs/adr) — decisions with real trade-offs, and the evidence
 - [docs/BACKLOG.md](./docs/BACKLOG.md) — what is deliberately out of scope
 - [docs/learnings/](./docs/learnings) — verified library facts and gotchas, several recording where official docs are wrong
-- [CLAUDE.md](./CLAUDE.md) — the working rules: layers, testing, the commit loop
+- [AGENTS.md](./AGENTS.md) — the working rules: layers, testing, the commit loop

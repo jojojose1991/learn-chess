@@ -6,7 +6,7 @@ service that spreads a row into its DTO instead.
 `({ banned, ...row }) => ({ ...row, revoked: Boolean(banned) })`. TypeScript's
 excess-property check does not fire through a spread, so a column added to
 `listCoachesWithPuzzleCounts`'s select reaches the browser silently and
-`pnpm typecheck` stays green — the one rule in CLAUDE.md's Layers table that
+`pnpm typecheck` stays green — the one rule in AGENTS.md's Layers table that
 the compiler cannot hold for us.
 
 Name the fields. Then look at the other services for the same shape: the fix
