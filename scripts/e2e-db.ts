@@ -41,7 +41,18 @@ export function databaseName(url: string): string {
   return name
 }
 
-if (import.meta.main) await provision()
+/**
+ * Whether this module is the file that was invoked, rather than imported for
+ * its exports. `import.meta.main` is undefined under tsx, so matching the
+ * script path is the signal that actually fires — the same guard as
+ * `scripts/tracker.ts`.
+ */
+export function isEntrypoint(scriptPath: string | undefined): boolean {
+  return scriptPath?.endsWith("e2e-db.ts") ?? false
+}
+
+// Exported for the tests; provision only when this file is the one invoked.
+if (isEntrypoint(process.argv[1])) await provision()
 
 export async function provision() {
   const url = requireEnv("E2E_DATABASE_URL")
