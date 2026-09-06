@@ -121,8 +121,17 @@ needs no change to the workflow. The action declares no outputs and exports to
 `GITHUB_ENV` instead, so the list is the difference between the environment
 before it ran and after.
 
+**A blank value is a key that is not set.** Infisical's keys belong to the
+project rather than to one environment, so a name `dev` needs cannot be deleted
+from `prod` — it can only be emptied. The workflow reads an empty value the way
+`src/lib/env.ts` already does (`||`, so `""` is missing) and skips it. The
+corollary is that blanking is also how a needed secret goes missing by
+accident, so the four the service cannot run without — `DATABASE_URL`,
+`DATABASE_URL_UNPOOLED`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` — are checked
+by name before an image is pushed.
+
 Three names are refused rather than forwarded, and the deploy fails if `prod`
-still carries them. `STOCKFISH_PATH` and `ENGINE_MOVETIME_MS` belong to the
+carries a value for them. `STOCKFISH_PATH` and `ENGINE_MOVETIME_MS` belong to the
 image — a deploy-time `STOCKFISH_PATH` would point the engine at a binary that
 is not in the container — and `PORT` is Cloud Run's own, so overriding it means
 the container listens where nothing is asking.
