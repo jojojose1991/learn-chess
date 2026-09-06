@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**21 of 27 resolved. Four tickets are actionable right now: 16, 25, 26 and 27.**
+**22 of 27 resolved. Three tickets are actionable right now: 16, 26 and 27.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -43,8 +43,8 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 | 21  | A Library row says what the Puzzle is                        | ✅ resolved     | —            |
 | 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved     | —            |
 | 24  | The engine's failures are visible somewhere                  | ✅ resolved     | —            |
+| 25  | The accounts DTO spreads its row                             | ✅ resolved     | —            |
 | 16  | Deploy to Cloud Run                                          | 🟢 **ready**    | 13 ✅, 15 ✅ |
-| 25  | The accounts DTO spreads its row                             | 🟢 **ready**    | —            |
 | 26  | The e2e suites each carry their own sign-in                  | 🟢 **ready**    | —            |
 | 27  | `issue-files.md` counts the tickets, and gets it wrong       | 🟢 **ready**    | —            |
 | 17  | Does a rejected Position need to say more than one sentence? | ❓ needs-triage | 14 ✅        |

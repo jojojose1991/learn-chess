@@ -38,10 +38,17 @@ export async function listAccounts(
   const coach = await getCoach(headers)
   if (!coach?.isAdmin) return null
 
-  return (await listCoachesWithPuzzleCounts()).map(({ banned, ...row }) => ({
-    ...row,
-    revoked: Boolean(banned),
-  }))
+  // Named fields, not the row: widening the repository's select would
+  // otherwise ship new columns to the client with no type error.
+  return (await listCoachesWithPuzzleCounts()).map(
+    ({ id, email, name, puzzles, banned }) => ({
+      id,
+      email,
+      name,
+      puzzles,
+      revoked: Boolean(banned),
+    })
+  )
 }
 
 /**

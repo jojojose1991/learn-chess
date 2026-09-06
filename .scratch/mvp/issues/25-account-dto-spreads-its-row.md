@@ -14,10 +14,18 @@ is worth nothing if it lands in one file and the pattern survives elsewhere.
 
 **Blocked by:** nothing.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `Account` is built field by field, so a new column on that select cannot reach the client
-- [ ] Adding a column to the repository's select does not change what `/admin` receives
-- [ ] Every other service that maps a row to a DTO is checked for the same spread, and the finding recorded either way
-- [ ] A test fails if a field is added to the DTO without being named
-- [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+- [x] `Account` is built field by field, so a new column on that select cannot reach the client
+- [x] Adding a column to the repository's select does not change what `/admin` receives
+- [x] Every other service that maps a row to a DTO is checked for the same spread, and the finding recorded either way
+- [x] A test fails if a field is added to the DTO without being named
+- [x] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+
+## Comments
+
+Audited all services for the spread pattern:
+- `src/lib/puzzles/service.ts`: `listLibrary` and `readPuzzle` already map field by field.
+- `src/lib/puzzle-links/service.ts`: `openLink` already maps field by field.
+- `src/lib/board-theme/service.ts`, `src/lib/engine/service.ts`, `src/lib/scan/service.ts`: no DB rows mapped to DTOs.
+`src/lib/accounts/service.ts` was the sole location where a database row was spread into a DTO.

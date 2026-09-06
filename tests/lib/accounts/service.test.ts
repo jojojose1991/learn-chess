@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { newCoachBody } from "@/lib/accounts/service"
 
 import type { NewCoach } from "@/lib/accounts/rules"
+import type { Account } from "@/lib/accounts/service"
 
 /**
  * The accounts screen may add a Coach. It may not decide what that Coach *is*.
@@ -140,5 +141,124 @@ describe("a write that fails", () => {
     expect(log.error).toHaveBeenCalledTimes(1)
     const [build] = vi.mocked(log.error).mock.calls[0] as [() => string]
     expect(build()).toContain("User already exists. Use another email.")
+  })
+})
+
+/**
+ * What crosses to the client: an explicit DTO whose fields are named one by
+ * one. The compiler's excess-property check does not fire through a spread, so
+ * this is what stops a column added to the repository query reaching `/admin`.
+ */
+describe("listAccounts DTO mapping", () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.doMock("@/lib/auth", () => ({
+      getCoach: async () => ({
+        id: "admin1",
+        email: "admin@example.com",
+        isAdmin: true,
+      }),
+    }))
+  })
+
+  afterEach(() => {
+    vi.doUnmock("@/lib/auth")
+    vi.doUnmock("@/db/repositories/accounts")
+  })
+
+  it("names each field, so an extra column on the select never reaches /admin", async () => {
+    vi.doMock("@/db/repositories/accounts", () => ({
+      listCoachesWithPuzzleCounts: async () => [
+        {
+          id: "c1",
+          email: "coach@example.com",
+          name: "Coach",
+          banned: false,
+          puzzles: 3,
+          role: "admin",
+          extraSecret: "leaked",
+        },
+      ],
+    }))
+
+    const { listAccounts } = await import("@/lib/accounts/service")
+    const accounts = await listAccounts(new Headers())
+
+    expect(accounts).toEqual([
+      {
+        id: "c1",
+        email: "coach@example.com",
+        name: "Coach",
+        puzzles: 3,
+        revoked: false,
+      },
+    ])
+    expect(accounts?.[0]).not.toHaveProperty("role")
+    expect(accounts?.[0]).not.toHaveProperty("extraSecret")
+    expect(Object.keys(accounts?.[0] ?? {}).sort()).toEqual([
+      "email",
+      "id",
+      "name",
+      "puzzles",
+      "revoked",
+    ])
+  })
+
+  it("maps banned to revoked, so the client receives product semantics rather than database flags", async () => {
+    vi.doMock("@/db/repositories/accounts", () => ({
+      listCoachesWithPuzzleCounts: async () => [
+        {
+          id: "c1",
+          email: "banned@example.com",
+          name: "Banned",
+          banned: true,
+          puzzles: 0,
+        },
+        {
+          id: "c2",
+          email: "active@example.com",
+          name: "Active",
+          banned: null,
+          puzzles: 1,
+        },
+      ],
+    }))
+
+    const { listAccounts } = await import("@/lib/accounts/service")
+    const accounts = await listAccounts(new Headers())
+
+    expect(accounts?.map((a) => a.revoked)).toEqual([true, false])
+  })
+
+  it("fails if a field is added to the DTO without being named, keeping the contract explicit", async () => {
+    // Record<keyof Account, true> fails typecheck if a field is added to Account
+    // without being added here, proving that every DTO field is accounted for.
+    const accountKeys: Record<keyof Account, true> = {
+      id: true,
+      email: true,
+      name: true,
+      puzzles: true,
+      revoked: true,
+    }
+    const expectedKeys = Object.keys(accountKeys).sort()
+
+    vi.doMock("@/db/repositories/accounts", () => ({
+      listCoachesWithPuzzleCounts: async () => [
+        {
+          id: "c1",
+          email: "coach@example.com",
+          name: "Coach",
+          banned: false,
+          puzzles: 1,
+        },
+      ],
+    }))
+
+    const { listAccounts } = await import("@/lib/accounts/service")
+    const accounts = await listAccounts(new Headers())
+    const account = accounts?.[0]
+    expect(account).toBeDefined()
+
+    expect(Object.keys(account!).sort()).toEqual(expectedKeys)
   })
 })
