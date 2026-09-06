@@ -21,12 +21,14 @@ RUN tar -xf /tmp/stockfish.tar -C /tmp \
 # runtime stage pays for emulation.
 FROM --platform=$BUILDPLATFORM node:24-slim AS build
 WORKDIR /app
-# Pinned, not `corepack enable pnpm`: the lockfile was written by pnpm 11, and
-# corepack's default moves with the base image — a refresh would otherwise
-# break `--frozen-lockfile` with nothing in the repo having changed. Corepack
-# also leaves the Node distribution at 25 (docs/learnings/deployment.md).
-RUN npm install --global pnpm@11.21.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# From `packageManager` in the file just copied, so the image, CI and a laptop
+# cannot drift apart — a version pinned here as well would be a second answer
+# to a question `package.json` already answers. Not `corepack enable pnpm`:
+# corepack 0.34 cannot fetch pnpm 12 at all (it looks for a `bin/pnpm.cjs`
+# that a self-contained release does not ship), and corepack is gone from the
+# Node distribution at 25 (docs/learnings/deployment.md).
+RUN npm install --global "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
 # Belt to `--ignore-scripts`' braces and to `allowBuilds`' own `false`: the
 # postinstall would download CUDA and TensorRT providers this CPU service never
 # runs (docs/learnings/board-recognition.md).

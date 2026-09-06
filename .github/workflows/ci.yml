@@ -21,10 +21,6 @@ permissions:
   contents: read
 
 env:
-  # Pinned to what wrote pnpm-lock.yaml. `package.json` names no
-  # `packageManager`, so this and the Dockerfile's own pin are two copies of
-  # one fact — the third would be the one to fix that.
-  PNPM_VERSION: 10.30.1
   NODE_VERSION: 22
 
 jobs:
@@ -36,9 +32,9 @@ jobs:
 
       # Before setup-node, not after: `cache: pnpm` shells out to
       # `pnpm store path` and fails if pnpm is not installed yet.
+      # No `version:` — the action reads `packageManager` from package.json,
+      # which is the only place this repo names a pnpm version.
       - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v7
         with:
@@ -105,9 +101,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # No `version:` — the action reads `packageManager` from package.json,
+      # which is the only place this repo names a pnpm version.
       - uses: pnpm/action-setup@v6
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v7
         with:

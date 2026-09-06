@@ -101,8 +101,27 @@ for the engine) a runtime stage copying only `.output` may be missing the
 `output.dir` are the neighbours ([nitro config](https://nitro.build/config)).
 
 **`corepack enable` works on Node 24 (experimental) but Corepack is removed from
-the Node distribution in 25+.** On 25+ use `npm i -g pnpm@11` or the
-`ghcr.io/pnpm/pnpm:11` base image. pnpm's `latest` is **11.25.0**.
+the Node distribution in 25+.** On 25+ use `npm i -g pnpm@<version>` or the
+`ghcr.io/pnpm/pnpm` base image.
+
+⚠️ **Corepack cannot install pnpm 12 at all**, whatever the Node version.
+Measured with corepack 0.34.0: it looks for
+`~/.cache/node/corepack/v1/pnpm/<version>/bin/pnpm.cjs`, and a pnpm 12 release
+ships a self-contained binary rather than that file, so `corepack pnpm` dies
+with `Cannot find module`. `npm install --global` is the way in.
+
+**One pin, in `packageManager`.** `package.json` names the version, the
+Dockerfile reads it out of the file it has already copied, and
+`pnpm/action-setup` reads it with no `version:` input. Three copies of a
+version number is how an image and a CI run come to install different pnpms
+against one lockfile.
+
+**pnpm 12 does not rewrite the lockfile.** Measured going from 10.30.1:
+`lockfileVersion` stays `9.0`, no existing dependency re-resolves, and the diff
+is additive — pnpm records itself under `packageManagerDependencies` with a
+`@pnpm/exe.*` entry per platform. Those stay out of `pnpm deploy --prod`, so
+the runtime image does not carry them; it measured 42 MB *smaller* than the
+same image built by pnpm 10.
 [pnpm's Docker page](https://pnpm.io/docker) recommends BuildKit cache mounts on
 `/pnpm/store`, or `pnpm fetch --prod` where cache mounts aren't available.
 
