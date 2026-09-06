@@ -38,15 +38,6 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      # The window either side of Infisical, and nothing else inside it: the
-      # names appearing between these two snapshots are what `prod` carries.
-      # `auth` runs below for that reason — it exports CLOUDSDK_* of its own.
-      - name: Note the environment
-        shell: bash
-        run: |
-          compgen -e | sort > "$RUNNER_TEMP/env-before.txt"
-          : > "$RUNNER_TEMP/refused.txt"
-
       # Pinned to a patch tag: this action publishes no floating `v1`.
       - name: Fetch secrets
         uses: Infisical/secrets-action@v1.0.17
@@ -57,10 +48,6 @@ jobs:
           project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
           env-slug: prod
           secret-path: /
-
-      - name: Note what prod added
-        shell: bash
-        run: compgen -e | sort > "$RUNNER_TEMP/env-after.txt"
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
@@ -111,39 +98,6 @@ jobs:
           done
           pnpm db:migrate
 
-      # A file, not a step output: an output carrying DATABASE_URL is stored
-      # with the run. `STOCKFISH_PATH` and `ENGINE_MOVETIME_MS` belong to the
-      # image and `PORT` to Cloud Run, so a value for any of them overrides
-      # something that was already right.
-      - name: Collect the service's environment
-        shell: bash
-        run: |
-          set -euo pipefail
-          comm -13 "$RUNNER_TEMP/env-before.txt" "$RUNNER_TEMP/env-after.txt" |
-            while IFS= read -r name; do
-              value="${!name}"
-              [ -n "$value" ] || continue
-              case "$name" in
-                STOCKFISH_PATH|ENGINE_MOVETIME_MS|PORT)
-                  echo "$name (the image owns it; blank it in prod)" \
-                    >> "$RUNNER_TEMP/refused.txt"; continue ;;
-              esac
-              # `--set-env-vars` splits on these, and a truncated value would
-              # reach the service with nothing said about it.
-              if [ "$value" != "${value%,*}" ] ||
-                 [ "$(printf '%s' "$value" | wc -l)" -ne 0 ]; then
-                echo "$name (holds a comma or a newline)" \
-                  >> "$RUNNER_TEMP/refused.txt"; continue
-              fi
-              printf '%s=%s\n' "$name" "$value"
-            done > "$RUNNER_TEMP/service-env"
-
-          if [ -s "$RUNNER_TEMP/refused.txt" ]; then
-            echo "::error::prod holds names this deploy will not forward: $(tr '\n' ' ' < "$RUNNER_TEMP/refused.txt")"
-            exit 1
-          fi
-          echo "forwarding $(wc -l < "$RUNNER_TEMP/service-env") variables"
-
       - name: Deploy to Cloud Run
         id: deploy
         uses: google-github-actions/deploy-cloudrun@v3
@@ -163,15 +117,38 @@ jobs:
             --max-instances=3
             --concurrency=4
             --timeout=120
-          # `overwrite`, so a key deleted in Infisical leaves the service too.
-          env_vars_file: ${{ runner.temp }}/service-env
+          # Named rather than forwarded wholesale: `STOCKFISH_PATH` and
+          # `ENGINE_MOVETIME_MS` belong to the image and `PORT` to Cloud Run,
+          # and prod also holds seed credentials no running container wants.
+          # `overwrite`, so a key removed here leaves the service too.
+          env_vars: |
+            DATABASE_URL=${{ env.DATABASE_URL }}
+            BETTER_AUTH_SECRET=${{ env.BETTER_AUTH_SECRET }}
+            BETTER_AUTH_URL=${{ env.BETTER_AUTH_URL }}
+            LOG_LEVEL=${{ env.LOG_LEVEL }}
           env_vars_update_strategy: overwrite
 
-      # Proves the revision serves, not that the API accepted it.
+      # `/sign-in` renders without touching the database, so a revision with no
+      # DATABASE_URL answers it 200 — this deploy did exactly that once. The
+      # engine and a rejected sign-in are the two that need the image's binary
+      # and the environment to both be right.
       - name: Check it answers
+        env:
+          URL: ${{ steps.deploy.outputs.url }}
         run: |
           set -euo pipefail
-          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 3 \
-            --retry-all-errors "${{ steps.deploy.outputs.url }}/sign-in")
-          echo "sign-in answered $code"
-          test "$code" = "200"
+          curl -fsS --retry 5 --retry-delay 3 --retry-all-errors \
+            -o /dev/null "$URL/sign-in"
+
+          engine=$(curl -sS -X POST "$URL/api/engine/move" \
+            -H 'content-type: application/json' \
+            -d '{"fen":"rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1"}')
+          echo "engine: $engine"
+          grep -q '"from"' <<< "$engine"
+
+          # 401, not 500: a 500 here is the shape of a missing DATABASE_URL.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST \
+            "$URL/api/auth/sign-in/email" -H 'content-type: application/json' \
+            -d '{"email":"nobody@example.test","password":"wrong-on-purpose"}')
+          echo "a wrong password answered $code"
+          test "$code" != "500"
