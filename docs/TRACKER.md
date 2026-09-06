@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**25 of 28 resolved. One ticket is actionable right now: 16.**
+**26 of 28 resolved. One ticket is actionable right now: 16.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -37,6 +37,7 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 | 13  | The engine defends, and Hint                                 | ✅ resolved     | —            |
 | 14  | Scan a clean screenshot                                      | ✅ resolved     | —            |
 | 15  | The four-corner warp on the unreliable path                  | ✅ resolved     | —            |
+| 17  | Does a rejected Position need to say more than one sentence? | ✅ resolved     | —            |
 | 18  | Admin: the accounts screen                                   | ✅ resolved     | —            |
 | 19  | Logging, in development and in production                    | ✅ resolved     | —            |
 | 20  | A Coach picks their board theme                              | ✅ resolved     | —            |
@@ -48,7 +49,6 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 | 27  | `issue-files.md` counts the tickets, and gets it wrong       | ✅ resolved     | —            |
 | 28  | The board locators are copied into four e2e specs            | ✅ resolved     | —            |
 | 16  | Deploy to Cloud Run                                          | 🟢 **ready**    | 13 ✅, 15 ✅ |
-| 17  | Does a rejected Position need to say more than one sentence? | ❓ needs-triage | 14 ✅        |
 | 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16           |
 
 <!-- /tracker:tickets -->
