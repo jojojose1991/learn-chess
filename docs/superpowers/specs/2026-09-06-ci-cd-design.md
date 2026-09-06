@@ -36,7 +36,7 @@ Measured sizes, and what happens to each:
 
 | Item | Size | Disposition |
 | --- | --- | --- |
-| full `node_modules` | 1.0 GB | production-only install in its own stage |
+| full `node_modules` | 1.0 GB | `pnpm deploy --prod --filter=.` into its own tree |
 | `onnxruntime-node` darwin + win32 | 216 MB | deleted — cannot load in this image |
 | `onnxruntime-node` linux/x64 | 67 MB | kept — the Scan route needs it |
 | `onnxruntime-web` | 136 MB | deleted — ADR-0003 rejected the wasm path |
@@ -47,6 +47,13 @@ Measured sizes, and what happens to each:
 records that neither `packageExtensions` nor `peerDependencyRules` moves it and
 only repo-wide `autoInstallPeers: false` does. Deleting it from the runtime
 layer is the cheap half of that debt; the install-time half stays owed.
+
+**The prune runs after `pnpm deploy`, not before.** `deploy` re-resolves every
+dependency out of the store, so anything deleted first is faithfully restored
+into the tree that ships. Measured on the real build: 866 MB after the deploy,
+490 MB after the prune. `--filter=.` is required — `pnpm-workspace.yaml` has
+`packages: []`, and without it pnpm selects nothing and fails with
+`ERR_PNPM_NOTHING_TO_DEPLOY`.
 
 `CMD` runs srvx with an **absolute** `--static` path — see ADR-0006 for the
 silent-404 trap that motivates it.

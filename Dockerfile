@@ -36,15 +36,31 @@ ENV ONNXRUNTIME_NODE_INSTALL=skip
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm build
-# `onnxruntime-node` ships every platform it supports: 283 MB unpacked, of
-# which the 43 MB under linux/x64 is the only one this image can load. Pruned
-# after the build, so a build host that is not linux/x64 keeps its own binding
-# while `pnpm build` runs. `set -eu` and the test are what make an unmatched
-# glob fail here rather than quietly leave the 240 MB behind.
+# A tree the runtime stage can copy on its own: still symlinked, but into a
+# `.pnpm` store of its own inside `/runtime`, so the links resolve after the
+# COPY. `node_modules` as it stands here points at a store that stage has not
+# got. `--prod` drops the dev half; without `--filter=.` pnpm selects nothing
+# (`packages: []`) and without `--legacy` it refuses a non-injected workspace.
+RUN pnpm --filter=. deploy --prod --legacy --ignore-scripts /runtime
+
+# Pruned *after* the deploy, never before: `pnpm deploy` re-resolves every
+# dependency out of the store, so anything deleted from `node_modules` first
+# is faithfully restored into the tree that ships.
+#
+# Neither is loadable in this image: `onnxruntime-node` carries a binding per
+# platform, and `onnxruntime-web` is the wasm runtime ADR-0003 rejected, here
+# only as a peer nothing imports (docs/superpowers/specs, for the half of that
+# still owed at install time).
+#
+# `set -eu` and the `test` are what make an unmatched glob fail here rather
+# than quietly leave the hundreds of megabytes behind.
 RUN set -eu \
-  && ORT="$(echo node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6)" \
+  && ORT="$(echo /runtime/node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6)" \
   && test -d "$ORT/linux/x64" \
-  && rm -rf "$ORT/darwin" "$ORT/win32" "$ORT/linux/arm64"
+  && rm -rf "$ORT/darwin" "$ORT/win32" "$ORT/linux/arm64" \
+  && rm -rf /runtime/node_modules/.pnpm/onnxruntime-web@* \
+    /runtime/node_modules/.pnpm/node_modules/onnxruntime-web \
+    /runtime/node_modules/.pnpm/@scoriiu+fenshot@*/node_modules/onnxruntime-web
 
 # Pinned, and BuildKit's advice against a constant platform is declined here:
 # the engine binary is x86_64 glibc, so an image built for anything else has a
@@ -60,11 +76,13 @@ COPY --from=stockfish /usr/local/bin/stockfish /usr/local/bin/stockfish
 # layer for anyone who pulls it.
 ENV STOCKFISH_PATH=/usr/local/bin/stockfish
 ENV ENGINE_MOVETIME_MS=200
-# Not yet the pruned `node_modules`, nor the classifier's `.onnx` — both are
-# ticket 16's, with the entry point that would prove them.
+# The server resolves its native binding and the classifier's model at runtime,
+# so the store ships beside `dist/` (ADR-0006). Second, because it changes far
+# less often than the bundle above it.
+COPY --from=build /runtime/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 USER node
-# No CMD: `vite build` emits a fetch handler, not a server that listens. The
-# entry point arrives with Nitro in ticket 16, which is also where the image
-# is deployed. Until then the engine half is what this image is exercised for:
-#   docker run --rm --memory 1g <image> stockfish
+# ADR-0006 is why this is srvx rather than Nitro, and why `--static` is
+# absolute rather than relative.
+CMD ["node", "node_modules/srvx/bin/srvx.mjs", "serve", "--prod", \
+  "--entry=/app/dist/server/server.js", "--static=/app/dist/client"]

@@ -50,6 +50,12 @@ all interfaces, which is Cloud Run's container contract without configuration.
 
 ## Consequences
 
+**srvx becomes a direct dependency**, pinned to the `0.11.22` the lockfile had
+already resolved. It arrived transitively, and a package the image cannot boot
+without is not one to borrow from another package's dependency tree: a
+`start-plugin-core` release that drops or moves it would break the container at
+runtime, in production, with the build green.
+
 **`--static` takes an absolute path.** srvx resolves it relative to the entry
 file's own directory, not the working directory (`dist/cli.mjs`), so
 `--static=dist/client` beside `--entry=dist/server/server.js` silently resolves
