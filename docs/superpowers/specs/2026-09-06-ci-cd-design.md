@@ -109,7 +109,18 @@ the database at once.
    exactly one workflow run does this at a time and the new revision does not
    exist yet.
 5. **Deploy** to Cloud Run with `--memory 1Gi`, `--min-instances 0`,
-   `--max-instances 3`, `--allow-unauthenticated`, and the secrets as env vars.
+   `--max-instances 3`, `--allow-unauthenticated`.
+
+Everything `prod` holds reaches the service, so adding a variable in Infisical
+needs no change to the workflow. The action declares no outputs and exports to
+`GITHUB_ENV` instead, so the list is the difference between the environment
+before it ran and after.
+
+Three names are refused rather than forwarded, and the deploy fails if `prod`
+still carries them. `STOCKFISH_PATH` and `ENGINE_MOVETIME_MS` belong to the
+image — a deploy-time `STOCKFISH_PATH` would point the engine at a binary that
+is not in the container — and `PORT` is Cloud Run's own, so overriding it means
+the container listens where nothing is asking.
 
 `BETTER_AUTH_URL` must equal the service's own public URL or the session cookie
 is set for the wrong origin. It is stored in Infisical rather than derived,

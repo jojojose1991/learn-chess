@@ -1,0 +1,214 @@
+# main to production. Builds the image, runs the migrations, then puts the
+# revision in front of traffic — in that order, because a revision that boots
+# against a schema it is newer than is a crash loop.
+name: Deploy
+
+# On CI passing, not on the push itself. Both would otherwise start together
+# and a commit whose tests are failing would reach production anyway, which is
+# the one thing a pipeline exists to prevent. `workflow_run` fires on the same
+# commit CI ran against.
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+# One deploy at a time, and never cancelled: `drizzle-kit migrate` takes no
+# advisory lock, so two runs on the same new revision would both read the same
+# watermark and both apply the same DDL. Serialising here is the whole
+# protection. `cancel-in-progress` would be worse than useless — it would kill
+# a run mid-migration.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PNPM_VERSION: 10.30.1
+  NODE_VERSION: 22
+
+jobs:
+  deploy:
+    name: Build, migrate, deploy
+    runs-on: ubuntu-latest
+    # `workflow_run` fires whatever CI concluded, so the success check is here
+    # rather than in the trigger.
+    if: github.event.workflow_run.conclusion == 'success'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      # The commit CI passed on, not whatever `main` points at now: a
+      # `workflow_run` checkout defaults to the branch head, which by the time
+      # a deploy starts may be a commit nothing has tested.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # The window either side of the Infisical step, and nothing else inside
+      # it: the names that appear between these two snapshots are exactly what
+      # `prod` carries. `google-github-actions/auth` sits below for that
+      # reason — it exports GOOGLE_APPLICATION_CREDENTIALS and four CLOUDSDK_*
+      # names of its own, and inside this window they would be forwarded to
+      # the service as if a Coach had asked for them.
+      - name: Note the environment
+        shell: bash
+        run: |
+          compgen -e | sort > "$RUNNER_TEMP/env-before.txt"
+          : > "$RUNNER_TEMP/refused.txt"
+
+      # Everything the running service needs. The action calls `core.setSecret`
+      # on every value, so they are masked in the log.
+      #
+      # Pinned to a patch tag on purpose: this action publishes no floating
+      # `v1`, so `@v1` does not resolve.
+      - name: Fetch secrets
+        uses: Infisical/secrets-action@v1.0.17
+        with:
+          method: universal
+          client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
+          client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: prod
+          secret-path: /
+
+      # Closed here, before anything else can add a name to the environment.
+      - name: Note what prod added
+        shell: bash
+        run: compgen -e | sort > "$RUNNER_TEMP/env-after.txt"
+
+      # No JSON key exists for this project. The provider is pinned to this
+      # repository, so no other repo's workflow can mint this token.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      # Tagged with the commit, so a revision names the source it came from,
+      # and `latest` for a human pulling it to look.
+      - name: Build and push
+        env:
+          IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/learn-chess/app
+        run: |
+          set -euo pipefail
+          docker build -t "$IMAGE:${{ github.event.workflow_run.head_sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.event.workflow_run.head_sha }}"
+          docker push "$IMAGE:latest"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        env:
+          ONNXRUNTIME_NODE_INSTALL: skip
+
+      # Before the deploy and never at boot: Cloud Run starts instances of a
+      # new revision concurrently, and the migrator has no lock, so the loser
+      # of that race crash-loops. Over the unpooled URL, which is what Neon
+      # documents for DDL.
+      - name: Migrate
+        run: pnpm db:migrate
+
+      # Everything Infisical's `prod` holds goes to the service, so adding a
+      # variable there needs no change here. The action exports each one to
+      # `GITHUB_ENV` and declares no outputs, so the list is the difference
+      # between the environment before it ran and after — which `before-env`
+      # above captured.
+      #
+      # Three names are refused rather than forwarded. `STOCKFISH_PATH` and
+      # `ENGINE_MOVETIME_MS` are properties of the image — the Dockerfile sets
+      # them, and a deploy-time value would point the engine at a binary that
+      # is not there. `PORT` is Cloud Run's to inject, and overriding it means
+      # the container listens where nothing is asking. The deploy fails loudly
+      # rather than shipping any of them, because a silent skip would leave
+      # prod holding a value that looks live and is not.
+      - name: Collect the service's environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A file, not a step output: an output carrying DATABASE_URL and
+          # BETTER_AUTH_SECRET is stored with the run, and log masking is the
+          # only thing between it and a reader. This file never leaves the
+          # runner, which is thrown away with the job.
+          comm -13 "$RUNNER_TEMP/env-before.txt" "$RUNNER_TEMP/env-after.txt" |
+            while IFS= read -r name; do
+              case "$name" in
+                STOCKFISH_PATH|ENGINE_MOVETIME_MS|PORT)
+                  echo "$name" >> "$RUNNER_TEMP/refused.txt"; continue ;;
+              esac
+              # `--set-env-vars` splits on commas and newlines, so a value
+              # holding either would arrive at the service truncated and no
+              # error would say so. Refused rather than escaped: "adding a
+              # variable in Infisical needs no change here" has to fail at the
+              # deploy rather than in production.
+              value="${!name}"
+              if [ "$value" != "${value%,*}" ] ||
+                 [ "$(printf '%s' "$value" | wc -l)" -ne 0 ]; then
+                echo "$name (holds a comma or a newline)" \
+                  >> "$RUNNER_TEMP/refused.txt"; continue
+              fi
+              printf '%s=%s\n' "$name" "$value"
+            done > "$RUNNER_TEMP/service-env"
+
+          if [ -s "$RUNNER_TEMP/refused.txt" ]; then
+            echo "::error::prod holds names this deploy will not forward: $(tr '\n' ' ' < "$RUNNER_TEMP/refused.txt")"
+            exit 1
+          fi
+          echo "forwarding $(wc -l < "$RUNNER_TEMP/service-env") variables"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ vars.CLOUD_RUN_SERVICE }}
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/learn-chess/app:${{ github.event.workflow_run.head_sha }}
+          # 1 GiB, not the 512 MiB default: Stockfish 18 peaks at 377 MiB
+          # resident before Node's own, so the default is an OOM kill on the
+          # first search. Scale to zero — this is a coaching tool, not a
+          # service that must answer in the same second at 3am.
+          #
+          # `--concurrency=4` is the Scan ceiling this ticket owed. A 12 MP
+          # image peaks near 300 MB decoding and nothing in `src/lib/scan`
+          # bounds two at once, so against Stockfish's 377 MiB in the same
+          # gigabyte, four is what the memory buys. Cloud Run queues the fifth
+          # caller rather than refusing it, and starts a second instance if the
+          # queue holds. Raise it when something bounds Scan itself.
+          flags: |
+            --allow-unauthenticated
+            --memory=1Gi
+            --cpu=1
+            --min-instances=0
+            --max-instances=3
+            --concurrency=4
+            --timeout=120
+          # `overwrite`, not the default `merge`: Infisical is the whole truth
+          # about this service's environment, and under `merge` a key deleted
+          # there would sit on the service until someone noticed.
+          env_vars_file: ${{ runner.temp }}/service-env
+          env_vars_update_strategy: overwrite
+
+      # Proves the revision serves, rather than that the API accepted it.
+      - name: Check it answers
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 3 \
+            --retry-all-errors "${{ steps.deploy.outputs.url }}/sign-in")
+          echo "sign-in answered $code"
+          test "$code" = "200"
