@@ -106,18 +106,24 @@ describe("the Play screen", () => {
     expect(screen.queryByText("Black to move")).not.toBeInTheDocument()
   })
 
-  it("says why an attempt ended and offers another go, which starts the Puzzle over", () => {
-    render(<PlayPuzzle puzzle={MATE_IN_ONE} />)
+  it("says why an attempt ended and offers another go, which starts the Puzzle over", async () => {
+    // The defender answers a lost attempt too, so this needs an engine where
+    // it once needed none: Qg8+ leaves Black the single reply Kxg8, and the
+    // outcome is only said once that has landed.
+    render(
+      <PlayPuzzle puzzle={MATE_IN_ONE} askEngine={answering("h8", "g8")} />
+    )
 
     // Legal, and check — but not mate, so the one move the Goal allowed is
     // spent and the attempt is over.
     play("g1, white queen", "g8, empty")
 
+    await waitFor(() => expect(moves()).toEqual(["Qg8+", "Kxg8"]))
+
     const outcome = screen.getByRole("status")
+    // The sentence is the Goal's and is held in tests/lib/chess/goals.test.ts;
+    // what this test is about is that the attempt ended and offers another go.
     expect(outcome).toHaveTextContent("Not this time")
-    expect(outcome).toHaveTextContent(
-      "That is 1 move played, and no checkmate."
-    )
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }))
 
@@ -130,6 +136,45 @@ describe("the Play screen", () => {
     // Immediately playable from the start, which is the whole point of the go.
     play("g1, white queen", "g7, empty")
     expect(moves()).toEqual(["Qg7#"])
+  })
+
+  // The whole point of letting the defender answer a lost attempt: a Student
+  // told "Not this time" over a board that never moved cannot see what beat
+  // them. The refutation lands in the line like any other reply.
+  it("plays the defender's refutation into the line after the attempt is lost", async () => {
+    // One move of budget, and ...e5 is not mate: the attempt is lost the
+    // moment it is played, and the defender still answers it.
+    render(
+      <PlayPuzzle
+        puzzle={{ ...BLACKS_TO_SOLVE, goal: { kind: "mate_in", n: 1 } }}
+        askEngine={answering("g2", "g4")}
+      />
+    )
+
+    play("e7, black pawn", "e5, empty")
+
+    await waitFor(() => expect(moves()).toEqual(["e5", "g4"]))
+
+    const outcome = screen.getByRole("status")
+    expect(outcome).toHaveTextContent("Not this time")
+    expect(outcome).toHaveTextContent(
+      "That is 1 move played, and no checkmate."
+    )
+  })
+
+  it("waits for the defender before saying the attempt is over, so the verdict is not premature", () => {
+    render(
+      <PlayPuzzle
+        puzzle={{ ...BLACKS_TO_SOLVE, goal: { kind: "mate_in", n: 1 } }}
+        askEngine={stillThinking}
+      />
+    )
+
+    play("e7, black pawn", "e5, empty")
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "The engine is thinking…"
+    )
   })
 
   it("plays the engine's answer into the line, so the Student is up against a defender", async () => {

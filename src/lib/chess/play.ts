@@ -1,3 +1,5 @@
+import { Chess } from "chess.js"
+
 import { evaluateGoal } from "./goals"
 import { applyMove, explainIllegal } from "./rules"
 
@@ -77,11 +79,27 @@ export function startPlay(puzzle: { fen: string; goal: Goal }): PlayState {
  * same parity `evaluateGoal` counts the budget by, and the reason a reply is
  * free. An engine that has already failed is not thought about any longer: the
  * board goes back to the person at it, who can play the reply themselves.
+ *
+ * A spent budget is still answered. `docs/PLAN.md` has two things happen and
+ * not one — the engine defends, *and then* the budget runs out — so a Student
+ * told "Not this time" over a board that never moved is robbed of finding out
+ * why it failed. What ends the loop is the board having no move left, which
+ * is checkmate, stalemate or a draw; those need no reply and have none to
+ * give.
  */
 export const engineThinking = (state: PlayState) =>
-  state.status.status === "open" &&
+  // Parity and the failure flag first: both are a field read, and they answer
+  // for most renders without standing a board up to ask it.
   state.moves.length % 2 === 1 &&
-  state.engineFailure === null
+  state.engineFailure === null &&
+  hasMoveLeft(state.fen)
+
+/**
+ * Whether anyone may still move here. `chess.js` calls a Position with no
+ * legal move over, whichever of the three ways it got there.
+ */
+const hasMoveLeft = (fen: string) =>
+  !new Chess(fen, { skipValidation: true }).isGameOver()
 
 /**
  * The game loop: a Position, the moves played from it, and what the Goal makes

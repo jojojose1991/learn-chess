@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**27 of 29 resolved. One ticket is actionable right now: 16.**
+**28 of 30 resolved. One ticket is actionable right now: 16.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -49,6 +49,7 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 | 27  | `issue-files.md` counts the tickets, and gets it wrong       | ✅ resolved     | —            |
 | 28  | The board locators are copied into four e2e specs            | ✅ resolved     | —            |
 | 29  | An unreachable Goal saves silently                           | ✅ resolved     | —            |
+| 30  | The defender never answers a lost attempt                    | ✅ resolved     | —            |
 | 16  | Deploy to Cloud Run                                          | 🟢 **ready**    | 13 ✅, 15 ✅ |
 | 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16           |
 

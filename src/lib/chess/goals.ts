@@ -69,6 +69,18 @@ export function evaluateGoal(
     )
   }
 
+  // The last way a board can be over. It has to be here rather than only in
+  // `chess.js`: `engineThinking` asks the board whether a move is left, and a
+  // draw this knew nothing about would leave an attempt with no outcome, an
+  // unlocked board and nobody to move on it. Threefold is the one draw still
+  // missing, and cannot be: it is path-dependent and a Puzzle starts from a
+  // FEN with no history behind it.
+  if (board.isDrawByFiftyMoves()) {
+    return failed(
+      "Fifty moves have passed with no capture and no pawn moved. The game is a draw."
+    )
+  }
+
   if (spent >= goal.n) {
     return failed(
       `That is ${spent} ${moveWord(spent)} played, and no checkmate.`
