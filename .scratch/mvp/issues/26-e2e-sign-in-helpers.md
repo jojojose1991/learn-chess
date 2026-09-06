@@ -12,9 +12,23 @@ whatever the last author left.
 
 **Blocked by:** nothing.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The setup repeated across the e2e specs lives in `tests/e2e/coach.ts`
-- [ ] A helper is added only where two or more specs genuinely share it, not where they merely resemble each other
-- [ ] `pnpm e2e` passes with the same test count as before, since this changes no behaviour
-- [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+- [x] The setup repeated across the e2e specs lives in `tests/e2e/coach.ts`
+- [x] A helper is added only where two or more specs genuinely share it, not where they merely resemble each other
+- [x] `pnpm e2e` passes with the same test count as before, since this changes no behaviour
+- [x] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+
+## Comments
+
+`theme.spec.ts`'s `newPuzzle` was left where it is: it waits on the theme
+buttons rather than the form, because those have no non-JS fallback, and it
+omits `signIn` because the test calls it twice around a sign-out. That is the
+"merely resemble each other" case this ticket warns about.
+
+`addPuzzle` went to `tests/e2e/puzzle.ts` rather than `coach.ts` — it is a
+database fixture, and `coach.ts`'s subject is the Coach's session.
+
+The locators `boardOf`, `movesOf` and `square` are still duplicated across
+four specs. They encode the app's accessible names rather than a journey, so
+they belong in a board module of their own; ticket 28 has them.

@@ -3,10 +3,9 @@ import { Pool } from "pg"
 
 import type { Locator, Page } from "@playwright/test"
 
-import { E2E_ADMIN } from "../../scripts/e2e-db"
 import { requireEnv } from "../../src/lib/env"
-import { signIn } from "./coach"
-import { hydrated } from "./hydrated"
+import { openInPlay } from "./coach"
+import { addPuzzle } from "./puzzle"
 
 /**
  * Play, end to end. The loop itself is a reducer and is tested as one
@@ -31,33 +30,16 @@ test.beforeEach(() => pool.query("delete from puzzle"))
 
 test.afterAll(() => pool.end())
 
-async function addPuzzle(name: string, fen: string) {
-  await pool.query(
-    `insert into puzzle (coach_id, name, fen, goal_kind, goal_n)
-     select id, $2, $3, 'mate_in', 1 from "user" where email = $1`,
-    [E2E_ADMIN.email, name, fen]
-  )
-}
-
 const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
 const movesOf = (page: Page) => page.getByRole("list", { name: "Moves" })
 
 const square = (board: Locator, name: string) =>
   board.getByRole("button", { name: new RegExp(`^${name}(,|$)`) })
 
-/** Library → the Puzzle → Play, which is the only way in today. */
-async function openInPlay(page: Page, name: string) {
-  await signIn(page)
-  await page.getByRole("link", { name }).click()
-  await hydrated(page, "form")
-  await page.getByRole("button", { name: "Play" }).click()
-  await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible()
-}
-
 test("a Coach opens a saved Puzzle and plays it at the Position it was stored with", async ({
   page,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
 
   await openInPlay(page, "Queen and king mate")
   const board = boardOf(page)
@@ -89,7 +71,7 @@ test("a Coach opens a saved Puzzle and plays it at the Position it was stored wi
 test("keeps Try again tappable at all three widths, with no sideways scrolling", async ({
   page,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openInPlay(page, "Queen and king mate")
   const board = boardOf(page)
 
@@ -117,7 +99,7 @@ test("keeps Try again tappable at all three widths, with no sideways scrolling",
 test("keeps the board its full size beside the move list, and puts the list beneath it on a phone", async ({
   page,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openInPlay(page, "Queen and king mate")
 
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -141,7 +123,7 @@ test("keeps the board its full size beside the move list, and puts the list bene
 test("asks a promoting pawn what it becomes, in buttons a five-year-old can hit", async ({
   page,
 }) => {
-  await addPuzzle("Promote", PROMOTING)
+  await addPuzzle(pool, "Promote", PROMOTING)
   await openInPlay(page, "Promote")
   const board = boardOf(page)
 
@@ -177,7 +159,7 @@ test("asks a promoting pawn what it becomes, in buttons a five-year-old can hit"
 test("plays on the board the Coach teaches on, not on the default", async ({
   page,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openInPlay(page, "Queen and king mate")
   const themes = page.getByRole("group", { name: "Board theme" })
 

@@ -3,9 +3,9 @@ import { Pool } from "pg"
 
 import type { Browser, BrowserContext, Page } from "@playwright/test"
 
-import { E2E_ADMIN } from "../../scripts/e2e-db"
 import { requireEnv } from "../../src/lib/env"
-import { signIn } from "./coach"
+import { openPuzzle } from "./coach"
+import { addPuzzle } from "./puzzle"
 import { hydrated } from "./hydrated"
 
 /**
@@ -48,22 +48,7 @@ test.afterEach(async () => {
 
 test.afterAll(() => pool.end())
 
-async function addPuzzle(name: string, fen: string) {
-  await pool.query(
-    `insert into puzzle (coach_id, name, fen, goal_kind, goal_n)
-     select id, $2, $3, 'mate_in', 1 from "user" where email = $1`,
-    [E2E_ADMIN.email, name, fen]
-  )
-}
-
 const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
-
-/** Signed in, on Confirm & Edit for one Puzzle, with the share block live. */
-async function openPuzzle(page: Page, name: string) {
-  await signIn(page)
-  await page.getByRole("link", { name }).click()
-  await hydrated(page, "form")
-}
 
 /** Mints the link if there is none yet, and answers with the URL to send. */
 async function mint(page: Page) {
@@ -95,7 +80,7 @@ test("opens straight on Play in a browser that has never signed in", async ({
   page,
   browser,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openPuzzle(page, "Queen and king mate")
 
   const url = await mint(page)
@@ -135,7 +120,7 @@ test("plays on the board it was stamped with, not on the one the Coach moved to"
   page,
   browser,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openPuzzle(page, "Queen and king mate")
   const themes = page.getByRole("group", { name: "Board theme" })
   await hydrated(page, '[aria-label="Board theme"] button')
@@ -165,8 +150,8 @@ test("opens the Puzzle its own slug points at, and not whichever was read first"
   page,
   browser,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
-  await addPuzzle("Fool's mate", FOOLS_MATE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Fool's mate", FOOLS_MATE)
 
   await openPuzzle(page, "Queen and king mate")
   const queen = await mint(page)
@@ -195,7 +180,7 @@ test("refuses a revoked link in the same words an unknown one gets", async ({
   page,
   browser,
 }) => {
-  await addPuzzle("Queen and king mate", MATE_IN_ONE)
+  await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openPuzzle(page, "Queen and king mate")
   const url = await mint(page)
 
@@ -223,7 +208,7 @@ test("needs no sideways scrolling on a phone, which is where a Student meets it"
   // The longest name `NAME_MAX` allows, in one unbroken word — which is what
   // a heading with nothing wrapping it pushes off the side of a phone.
   const name = "m".repeat(100)
-  await addPuzzle(name, MATE_IN_ONE)
+  await addPuzzle(pool, name, MATE_IN_ONE)
   await openPuzzle(page, name)
   const url = await mint(page)
 

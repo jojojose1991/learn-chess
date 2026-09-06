@@ -3,10 +3,9 @@ import { Pool } from "pg"
 
 import type { Locator, Page } from "@playwright/test"
 
-import { E2E_ADMIN } from "../../scripts/e2e-db"
 import { requireEnv } from "../../src/lib/env"
-import { signIn } from "./coach"
-import { hydrated } from "./hydrated"
+import { openInPlay } from "./coach"
+import { addPuzzle } from "./puzzle"
 
 /**
  * The defender and Hint, against the real Stockfish over the real route.
@@ -49,34 +48,16 @@ test.beforeEach(() => pool.query("delete from puzzle"))
 
 test.afterAll(() => pool?.end())
 
-/** A Puzzle with two of the Student's moves to spend, so a reply is not the end. */
-async function addMateInTwo(name: string, fen: string) {
-  await pool.query(
-    `insert into puzzle (coach_id, name, fen, goal_kind, goal_n)
-     select id, $2, $3, 'mate_in', 2 from "user" where email = $1`,
-    [E2E_ADMIN.email, name, fen]
-  )
-}
-
 const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
 const movesOf = (page: Page) => page.getByRole("list", { name: "Moves" })
 
 const square = (board: Locator, name: string) =>
   board.getByRole("button", { name: new RegExp(`^${name}(,|$)`) })
 
-/** Library → the Puzzle → Play, which is the only way in today. */
-async function openInPlay(page: Page, name: string) {
-  await signIn(page)
-  await page.getByRole("link", { name }).click()
-  await hydrated(page, "form")
-  await page.getByRole("button", { name: "Play" }).click()
-  await expect(page.getByRole("heading", { name, level: 1 })).toBeVisible()
-}
-
 test("answers the Student's move with one of its own, and hands the turn back", async ({
   page,
 }) => {
-  await addMateInTwo("Two moves to spend", OPEN_POSITION)
+  await addPuzzle(pool, "Two moves to spend", OPEN_POSITION, { mateIn: 2 })
   await openInPlay(page, "Two moves to spend")
   const board = boardOf(page)
 
@@ -102,7 +83,7 @@ test("answers the Student's move with one of its own, and hands the turn back", 
 test("hints one piece and nothing else — no destination, no arrow, no notation", async ({
   page,
 }) => {
-  await addMateInTwo("Two moves to spend", OPEN_POSITION)
+  await addPuzzle(pool, "Two moves to spend", OPEN_POSITION, { mateIn: 2 })
   await openInPlay(page, "Two moves to spend")
   const board = boardOf(page)
 

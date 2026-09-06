@@ -2,8 +2,7 @@ import { expect, test } from "@playwright/test"
 
 import type { Locator, Page } from "@playwright/test"
 
-import { signIn } from "./coach"
-import { hydrated } from "./hydrated"
+import { openNewPuzzle } from "./coach"
 
 /**
  * Squareness is the one board behaviour no layer below can hold: jsdom
@@ -13,14 +12,6 @@ import { hydrated } from "./hydrated"
  * measured — an empty board is still a board, and the pieces it can draw are
  * the tray's, which is the same twelve files.
  */
-
-async function editor(page: Page) {
-  await signIn(page)
-  // Straight to the URL: the sidebar is a drawer on a phone, and how a
-  // Coach navigates is `nav.spec.ts`'s subject rather than this one's.
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
-}
 
 const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
 const trayOf = (page: Page) =>
@@ -34,7 +25,7 @@ for (const viewport of [
     page,
   }) => {
     await page.setViewportSize(viewport)
-    await editor(page)
+    await openNewPuzzle(page)
 
     const box = await boardOf(page).boundingBox()
 
@@ -47,7 +38,7 @@ test("fills the width its screen allows, so the board is the hero", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await editor(page)
+  await openNewPuzzle(page)
 
   const box = await boardOf(page).boundingBox()
 
@@ -67,7 +58,7 @@ test("fills the width its screen allows, so the board is the hero", async ({
  * decision, so asserting them is asserting the spec.
  */
 test("checkers the squares in green, the default theme", async ({ page }) => {
-  await editor(page)
+  await openNewPuzzle(page)
   const board = boardOf(page)
 
   // a1 is dark and its neighbour is light: parity has an off-by-one each side.
@@ -88,7 +79,7 @@ test("checkers the squares in green, the default theme", async ({ page }) => {
 test("draws the artwork, so a sighted Coach sees what they are placing", async ({
   page,
 }) => {
-  await editor(page)
+  await openNewPuzzle(page)
   const tray = trayOf(page)
   const pieces = tray.locator("img")
 
@@ -133,7 +124,7 @@ test("keeps a square at 44px on a phone, because the person tapping is five", as
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 800 })
-  await editor(page)
+  await openNewPuzzle(page)
 
   const box = await square(boardOf(page), "a1, empty").boundingBox()
 

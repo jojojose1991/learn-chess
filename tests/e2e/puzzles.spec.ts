@@ -4,8 +4,7 @@ import { Pool } from "pg"
 import type { Page } from "@playwright/test"
 
 import { requireEnv } from "../../src/lib/env"
-import { signIn } from "./coach"
-import { hydrated } from "./hydrated"
+import { openNewPuzzle, signIn } from "./coach"
 
 /** Another Coach, written behind the app's back so nothing below this can lie. */
 const OTHER_COACH = { id: "e2e-other-owner", email: "owner@e2e.test" }
@@ -30,9 +29,7 @@ test.afterAll(() => pool.end())
 test("a Coach builds a Puzzle by hand and finds it in the Library", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
 
   // The validity check is blocking before anything is placed.
   await expect(page.getByText("White has no king.")).toBeVisible()

@@ -4,8 +4,7 @@ import { expect, test } from "@playwright/test"
 import type { Page } from "@playwright/test"
 
 import { KEYSTONE, outBy } from "../fixtures/keystone"
-import { signIn } from "./coach"
-import { hydrated } from "./hydrated"
+import { openNewPuzzle } from "./coach"
 
 /**
  * The other way into a Puzzle, end to end. Nothing below a browser composes
@@ -38,9 +37,7 @@ async function expectTheReadPosition(page: Page) {
 test("a Coach scans a screenshot and confirms the Position it read", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
 
   await page
     .getByLabel("Scan an image of a board")
@@ -65,9 +62,7 @@ test("a Coach scans a screenshot and confirms the Position it read", async ({
 test("a board screenshotted from Black's side opens the right way up, with the control that turned it", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
 
   await page
     .getByLabel("Scan an image of a board")
@@ -94,9 +89,7 @@ test("a board screenshotted from Black's side opens the right way up, with the c
 test("an image that did not read cleanly says so instead of opening a draft", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
 
   await page
     .getByLabel("Scan an image of a board")
@@ -116,9 +109,7 @@ test("an image that did not read cleanly says so instead of opening a draft", as
 test("a file that is not an image is refused at the route, not by the browser", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
 
   await page.getByLabel("Scan an image of a board").setInputFiles({
     name: "not-a-board.txt",
@@ -141,9 +132,7 @@ for (const width of [390, 820, 1280]) {
     page,
   }) => {
     await page.setViewportSize({ width, height: 800 })
-    await signIn(page)
-    await page.goto("/puzzles/new")
-    await hydrated(page, "form")
+    await openNewPuzzle(page)
 
     await page
       .getByLabel("Scan an image of a board")
@@ -216,9 +205,7 @@ const keystone = () => ({
 test("a board the Scan cannot read offers four corners instead of a dead end", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
 
   await page.getByLabel("Scan an image of a board").setInputFiles(keystone())
 
@@ -247,9 +234,7 @@ test("a board the Scan cannot read offers four corners instead of a dead end", a
 test("corners in the wrong place say so, and moving them reads the board again", async ({
   page,
 }) => {
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
   await page.getByLabel("Scan an image of a board").setInputFiles(keystone())
 
   // 25px out on both axes at every corner: measured, that is 0.24 minimum
@@ -273,9 +258,7 @@ test("the four corners can be placed on a 390px phone, which is the width that m
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 800 })
-  await signIn(page)
-  await page.goto("/puzzles/new")
-  await hydrated(page, "form")
+  await openNewPuzzle(page)
   await page.getByLabel("Scan an image of a board").setInputFiles(keystone())
 
   await putCornersOn(page, KEYSTONE.corners)
