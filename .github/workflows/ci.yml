@@ -51,6 +51,11 @@ jobs:
         env:
           ONNXRUNTIME_NODE_INSTALL: skip
 
+      # Here too, not only in e2e: the lowest layer holding "the engine returns
+      # a move this Position allows" is a unit test, and it skips itself
+      # without a binary.
+      - uses: ./.github/actions/stockfish
+
       # Each named, so a red run says which one without opening the log.
       - name: Types
         run: pnpm typecheck
@@ -63,6 +68,9 @@ jobs:
 
       - name: Unit and DOM tests
         run: pnpm test
+        env:
+          STOCKFISH_PATH: /usr/local/bin/stockfish
+          ENGINE_MOVETIME_MS: 200
 
   e2e:
     name: End to end
@@ -110,20 +118,7 @@ jobs:
         env:
           ONNXRUNTIME_NODE_INSTALL: skip
 
-      # The same binary and the same checksum as the image, because a suite
-      # that proves the engine against a different build proves less than it
-      # looks. Without this both engine tests skip themselves, which is the
-      # debt docs/TRACKER.md files under "a suite runs where the binary is".
-      - name: Install Stockfish
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/stockfish.tar \
-            https://github.com/official-stockfish/Stockfish/releases/download/sf_18/stockfish-ubuntu-x86-64-avx2.tar
-          echo "536c0c2c0cf06450df0bfb5e876ef0d3119950703a8f143627f990c7b5417964  /tmp/stockfish.tar" \
-            | sha256sum -c -
-          tar -xf /tmp/stockfish.tar -C /tmp
-          sudo mv /tmp/stockfish/stockfish-ubuntu-x86-64-avx2 "$STOCKFISH_PATH"
-          echo "uci" | "$STOCKFISH_PATH" | tail -1
+      - uses: ./.github/actions/stockfish
 
       # Not cached: Playwright's own CI guidance is that restoring costs about
       # what downloading costs, and the apt libraries `--with-deps` installs
