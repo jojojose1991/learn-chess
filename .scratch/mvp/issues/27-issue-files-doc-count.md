@@ -12,8 +12,8 @@ clock on the same drift.
 
 **Blocked by:** nothing.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `docs/agents/issue-files.md` no longer states how many tickets exist
-- [ ] The sentence still points at `docs/TRACKER.md` as the index, which was its job
-- [ ] No other doc carries a hand-written ticket count
+- [x] `docs/agents/issue-files.md` no longer states how many tickets exist
+- [x] The sentence still points at `docs/TRACKER.md` as the index, which was its job
+- [x] No other doc carries a hand-written ticket count
