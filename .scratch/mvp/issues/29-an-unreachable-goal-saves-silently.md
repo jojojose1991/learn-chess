@@ -70,3 +70,19 @@ validity, mate detection, `evaluateGoal`, the reducer, orientation — answers
 correctly for it. `Nh1+` is check and not mate, since White escapes with the
 only reply `Kxf3`. The hole this ticket closes is real and was found on the
 way, but it is not that report's fix.
+
+
+**Six e2e fixtures encoded Goals that were never reachable**, and are corrected
+rather than the check relaxed; `Play` is a submit through the same Save path,
+which is why half of them timed out rather than showing a refusal.
+
+**One review finding declined.** Both reviews asked that the engine and scan
+fixtures use a Position with a genuine forced mate at the stated depth, rather
+than a Goal past `SEARCH_CEILING`. Declined for the engine pair: those tests
+play `e7-e5` and assert the attempt is still open with budget left afterwards,
+and a Position that really does mate in the stated number ends the attempt the
+engine is there to answer — the suggestion trades a ceiling dependency for a
+test that fails on what its defender chooses. The scan pair reads its Position
+from a fixture image, which is not ours to pick a mate from. Both now name
+`SEARCH_CEILING` and its file so raising it finds them, and the tracker row for
+that ceiling names both specs.

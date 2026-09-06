@@ -49,9 +49,14 @@ test("a Coach scans a screenshot and confirms the Position it read", async ({
   // the draft is the placement as it stands.
   await expect(page.getByRole("radio", { name: "White's side" })).toBeChecked()
 
-  // A draft is a Puzzle only once a person has confirmed it.
+  // A draft is a Puzzle only once a person has confirmed it. The Goal is past
+  // `SEARCH_CEILING` (`src/lib/chess/goals.ts`) because this fixture is an
+  // opening with no forced mate in it, and Save proves a Goal unreachable only
+  // within that ceiling — the scan is this test's subject, not the Goal, and
+  // the image is not ours to choose a mate from. Raising the ceiling to 3
+  // turns this red; the Goal moves with it.
   await page.getByLabel("Name").fill("Scanned opening")
-  await page.getByLabel("Mate in").fill("2")
+  await page.getByLabel("Mate in").fill("3")
   await page.getByRole("button", { name: "Save" }).click()
 
   await expect(page.getByRole("heading", { name: "Library" })).toBeVisible()
@@ -222,7 +227,8 @@ test("a board the Scan cannot read offers four corners instead of a dead end", a
   await expect(page.getByRole("alert")).toBeHidden()
 
   await page.getByLabel("Name").fill("Scanned from a photo")
-  await page.getByLabel("Mate in").fill("2")
+  // Past `SEARCH_CEILING`, for the reason the first Save in this file gives.
+  await page.getByLabel("Mate in").fill("3")
   await page.getByRole("button", { name: "Save" }).click()
 
   await expect(
