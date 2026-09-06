@@ -18,8 +18,16 @@ import { addPuzzle } from "./puzzle"
 
 /** White plays Qg7 mate; Black is not already in check, so it is legal too. */
 const MATE_IN_ONE = "7k/8/5K2/8/8/8/8/6Q1 w - - 0 1"
-/** A white pawn one square from the last rank, and a king each. */
-const PROMOTING = "4k3/P7/8/8/8/8/8/4K3 w - - 0 1"
+/**
+ * A white pawn one square from the last rank. Every mate here is a promotion,
+ * so a mate-in-1 Goal is true of it.
+ *
+ * The black rook is only there to keep material sufficient: without it an
+ * underpromotion ends the attempt as a draw rather than as a move that simply
+ * did not mate, which is a confusing board to leave behind two of the four
+ * buttons this test taps.
+ */
+const PROMOTING = "7k/5P2/6K1/8/8/8/8/r7 w - - 0 1"
 
 let pool: Pool
 
@@ -122,8 +130,8 @@ test("asks a promoting pawn what it becomes, in buttons a five-year-old can hit"
   await openInPlay(page, "Promote")
   const board = boardOf(page)
 
-  await square(board, "a7, white pawn").click()
-  await square(board, "a8, empty").click()
+  await square(board, "f7, white pawn").click()
+  await square(board, "f8, empty").click()
 
   // `showModal`, which jsdom does not implement: the picker is on the top
   // layer and the board behind it cannot be tapped through.
@@ -148,7 +156,7 @@ test("asks a promoting pawn what it becomes, in buttons a five-year-old can hit"
   await picker.getByRole("button", { name: "Rook" }).click()
 
   await expect(picker).toBeHidden()
-  await expect(movesOf(page).getByRole("listitem")).toHaveText(["a8=R+"])
+  await expect(movesOf(page).getByRole("listitem")).toHaveText(["f8=R#"])
 })
 
 test("plays on the board the Coach teaches on, not on the default", async ({

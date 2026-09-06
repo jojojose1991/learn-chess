@@ -36,12 +36,13 @@ test("a Coach builds a Puzzle by hand and finds it in the Library", async ({
   await expect(page.getByText("White has no king.")).toBeVisible()
   await expect(page.getByRole("button", { name: "Save" })).toBeDisabled()
 
-  await place(page, "white king", "f6")
-  await place(page, "black king", "h8")
-  await place(page, "white queen", "g1")
+  await place(page, "black king", "f3")
+  await place(page, "white king", "h1")
+  await place(page, "black queen", "g8")
   // Black to move: White is not in check, so the Position is legal either
   // way — and asserting it comes back is only worth anything if it is not
-  // the default the editor opens on.
+  // the default the editor opens on. Black holds the mating material because
+  // Save refuses a Goal the side to move cannot reach.
   await page.getByRole("radio", { name: "Black", exact: true }).check()
 
   await expect(
@@ -59,13 +60,13 @@ test("a Coach builds a Puzzle by hand and finds it in the Library", async ({
   await expect(page.getByRole("heading", { name: "Edit Puzzle" })).toBeVisible()
   const board = boardOf(page)
   await expect(
-    board.getByRole("button", { name: /^h8, black king/ })
+    board.getByRole("button", { name: /^f3, black king/ })
   ).toBeVisible()
   await expect(
-    board.getByRole("button", { name: /^g1, white queen/ })
+    board.getByRole("button", { name: /^g8, black queen/ })
   ).toBeVisible()
   await expect(
-    board.getByRole("button", { name: /^f6, white king/ })
+    board.getByRole("button", { name: /^h1, white king/ })
   ).toBeVisible()
   await expect(
     page.getByRole("radio", { name: "Black", exact: true })
