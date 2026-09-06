@@ -91,6 +91,11 @@ restore time is comparable to download time, and the Linux system libraries
 `actions/setup-node`'s `cache: pnpm`, which requires `pnpm/action-setup` to run
 first — `cache: pnpm` shells out to `pnpm store path`.
 
+**The pnpm version is named once**, in `package.json`'s `packageManager`.
+`pnpm/action-setup` reads it with no `version:` input and the Dockerfile reads
+it out of the file it has already copied, so an image and a CI run cannot
+install different pnpms against one lockfile.
+
 ## `deploy.yml` — main to production
 
 Triggers on push to `main`, gated on `ci.yml` passing. `concurrency` with no
