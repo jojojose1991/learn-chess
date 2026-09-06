@@ -121,22 +121,37 @@ jobs:
       # new revision concurrently, and the migrator has no lock, so the loser
       # of that race crash-loops. Over the unpooled URL, which is what Neon
       # documents for DDL.
+      #
+      # Named here rather than left to `requireEnv`: blank is how a key gets
+      # switched off in `prod`, and a blank one of these is a mistake rather
+      # than a choice. The message says which, before an image is pushed.
       - name: Migrate
-        run: pnpm db:migrate
+        run: |
+          set -euo pipefail
+          for name in DATABASE_URL_UNPOOLED DATABASE_URL BETTER_AUTH_SECRET \
+            BETTER_AUTH_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is blank in Infisical prod, and the service cannot run without it."
+              exit 1
+            fi
+          done
+          pnpm db:migrate
 
       # Everything Infisical's `prod` holds goes to the service, so adding a
       # variable there needs no change here. The action exports each one to
       # `GITHUB_ENV` and declares no outputs, so the list is the difference
-      # between the environment before it ran and after — which `before-env`
-      # above captured.
+      # between the environment before it ran and after.
       #
-      # Three names are refused rather than forwarded. `STOCKFISH_PATH` and
-      # `ENGINE_MOVETIME_MS` are properties of the image — the Dockerfile sets
-      # them, and a deploy-time value would point the engine at a binary that
-      # is not there. `PORT` is Cloud Run's to inject, and overriding it means
-      # the container listens where nothing is asking. The deploy fails loudly
-      # rather than shipping any of them, because a silent skip would leave
-      # prod holding a value that looks live and is not.
+      # **An empty value is a key that is not set here.** Infisical's keys are
+      # the project's, not an environment's, so a name `dev` needs cannot be
+      # deleted from `prod` — it can only be blanked. `src/lib/env.ts` reads
+      # the two the same way (`||`, so "" is missing), and this follows it.
+      #
+      # Three names are refused when they arrive with a value. `STOCKFISH_PATH`
+      # and `ENGINE_MOVETIME_MS` belong to the image, which sets them as `ENV`,
+      # and `PORT` is Cloud Run's to inject — any of them passed here overrides
+      # a thing that was right, and the engine's path is the one that fails on
+      # a Coach's first move rather than at boot.
       - name: Collect the service's environment
         shell: bash
         run: |
@@ -147,16 +162,18 @@ jobs:
           # runner, which is thrown away with the job.
           comm -13 "$RUNNER_TEMP/env-before.txt" "$RUNNER_TEMP/env-after.txt" |
             while IFS= read -r name; do
+              value="${!name}"
+              [ -n "$value" ] || continue
               case "$name" in
                 STOCKFISH_PATH|ENGINE_MOVETIME_MS|PORT)
-                  echo "$name" >> "$RUNNER_TEMP/refused.txt"; continue ;;
+                  echo "$name (the image owns it; blank it in prod)" \
+                    >> "$RUNNER_TEMP/refused.txt"; continue ;;
               esac
               # `--set-env-vars` splits on commas and newlines, so a value
               # holding either would arrive at the service truncated and no
               # error would say so. Refused rather than escaped: "adding a
               # variable in Infisical needs no change here" has to fail at the
               # deploy rather than in production.
-              value="${!name}"
               if [ "$value" != "${value%,*}" ] ||
                  [ "$(printf '%s' "$value" | wc -l)" -ne 0 ]; then
                 echo "$name (holds a comma or a newline)" \
