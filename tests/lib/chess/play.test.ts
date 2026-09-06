@@ -179,13 +179,63 @@ describe("the end of an attempt", () => {
     expect(after.refusal).toBeNull()
   })
 
-  it("plays nothing more once the budget is spent, so the Puzzle waits to be tried again", () => {
+  // Reverses ticket 10's "a closed attempt takes no more moves", which applied
+  // one rule where docs/PLAN.md has two: the engine defends *and then* the
+  // budget runs out. A Student who is told "Not this time" and shown nothing
+  // is robbed of finding out why it failed, which is the thing PLAN protects.
+  it("still lets the defender answer a spent budget, so the Student sees the refutation", () => {
     const spent = run(opened(FOOLS, 1), move("e7", "e5"))
+    expect(spent.status.status).toBe("failed")
 
     const after = answered(spent, "g2", "g4")
 
-    expect(sans(after)).toEqual(["e5"])
-    expect(after.fen).toBe(spent.fen)
+    expect(sans(after)).toEqual(["e5", "g4"])
+  })
+
+  it("keeps the attempt failed once the defender has answered, so an answer is not a reprieve", () => {
+    const spent = run(opened(FOOLS, 1), move("e7", "e5"))
+
+    expect(answered(spent, "g2", "g4").status).toEqual({
+      status: "failed",
+      reason: "That is 1 move played, and no checkmate.",
+    })
+  })
+
+  // The gate that lets a lost attempt be answered reads the board, and the
+  // Goal reads the board: if the two disagree about what "over" means, a draw
+  // one of them has not heard of leaves the board unlocked with no outcome and
+  // no way on but Rewind. The 50-move rule is the one `chess.js` counts and
+  // `evaluateGoal` did not.
+  it("closes an attempt the 50-move rule has drawn, rather than leaving the board open", () => {
+    // Halfmove clock at 99: a quiet move makes it 100 and draws the game.
+    const drawn = run(
+      opened("4k3/8/8/8/8/8/4R3/4K3 w - - 99 60", 3),
+      move("e2", "d2")
+    )
+
+    expect(drawn.status).toEqual({
+      status: "failed",
+      reason:
+        "Fifty moves have passed with no capture and no pawn moved. The game is a draw.",
+    })
+    expect(engineThinking(drawn)).toBe(false)
+  })
+
+  // Delete the board check from `engineThinking` and every other test here
+  // still passes: this is the one that holds it.
+  it("asks the defender nothing about a Position with no move left in it", () => {
+    const solved = run(opened(MATE_IN_ONE), move("g1", "g7"))
+
+    expect(solved.status.status).toBe("solved")
+    expect(engineThinking(solved)).toBe(false)
+  })
+
+  it("takes no move from the Student once the budget is spent, defender answered or not", () => {
+    const spent = run(opened(FOOLS, 1), move("e7", "e5"))
+
+    const after = run(answered(spent, "g2", "g4"), move("d8", "h4"))
+
+    expect(sans(after)).toEqual(["e5", "g4"])
   })
 })
 

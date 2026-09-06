@@ -176,7 +176,10 @@ export function PlayPuzzle({
               so the element stays and its contents change. The button is a
               sibling, so a turn change never reads it out. */}
           <div role="status" className="flex flex-col gap-1">
-            {outcome.status === "open" ? (
+            {/* The engine wins over the outcome: a lost attempt is still
+                answered, and "Not this time" over a board whose refutation
+                has not landed is a verdict on a move nobody has seen yet. */}
+            {thinking || outcome.status === "open" ? (
               <p>
                 {thinking
                   ? "The engine is thinking…"

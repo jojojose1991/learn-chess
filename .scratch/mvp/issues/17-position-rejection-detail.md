@@ -23,13 +23,13 @@ sentence. If they do, they need Coach-readable wording, not the library's.
 **Blocked by:** 14 — scan a screenshot. Nothing to verify until a Position
 arrives from outside our own editor.
 
-**Status:** needs-triage
+**Status:** resolved
 
-- [ ] Determine whether Scan can produce a Position that fails `validateFen`
-      with any error `structuralReasons` does not map
-- [ ] If it can, give each reachable error a sentence in the register of the
-      other five — no notation, no library vocabulary
-- [ ] If it cannot, close this and leave the single sentence in place
+- [x] Determine whether Scan can produce a Position that fails `validateFen`
+      with any error `structuralReasons` does not map — it cannot
+- [x] If it can, give each reachable error a sentence in the register of the
+      other five — no notation, no library vocabulary — not reached
+- [x] If it cannot, close this and leave the single sentence in place
 
 ## Comments
 
@@ -61,3 +61,63 @@ unmeasured, and the tracker carries that separately. If the decision is
 waiting on evidence that the classifier can emit a structurally odd rank
 under photographic degradation, it is still waiting; if it is waiting on
 whether *our composition* can, that is answered, and the answer is no.
+
+**Answered: no. The one sentence stays, and no code changed.**
+
+15's reasoning is now measured rather than argued. Fuzzing 20,000 trials a
+path, against the real `probsToPlacement` and the real editor operations,
+produced **no** `validateFen` error that `structuralReasons` does not already
+map:
+
+- **The Scan path.** Random 13-class probabilities over 64 tiles through
+  `probsToPlacement`, then through both completions the app can apply.
+  `probsToPlacement` writes 64 labels from a fixed alphabet, slices them into
+  8 ranks of 8, and collapses runs of `1` to a single digit that can never
+  exceed 8 — so a well-formed placement is a property of its construction and
+  not of the model behaving. No classifier output, degraded or not, can make
+  it emit a malformed rank.
+- **The suffix is never the classifier's.** `src/lib/scan/service.ts` builds
+  no FEN at all; it returns a placement, and
+  `src/routes/_coach/puzzles.new.tsx:158` completes it — `completeFen` for a
+  board seen from White, `withPlacementRotated` for one seen from Black. Both
+  append our own constant, so castling, en-passant and both counters are ours
+  in every case. Both were fuzzed.
+- **The editor path.** Random walks of `withPiece`, `withSideToMove` and
+  `withPlacementRotated` from `EMPTY_POSITION`. Only the mapped king-count and
+  edge-row errors ever appear.
+
+The other **eleven** strings — 16 in 1.4.0 once the two `${color}` branches are
+counted as the four strings they produce, less our five — stay reachable only
+from a FEN we did not build. There are two such routes, not one:
+
+- `POST /api/engine/move`, whose body is a string from anyone. Nobody reads
+  its wording: `src/components/play-puzzle.tsx` throws on the *status* and
+  never opens the 422's message.
+- `savePuzzle`, whose `.validator((data: PuzzleDraft) => data)` is a type
+  annotation that strips nothing at runtime, so a signed-in Coach can put any
+  string in `fen`. This one **is** shown —
+  `src/components/puzzle-editor.tsx:189` renders `validity.reasons`, and the
+  same sentence is on screen throughout normal editing.
+
+So the fallback is read by people; what no one can do is *reach an unmapped
+one* through a screen, because every FEN the editor and Scan produce is built
+by `withPiece`, `withSideToMove`, `withPlacementRotated` and `completeFen`,
+and the fuzzing above is over exactly those. Getting an unmapped string onto a
+screen takes hand-crafting a malformed FEN into your own save request, which
+is not a Coach being failed by our wording.
+
+The trigger, then, is not Scan and never was: it is **a screen given an
+arbitrary FEN it did not build, to validate for a person who did not write
+it.** Nothing does that today.
+
+**One premise above is wrong, and stays there as the record.** The opening
+paragraph says "every Position is built by our own board editor". It is the
+only *UI*, but `savePuzzle` has taken an unvalidated FEN off the wire since
+ticket 08 — so the sentence was already untrue when written. It did not change
+this answer, and correcting the reasoning is worth more than tidying the
+sentence.
+
+No test is left behind: nothing shipped wrong, so there is no defect to hold.
+A test asserting that a fuzzed classifier read never trips an unmapped error
+would be asserting a property of `probsToPlacement`, which is a vendored
+library's construction and not our behaviour to pin.

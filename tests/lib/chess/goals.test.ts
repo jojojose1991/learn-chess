@@ -1,7 +1,7 @@
 import { Chess } from "chess.js"
 import { describe, expect, it } from "vitest"
 
-import { describeGoal, evaluateGoal } from "@/lib/chess/goals"
+import { describeGoal, evaluateGoal, hasNoMateWithin } from "@/lib/chess/goals"
 
 import type { Goal } from "@/lib/chess/goals"
 import type { PlayedMove } from "@/lib/chess/rules"
@@ -132,5 +132,54 @@ describe("describeGoal", () => {
 
   it("puts a one-move Goal in the singular, so the shortest Puzzle reads properly", () => {
     expect(describeGoal(MATE_IN_1)).toBe("Checkmate in 1 move")
+  })
+})
+
+/**
+ * "Mate in N" makes a claim about the Position, and one that cannot be met is
+ * a Puzzle no Student can solve. The search proves whether a forced mate is
+ * there so Save can refuse one — and, past a depth, declines to answer rather
+ * than calling a Goal unsolvable on a search that never ran.
+ */
+describe("hasNoMateWithin", () => {
+  /** Back rank: Rd8 mates at once. */
+  const MATES_IN_1 = "6k1/5ppp/8/8/8/8/8/3R2K1 w - - 0 1"
+
+  /** Forced, but the shortest line is two of White's own moves. */
+  const MATES_IN_2 = "7k/8/6K1/8/8/8/8/6Q1 w - - 0 1"
+
+  /** A bare king each way: legal, playable, and mate is never coming. */
+  const NO_MATE = "7k/8/5K2/8/8/8/8/8 w - - 0 1"
+
+  it("finds a mate that is there", () => {
+    expect(hasNoMateWithin(MATES_IN_1, 1)).toBe(false)
+  })
+
+  it("says so when the Position has no mate in it at all", () => {
+    expect(hasNoMateWithin(NO_MATE, 1)).toBe(true)
+  })
+
+  it("says so when the mate is further off than the budget reaches", () => {
+    expect(hasNoMateWithin(MATES_IN_2, 1)).toBe(true)
+    expect(hasNoMateWithin(MATES_IN_2, 2)).toBe(false)
+  })
+
+  // The budget is a ceiling, not an exact distance: a Coach setting a Goal
+  // more generous than the shortest line has made an easier Puzzle, not an
+  // unsolvable one.
+  it("counts a mate that arrives sooner than the budget allows", () => {
+    expect(hasNoMateWithin(MATES_IN_1, 2)).toBe(false)
+  })
+
+  // Searching only checking moves would go deeper cheaply and is wrong: this
+  // is the shape it misses, and the commonest one a Coach sets.
+  it("finds a mate whose first move is quiet rather than a check", () => {
+    expect(hasNoMateWithin("5k2/8/4K3/8/8/2R5/8/8 w - - 0 1", 2)).toBe(false)
+  })
+
+  // Past the ceiling nothing is claimed, so a Position with no mate at all
+  // still answers false — the Coach's word stands where the search stopped.
+  it("declines to call a Goal too deep to search unsolvable", () => {
+    expect(hasNoMateWithin(NO_MATE, 3)).toBe(false)
   })
 })

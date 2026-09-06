@@ -60,3 +60,15 @@ six readings of `game.status.status`.
 **Left to the orchestrator: `docs/TRACKER.md`'s header count.** Two agents were
 building in parallel and both editing that one line guarantees a conflict, so
 it is set at merge.
+
+**Superseded 2026-09-06: "a closed attempt takes no more moves" was too
+broad.** It was written as one rule beating two, and it took the defender's
+reply with it: a Student who played a losing move on a mate-in-1 was shown
+"Not this time" over a board that never moved, and never saw what refuted
+them. `docs/PLAN.md` has two things happen and not one — "the engine defends,
+the move budget runs down, and when it is exhausted the Puzzle fails" — and
+"it robs the Student of finding out why it failed" is the sentence this
+violated. Ticket 30 gates the loop on the board having a legal move left
+instead. The half of the rule that was right survives: the Student's own taps
+are still refused once the Goal has closed, and a Position with no move in it
+is still never asked for one.

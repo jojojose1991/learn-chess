@@ -74,3 +74,36 @@ describe("what a Puzzle has to be before it is saved", () => {
     expect(draftRefusal(draft({ goal }))).toBe("That is not a Goal we have.")
   })
 })
+
+/**
+ * The search itself is `hasNoMateWithin`'s, and proved in
+ * tests/lib/chess/goals.test.ts. What is left here is that Save is wired to
+ * it, and in which direction: an unreachable Goal refuses, and a Goal the
+ * search cannot reach does not.
+ */
+describe("a Goal has to be one the Position can actually reach", () => {
+  /** A bare king each way: legal, playable, and mate is never coming. */
+  const NO_MATE = "7k/8/5K2/8/8/8/8/8 w - - 0 1"
+
+  it("refuses a Goal the Position cannot reach, so no unsolvable Puzzle is stored", () => {
+    expect(
+      draftRefusal(draft({ fen: NO_MATE, goal: { kind: "mate_in", n: 1 } }))
+    ).toBe("There is no checkmate in 1 move in this position.")
+  })
+
+  it("takes a Goal the Position does reach", () => {
+    expect(
+      draftRefusal(draft({ fen: MATE_IN_ONE, goal: { kind: "mate_in", n: 1 } }))
+    ).toBeNull()
+  })
+
+  // The Goal's number reaches GOAL_N_MAX and the search stops well below it:
+  // past that the Coach's word stands, rather than a refusal nothing proved.
+  it("takes a Goal too deep to search rather than calling it unsolvable", () => {
+    expect(
+      draftRefusal(
+        draft({ fen: NO_MATE, goal: { kind: "mate_in", n: GOAL_N_MAX } })
+      )
+    ).toBeNull()
+  })
+})

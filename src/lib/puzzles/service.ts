@@ -5,6 +5,7 @@ import {
   updatePuzzleByCoach,
 } from "@/db/repositories/puzzles"
 import { getCoach } from "@/lib/auth"
+import { hasNoMateWithin, moveWord } from "@/lib/chess/goals"
 import { validatePosition } from "@/lib/chess/rules"
 import { GOAL_N_MAX, GOAL_N_MIN, NAME_MAX, isPuzzleId } from "./rules"
 
@@ -58,6 +59,13 @@ export function draftRefusal(draft: PuzzleDraft): string | null {
 
   const position = validatePosition(arrived.fen)
   if (!position.ok) return position.reasons.join(" ")
+
+  // Only a Goal the search actually disproved refuses: one too deep to search
+  // is the Coach's to stand behind, and refusing it would reject correct
+  // Puzzles.
+  if (hasNoMateWithin(arrived.fen, n)) {
+    return `There is no checkmate in ${n} ${moveWord(n)} in this position.`
+  }
 
   return null
 }
