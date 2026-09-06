@@ -1,0 +1,177 @@
+name: Deploy
+
+# On CI passing, not on the push: the two would otherwise race and a failing
+# commit would reach production anyway.
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+# Never cancelled: the migrator takes no advisory lock, so serialising here is
+# what stops two runs applying the same DDL.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  deploy:
+    name: Build, migrate, deploy
+    runs-on: ubuntu-latest
+    # `workflow_run` fires whatever CI concluded.
+    if: github.event.workflow_run.conclusion == 'success'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      # The commit CI passed on, not the branch head a checkout would default
+      # to by the time a deploy starts.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # The window either side of Infisical, and nothing else inside it: the
+      # names appearing between these two snapshots are what `prod` carries.
+      # `auth` runs below for that reason — it exports CLOUDSDK_* of its own.
+      - name: Note the environment
+        shell: bash
+        run: |
+          compgen -e | sort > "$RUNNER_TEMP/env-before.txt"
+          : > "$RUNNER_TEMP/refused.txt"
+
+      # Pinned to a patch tag: this action publishes no floating `v1`.
+      - name: Fetch secrets
+        uses: Infisical/secrets-action@v1.0.17
+        with:
+          method: universal
+          client-id: ${{ secrets.INFISICAL_CLIENT_ID }}
+          client-secret: ${{ secrets.INFISICAL_CLIENT_SECRET }}
+          project-slug: ${{ vars.INFISICAL_PROJECT_SLUG }}
+          env-slug: prod
+          secret-path: /
+
+      - name: Note what prod added
+        shell: bash
+        run: compgen -e | sort > "$RUNNER_TEMP/env-after.txt"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push
+        env:
+          IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/learn-chess/app
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          docker build -t "$IMAGE:$SHA" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$SHA"
+          docker push "$IMAGE:latest"
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        env:
+          ONNXRUNTIME_NODE_INSTALL: skip
+
+      # Before the deploy and never at boot: Cloud Run starts instances of a
+      # new revision concurrently and the migrator has no lock, so the loser
+      # crash-loops. Blank is how a key is switched off in `prod` and also how
+      # one goes missing, so these four are named.
+      - name: Migrate
+        run: |
+          set -euo pipefail
+          for name in DATABASE_URL_UNPOOLED DATABASE_URL BETTER_AUTH_SECRET \
+            BETTER_AUTH_URL; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is blank in Infisical prod."
+              exit 1
+            fi
+          done
+          pnpm db:migrate
+
+      # A file, not a step output: an output carrying DATABASE_URL is stored
+      # with the run. `STOCKFISH_PATH` and `ENGINE_MOVETIME_MS` belong to the
+      # image and `PORT` to Cloud Run, so a value for any of them overrides
+      # something that was already right.
+      - name: Collect the service's environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          comm -13 "$RUNNER_TEMP/env-before.txt" "$RUNNER_TEMP/env-after.txt" |
+            while IFS= read -r name; do
+              value="${!name}"
+              [ -n "$value" ] || continue
+              case "$name" in
+                STOCKFISH_PATH|ENGINE_MOVETIME_MS|PORT)
+                  echo "$name (the image owns it; blank it in prod)" \
+                    >> "$RUNNER_TEMP/refused.txt"; continue ;;
+              esac
+              # `--set-env-vars` splits on these, and a truncated value would
+              # reach the service with nothing said about it.
+              if [ "$value" != "${value%,*}" ] ||
+                 [ "$(printf '%s' "$value" | wc -l)" -ne 0 ]; then
+                echo "$name (holds a comma or a newline)" \
+                  >> "$RUNNER_TEMP/refused.txt"; continue
+              fi
+              printf '%s=%s\n' "$name" "$value"
+            done > "$RUNNER_TEMP/service-env"
+
+          if [ -s "$RUNNER_TEMP/refused.txt" ]; then
+            echo "::error::prod holds names this deploy will not forward: $(tr '\n' ' ' < "$RUNNER_TEMP/refused.txt")"
+            exit 1
+          fi
+          echo "forwarding $(wc -l < "$RUNNER_TEMP/service-env") variables"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ vars.CLOUD_RUN_SERVICE }}
+          region: ${{ vars.GCP_REGION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/learn-chess/app:${{ github.event.workflow_run.head_sha }}
+          # 1 GiB because Stockfish peaks at 377 MiB before Node's own.
+          # `--concurrency=4` because a 12 MP Scan peaks near 300 MB and
+          # nothing in `src/lib/scan` bounds two at once.
+          flags: |
+            --allow-unauthenticated
+            --memory=1Gi
+            --cpu=1
+            --min-instances=0
+            --max-instances=3
+            --concurrency=4
+            --timeout=120
+          # `overwrite`, so a key deleted in Infisical leaves the service too.
+          env_vars_file: ${{ runner.temp }}/service-env
+          env_vars_update_strategy: overwrite
+
+      # Proves the revision serves, not that the API accepted it.
+      - name: Check it answers
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 5 --retry-delay 3 \
+            --retry-all-errors "${{ steps.deploy.outputs.url }}/sign-in")
+          echo "sign-in answered $code"
+          test "$code" = "200"

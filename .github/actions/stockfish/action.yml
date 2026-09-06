@@ -1,0 +1,22 @@
+# The same release and checksum as `Dockerfile`, pinned by hand in both.
+# Without it the engine's tests skip themselves rather than fail.
+name: Install Stockfish
+description: The pinned Stockfish 18 build, verified and on PATH.
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        url=https://github.com/official-stockfish/Stockfish/releases/download/sf_18/stockfish-ubuntu-x86-64-avx2.tar
+        sum=536c0c2c0cf06450df0bfb5e876ef0d3119950703a8f143627f990c7b5417964
+        dest=/usr/local/bin/stockfish
+
+        curl -fsSL -o /tmp/stockfish.tar "$url"
+        echo "$sum  /tmp/stockfish.tar" | sha256sum -c -
+        tar -xf /tmp/stockfish.tar -C /tmp
+        sudo mv /tmp/stockfish/stockfish-ubuntu-x86-64-avx2 "$dest"
+
+        # A binary for the wrong CPU dies here, not inside a test.
+        echo "uci" | "$dest" | grep -q '^uciok$'

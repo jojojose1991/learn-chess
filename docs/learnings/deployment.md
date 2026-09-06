@@ -5,6 +5,14 @@ flagged as unverified. Several items contradict the official docs.
 
 ## TanStack Start → a Node server in Docker
 
+⚠️ **Corrected, and the correction is what shipped** — see
+[ADR-0006](../adr/0006-srvx-serves-the-build-not-nitro.md). Nitro is *not*
+required for the Node target and is not installed. `vite build` emits
+`dist/server/server.js` whose default export is `createServerEntry({ fetch })`,
+and `srvx serve --prod` runs exactly that — measured against this app's own
+build: HTML, favicon, robots and a hashed asset chunk all 200. What follows is
+kept for the version facts it records; its conclusion is superseded.
+
 **Nitro is opt-in but still required for the Node target.** Start no longer
 bundles it — `@tanstack/start-plugin-core` now depends on `srvx ^0.11.9` plus
 `@tanstack/start-server-core`, which uses `h3@2.0.1-rc.20`. But srvx is *what
@@ -93,8 +101,27 @@ for the engine) a runtime stage copying only `.output` may be missing the
 `output.dir` are the neighbours ([nitro config](https://nitro.build/config)).
 
 **`corepack enable` works on Node 24 (experimental) but Corepack is removed from
-the Node distribution in 25+.** On 25+ use `npm i -g pnpm@11` or the
-`ghcr.io/pnpm/pnpm:11` base image. pnpm's `latest` is **11.25.0**.
+the Node distribution in 25+.** On 25+ use `npm i -g pnpm@<version>` or the
+`ghcr.io/pnpm/pnpm` base image.
+
+⚠️ **Corepack cannot install pnpm 12 at all**, whatever the Node version.
+Measured with corepack 0.34.0: it looks for
+`~/.cache/node/corepack/v1/pnpm/<version>/bin/pnpm.cjs`, and a pnpm 12 release
+ships a self-contained binary rather than that file, so `corepack pnpm` dies
+with `Cannot find module`. `npm install --global` is the way in.
+
+**One pin, in `packageManager`.** `package.json` names the version, the
+Dockerfile reads it out of the file it has already copied, and
+`pnpm/action-setup` reads it with no `version:` input. Three copies of a
+version number is how an image and a CI run come to install different pnpms
+against one lockfile.
+
+**pnpm 12 does not rewrite the lockfile.** Measured going from 10.30.1:
+`lockfileVersion` stays `9.0`, no existing dependency re-resolves, and the diff
+is additive — pnpm records itself under `packageManagerDependencies` with a
+`@pnpm/exe.*` entry per platform. Those stay out of `pnpm deploy --prod`, so
+the runtime image does not carry them; it measured 42 MB *smaller* than the
+same image built by pnpm 10.
 [pnpm's Docker page](https://pnpm.io/docker) recommends BuildKit cache mounts on
 `/pnpm/store`, or `pnpm fetch --prod` where cache mounts aren't available.
 
@@ -109,6 +136,35 @@ three lines with no Dockerfile, and the Dockerfile in
 `docs/router/how-to/deploy-to-production.md` is for a static SPA behind nginx —
 not applicable. Third-party: [Railway's guide](https://docs.railway.com/guides/tanstack-start),
 [olegkorol/docker-tanstack-start](https://github.com/olegkorol/docker-tanstack-start/blob/main/Dockerfile).
+
+## TLS out of the container, and the CA bundle that is not there
+
+`node:24-slim` ships **no** `ca-certificates` package — `/etc/ssl/certs` does
+not exist. `onnxruntime-node` says so out loud on every start:
+
+```
+[W:onnxruntime:...] No readable CA bundle was found; telemetry HTTPS uploads
+will be unavailable
+```
+
+**It is not a bug and the image needs no fix.** Node does not read the OS trust
+store; it compiles its own in. Measured in this image: `tls.rootCertificates`
+has **118** entries, and a raw `tls.connect` to this project's own Neon host
+comes back `authorized = true` with no `authorizationError`. `fetch` to a public
+HTTPS host returns 200. The warning is ONNX's native layer, which does use the
+OS store, and the only thing it wanted it for is telemetry this service does not
+send.
+
+Installing `ca-certificates` would silence the line and nothing else — until
+something in the image shells out to `curl`, or a native library opens its own
+TLS connection. Neither happens today.
+
+**`sslmode=verify-full`, never `require`.** `pg` 8 treats `prefer`, `require`
+and `verify-ca` as aliases for `verify-full`, and warns at runtime that **pg 9
+adopts libpq's semantics**, where `require` encrypts without validating the
+certificate. That is a security property leaving on a version bump, with the
+same connection, the same logs and no error — so the connection strings say the
+strict word now. It is behaviour-preserving today.
 
 ## Neon from Cloud Run
 

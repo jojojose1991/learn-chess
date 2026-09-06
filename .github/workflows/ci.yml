@@ -1,0 +1,117 @@
+# Holds no credential: the unit suite is pure functions and jsdom, and e2e
+# builds its own database. A fork's pull request runs the whole thing.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  check:
+    name: Types, lint, format, unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Before setup-node: `cache: pnpm` shells out to `pnpm store path`.
+      # No `version:` — the action reads `packageManager` from package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      # `onnxruntime-node`'s postinstall fetches CUDA providers nothing runs.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        env:
+          ONNXRUNTIME_NODE_INSTALL: skip
+
+      # The engine's own test skips itself without a binary.
+      - uses: ./.github/actions/stockfish
+
+      - name: Types
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm check
+
+      - name: Unit and DOM tests
+        run: pnpm test
+        env:
+          STOCKFISH_PATH: /usr/local/bin/stockfish
+          ENGINE_MOVETIME_MS: 200
+
+  e2e:
+    name: End to end
+    runs-on: ubuntu-latest
+
+    services:
+      # Port 5433 matches docker-compose.yml, so E2E_DATABASE_URL reads the
+      # same here as on a laptop.
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: learn-chess
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d learn-chess"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5433/learn-chess-e2e
+      STOCKFISH_PATH: /usr/local/bin/stockfish
+      ENGINE_MOVETIME_MS: 200
+      BETTER_AUTH_SECRET: e2e-not-a-secret-this-database-is-thrown-away
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        env:
+          ONNXRUNTIME_NODE_INSTALL: skip
+
+      - uses: ./.github/actions/stockfish
+
+      # Not cached: Playwright's docs say restoring costs about what
+      # downloading costs, and `--with-deps`' apt libraries are not cacheable.
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      # `playwright.config.ts` provisions the database in `webServer.command`.
+      - name: End-to-end tests
+        run: pnpm e2e
+
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-failure
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

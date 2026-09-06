@@ -21,12 +21,10 @@ RUN tar -xf /tmp/stockfish.tar -C /tmp \
 # runtime stage pays for emulation.
 FROM --platform=$BUILDPLATFORM node:24-slim AS build
 WORKDIR /app
-# Pinned, not `corepack enable pnpm`: the lockfile was written by pnpm 11, and
-# corepack's default moves with the base image — a refresh would otherwise
-# break `--frozen-lockfile` with nothing in the repo having changed. Corepack
-# also leaves the Node distribution at 25 (docs/learnings/deployment.md).
-RUN npm install --global pnpm@11.21.0
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# From `packageManager`, so the image, CI and a laptop cannot drift apart. Not
+# corepack: it cannot fetch pnpm 12 (docs/learnings/deployment.md).
+RUN npm install --global "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
 # Belt to `--ignore-scripts`' braces and to `allowBuilds`' own `false`: the
 # postinstall would download CUDA and TensorRT providers this CPU service never
 # runs (docs/learnings/board-recognition.md).
@@ -36,15 +34,22 @@ ENV ONNXRUNTIME_NODE_INSTALL=skip
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm build
-# `onnxruntime-node` ships every platform it supports: 283 MB unpacked, of
-# which the 43 MB under linux/x64 is the only one this image can load. Pruned
-# after the build, so a build host that is not linux/x64 keeps its own binding
-# while `pnpm build` runs. `set -eu` and the test are what make an unmatched
-# glob fail here rather than quietly leave the 240 MB behind.
+# A self-contained tree: still symlinked, but into a `.pnpm` store of its own,
+# so the links resolve after the COPY. Without `--filter=.` pnpm selects
+# nothing (`packages: []`); without `--legacy` it refuses this workspace.
+RUN pnpm --filter=. deploy --prod --legacy --ignore-scripts /runtime
+
+# After the deploy, never before: `pnpm deploy` re-resolves from the store and
+# restores anything cut first. Neither is loadable here — a binding per
+# platform, and the wasm runtime ADR-0003 rejected, present only as a peer.
+# The `test` is what makes an unmatched glob fail rather than prune nothing.
 RUN set -eu \
-  && ORT="$(echo node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6)" \
+  && ORT="$(echo /runtime/node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v6)" \
   && test -d "$ORT/linux/x64" \
-  && rm -rf "$ORT/darwin" "$ORT/win32" "$ORT/linux/arm64"
+  && rm -rf "$ORT/darwin" "$ORT/win32" "$ORT/linux/arm64" \
+  && rm -rf /runtime/node_modules/.pnpm/onnxruntime-web@* \
+    /runtime/node_modules/.pnpm/node_modules/onnxruntime-web \
+    /runtime/node_modules/.pnpm/@scoriiu+fenshot@*/node_modules/onnxruntime-web
 
 # Pinned, and BuildKit's advice against a constant platform is declined here:
 # the engine binary is x86_64 glibc, so an image built for anything else has a
@@ -60,11 +65,11 @@ COPY --from=stockfish /usr/local/bin/stockfish /usr/local/bin/stockfish
 # layer for anyone who pulls it.
 ENV STOCKFISH_PATH=/usr/local/bin/stockfish
 ENV ENGINE_MOVETIME_MS=200
-# Not yet the pruned `node_modules`, nor the classifier's `.onnx` — both are
-# ticket 16's, with the entry point that would prove them.
+# The server resolves its native binding and the model at runtime, so the store
+# ships beside `dist/` (ADR-0006). First, because it changes less than `dist`.
+COPY --from=build /runtime/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 USER node
-# No CMD: `vite build` emits a fetch handler, not a server that listens. The
-# entry point arrives with Nitro in ticket 16, which is also where the image
-# is deployed. Until then the engine half is what this image is exercised for:
-#   docker run --rm --memory 1g <image> stockfish
+# ADR-0006: why srvx rather than Nitro, and why `--static` must be absolute.
+CMD ["node", "node_modules/srvx/bin/srvx.mjs", "serve", "--prod", \
+  "--entry=/app/dist/server/server.js", "--static=/app/dist/client"]
