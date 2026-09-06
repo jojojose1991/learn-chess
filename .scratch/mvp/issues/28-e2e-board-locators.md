@@ -13,9 +13,25 @@ found only by a red suite, which is the cost that makes this worth doing.
 
 **Blocked by:** nothing.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The board locators shared by two or more specs live in one module under `tests/e2e/`
-- [ ] `coach.ts` still holds only the Coach's session and the journeys through it
-- [ ] `pnpm e2e` passes with the same test count, since this changes no behaviour
-- [ ] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+- [x] The board locators shared by two or more specs live in one module under `tests/e2e/`
+- [x] `coach.ts` still holds only the Coach's session and the journeys through it
+- [x] `pnpm e2e` passes with the same test count, since this changes no behaviour
+- [x] `pnpm test`, `pnpm typecheck` and `pnpm lint` pass
+
+## Comments
+
+The ticket said `square` was identical in `board.spec.ts` and the others. It
+is not: `board.spec.ts` matched the whole label exactly, while `engine` and
+`play` matched the coordinate as a prefix. Merging them would have made the
+artwork assertions pass with the wrong piece on the square, so both survive —
+`square` by coordinate and `squareExactly` by whole label.
+
+`trayOf` and `themesOf` came along because the same names were inlined in
+`puzzles.spec.ts`, `scan.spec.ts` and `theme.spec.ts`, which the ticket did
+not count.
+
+`puzzle-link.spec.ts` keeps `boardLive`, which passes `[aria-label="Chess
+board"]` to `hydrated`. That is a CSS selector rather than a Locator, so it is
+a different kind of thing and not this module's.

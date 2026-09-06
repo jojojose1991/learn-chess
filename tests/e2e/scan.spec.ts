@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test"
 import type { Page } from "@playwright/test"
 
 import { KEYSTONE, outBy } from "../fixtures/keystone"
+import { boardOf } from "./board"
 import { openNewPuzzle } from "./coach"
 
 /**
@@ -23,7 +24,7 @@ const image = (name: string) => ({
 
 /** Four squares of the fixture's position, enough that no other read passes. */
 async function expectTheReadPosition(page: Page) {
-  const board = page.getByRole("group", { name: "Chess board" })
+  const board = boardOf(page)
   for (const square of [
     "c4, white bishop",
     "f3, white queen",
@@ -77,7 +78,7 @@ test("a board screenshotted from Black's side opens the right way up, with the c
   await page.getByRole("radio", { name: "White's side" }).check()
 
   // Turning it back gives the mirror again — the Coach's own call either way.
-  const board = page.getByRole("group", { name: "Chess board" })
+  const board = boardOf(page)
   await expect(
     board.getByRole("button", { name: "f5, white bishop" })
   ).toBeVisible()
@@ -99,9 +100,7 @@ test("an image that did not read cleanly says so instead of opening a draft", as
   // The board is still the empty one a Coach starts from, and the Position
   // that cannot be played is still refused.
   await expect(
-    page
-      .getByRole("group", { name: "Chess board" })
-      .getByRole("button", { name: /, empty$/ })
+    boardOf(page).getByRole("button", { name: /, empty$/ })
   ).toHaveCount(64)
   await expect(page.getByRole("button", { name: "Save" })).toBeDisabled()
 })

@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test"
 import { Pool } from "pg"
 
-import type { Locator, Page } from "@playwright/test"
+import type { Page } from "@playwright/test"
 
 import { requireEnv } from "../../src/lib/env"
+import { boardOf, movesOf, square, themesOf } from "./board"
 import { openInPlay } from "./coach"
 import { addPuzzle } from "./puzzle"
 
@@ -29,12 +30,6 @@ test.beforeAll(() => {
 test.beforeEach(() => pool.query("delete from puzzle"))
 
 test.afterAll(() => pool.end())
-
-const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
-const movesOf = (page: Page) => page.getByRole("list", { name: "Moves" })
-
-const square = (board: Locator, name: string) =>
-  board.getByRole("button", { name: new RegExp(`^${name}(,|$)`) })
 
 test("a Coach opens a saved Puzzle and plays it at the Position it was stored with", async ({
   page,
@@ -161,7 +156,7 @@ test("plays on the board the Coach teaches on, not on the default", async ({
 }) => {
   await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openInPlay(page, "Queen and king mate")
-  const themes = page.getByRole("group", { name: "Board theme" })
+  const themes = themesOf(page)
 
   await themes.getByRole("button", { name: /brown/i }).click()
 

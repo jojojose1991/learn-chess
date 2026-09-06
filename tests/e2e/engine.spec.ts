@@ -1,9 +1,8 @@
 import { expect, test } from "@playwright/test"
 import { Pool } from "pg"
 
-import type { Locator, Page } from "@playwright/test"
-
 import { requireEnv } from "../../src/lib/env"
+import { boardOf, movesOf, square } from "./board"
 import { openInPlay } from "./coach"
 import { addPuzzle } from "./puzzle"
 
@@ -47,12 +46,6 @@ test.beforeAll(() => {
 test.beforeEach(() => pool.query("delete from puzzle"))
 
 test.afterAll(() => pool?.end())
-
-const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
-const movesOf = (page: Page) => page.getByRole("list", { name: "Moves" })
-
-const square = (board: Locator, name: string) =>
-  board.getByRole("button", { name: new RegExp(`^${name}(,|$)`) })
 
 test("answers the Student's move with one of its own, and hands the turn back", async ({
   page,

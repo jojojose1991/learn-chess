@@ -4,6 +4,7 @@ import { Pool } from "pg"
 import type { Page } from "@playwright/test"
 
 import { requireEnv } from "../../src/lib/env"
+import { boardOf, square, trayOf } from "./board"
 import { openNewPuzzle, signIn } from "./coach"
 
 /** Another Coach, written behind the app's back so nothing below this can lie. */
@@ -56,7 +57,7 @@ test("a Coach builds a Puzzle by hand and finds it in the Library", async ({
   await page.getByRole("link", { name: "Queen and king mate" }).click()
 
   await expect(page.getByRole("heading", { name: "Edit Puzzle" })).toBeVisible()
-  const board = page.getByRole("group", { name: "Chess board" })
+  const board = boardOf(page)
   await expect(
     board.getByRole("button", { name: /^h8, black king/ })
   ).toBeVisible()
@@ -112,12 +113,6 @@ test("another Coach's Puzzle is not found, even by its own id", async ({
 
 /** Choose a piece in the tray, then tap the square it goes on. */
 async function place(page: Page, piece: string, coordinate: string) {
-  await page
-    .getByRole("group", { name: "Piece to place" })
-    .getByRole("radio", { name: piece })
-    .click()
-  await page
-    .getByRole("group", { name: "Chess board" })
-    .getByRole("button", { name: new RegExp(`^${coordinate},`) })
-    .click()
+  await trayOf(page).getByRole("radio", { name: piece }).click()
+  await square(boardOf(page), coordinate).click()
 }

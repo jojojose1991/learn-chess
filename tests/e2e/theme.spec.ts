@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test"
 
 import type { Page } from "@playwright/test"
 
+import { boardOf, themesOf as themes } from "./board"
 import { signIn } from "./coach"
 import { hydrated } from "./hydrated"
 
@@ -71,11 +72,6 @@ async function newPuzzle(page: Page) {
   await hydrated(page, '[aria-label="Board theme"] button')
 }
 
-/** The board theme controls, which live in the sidebar and never on a screen. */
-function themes(page: Page) {
-  return page.getByRole("group", { name: "Board theme" })
-}
-
 async function choose(page: Page, theme: RegExp) {
   await themes(page).getByRole("button", { name: theme }).click()
 }
@@ -90,7 +86,7 @@ async function expectBoard(
   page: Page,
   palette: { dark: string; light: string }
 ) {
-  const board = page.getByRole("group", { name: "Chess board" })
+  const board = boardOf(page)
 
   await expect(
     board.getByRole("button", { name: "a1, empty", exact: true })

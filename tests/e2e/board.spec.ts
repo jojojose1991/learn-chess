@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test"
 
-import type { Locator, Page } from "@playwright/test"
+import type { Page } from "@playwright/test"
 
+import { boardOf, squareExactly, trayOf } from "./board"
 import { openNewPuzzle } from "./coach"
 
 /**
@@ -12,10 +13,6 @@ import { openNewPuzzle } from "./coach"
  * measured — an empty board is still a board, and the pieces it can draw are
  * the tray's, which is the same twelve files.
  */
-
-const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
-const trayOf = (page: Page) =>
-  page.getByRole("group", { name: "Piece to place" })
 
 for (const viewport of [
   { width: 390, height: 800 },
@@ -62,15 +59,15 @@ test("checkers the squares in green, the default theme", async ({ page }) => {
   const board = boardOf(page)
 
   // a1 is dark and its neighbour is light: parity has an off-by-one each side.
-  await expect(square(board, "a1, empty")).toHaveCSS(
+  await expect(squareExactly(board, "a1, empty")).toHaveCSS(
     "background-color",
     "rgb(119, 153, 82)"
   )
-  await expect(square(board, "b1, empty")).toHaveCSS(
+  await expect(squareExactly(board, "b1, empty")).toHaveCSS(
     "background-color",
     "rgb(237, 238, 209)"
   )
-  await expect(square(board, "a8, empty")).toHaveCSS(
+  await expect(squareExactly(board, "a8, empty")).toHaveCSS(
     "background-color",
     "rgb(237, 238, 209)"
   )
@@ -96,16 +93,12 @@ test("draws the artwork, so a sighted Coach sees what they are placing", async (
   await place(page, "white rook", "a1")
   await place(page, "black king", "e8")
   await expect(
-    square(boardOf(page), "a1, white rook").locator("img")
+    squareExactly(boardOf(page), "a1, white rook").locator("img")
   ).toHaveAttribute("src", "/pieces/wR.svg")
   await expect(
-    square(boardOf(page), "e8, black king").locator("img")
+    squareExactly(boardOf(page), "e8, black king").locator("img")
   ).toHaveAttribute("src", "/pieces/bK.svg")
 })
-
-function square(board: Locator, name: string) {
-  return board.getByRole("button", { name, exact: true })
-}
 
 /** Choose a piece in the tray, then tap the square it goes on. */
 async function place(page: Page, piece: string, coordinate: string) {
@@ -126,7 +119,7 @@ test("keeps a square at 44px on a phone, because the person tapping is five", as
   await page.setViewportSize({ width: 390, height: 800 })
   await openNewPuzzle(page)
 
-  const box = await square(boardOf(page), "a1, empty").boundingBox()
+  const box = await squareExactly(boardOf(page), "a1, empty").boundingBox()
 
   expect(box!.width).toBeGreaterThanOrEqual(44)
   expect(box!.height).toBeGreaterThanOrEqual(44)

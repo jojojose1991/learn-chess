@@ -4,6 +4,7 @@ import { Pool } from "pg"
 import type { Browser, BrowserContext, Page } from "@playwright/test"
 
 import { requireEnv } from "../../src/lib/env"
+import { boardOf, themesOf } from "./board"
 import { openPuzzle } from "./coach"
 import { addPuzzle } from "./puzzle"
 import { hydrated } from "./hydrated"
@@ -47,8 +48,6 @@ test.afterEach(async () => {
 })
 
 test.afterAll(() => pool.end())
-
-const boardOf = (page: Page) => page.getByRole("group", { name: "Chess board" })
 
 /** Mints the link if there is none yet, and answers with the URL to send. */
 async function mint(page: Page) {
@@ -122,7 +121,7 @@ test("plays on the board it was stamped with, not on the one the Coach moved to"
 }) => {
   await addPuzzle(pool, "Queen and king mate", MATE_IN_ONE)
   await openPuzzle(page, "Queen and king mate")
-  const themes = page.getByRole("group", { name: "Board theme" })
+  const themes = themesOf(page)
   await hydrated(page, '[aria-label="Board theme"] button')
 
   // Minted while the Coach teaches on brown.
