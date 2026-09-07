@@ -42,7 +42,7 @@ function Credits() {
         </p>
         <p>
           {/* Not a router `Link`: the licence is a served file, not a route. */}
-          <a className="underline" href="/pieces/LICENSE">
+          <a className="underline" href="/pieces/LICENSE.txt">
             BSD 3-clause licence text
           </a>
         </p>

@@ -32,5 +32,18 @@ the loser crash-loops.
 - [ ] A Puzzle Link opened on a phone with no session lands on Play
 - [ ] Every screen is used on the deployed URL at 390px, 820px and 1280px, and none needs sideways scrolling
 - [ ] Container logs reach Cloud Logging with the severity the line was written at, and `LOG_LEVEL` is set on the service
-- [ ] The `/credits` notice page is live on the deployed service, and `/pieces/LICENSE` is served
+- [ ] The `/credits` notice page is live on the deployed service, and `/pieces/LICENSE.txt` is served
 - [ ] `pnpm typecheck` and `pnpm lint` pass in CI
+
+## Comments
+
+`/pieces/LICENSE` 404'd on the first deployed revision: srvx's static handler
+maps an extensionless request to `<path>.html` and `<path>/index.html` and
+never the file itself, so the licence pointer on `/credits` did not resolve
+while every `.svg` beside it served. The file is now `LICENSE.txt`, which
+reverses ticket 06's declined rename — the decline assumed the file was
+reachable, and ADR-0004 records the changed premise.
+
+The criterion above stays unticked: `/pieces/LICENSE.txt` is verified served by
+`srvx serve` over a real `pnpm build`, and `tests/public-files.test.ts` holds
+the rule, but the deployed revision carrying the rename is not out yet.

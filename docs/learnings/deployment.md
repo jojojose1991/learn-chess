@@ -137,6 +137,24 @@ three lines with no Dockerfile, and the Dockerfile in
 not applicable. Third-party: [Railway's guide](https://docs.railway.com/guides/tanstack-start),
 [olegkorol/docker-tanstack-start](https://github.com/olegkorol/docker-tanstack-start/blob/main/Dockerfile).
 
+**srvx's `--static` has clean URLs, so an extensionless file is unreachable.**
+`serveStatic` maps a request with no extension to `<path>.html` and
+`<path>/index.html` and never tries the path itself
+(`node_modules/srvx/dist/static.mjs`). So `public/pieces/LICENSE` 404s in the
+container while `pieces/wK.svg` beside it serves 200 — and it 404s under `srvx
+serve` on a laptop too, which is how to reproduce it without a deploy. Anything
+in `public/` that must be fetchable needs an extension; ADR-0004 records why
+the licence file now carries `.txt`, and `tests/public-files.test.ts` holds the
+rule.
+
+**`pnpm e2e` cannot hold it**, which is why that test reads the directory
+instead. The suite runs `vite dev` (`playwright.config.ts`), and Vite's own
+static middleware serves an extensionless file 200 — so the three
+`tests/e2e/credits.spec.ts` tests, one of which fetches the licence outright,
+all pass against the pre-fix tree with the 404 live in production. Measured
+both ways, on that tree. Anything about how static files are *served* is
+invisible to this suite.
+
 ## TLS out of the container, and the CA bundle that is not there
 
 `node:24-slim` ships **no** `ca-certificates` package — `/etc/ssl/certs` does

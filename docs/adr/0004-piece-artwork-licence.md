@@ -36,11 +36,18 @@ already twelve correctly-named SVGs in its repo root.
 
 ## Consequences
 
-Ship `public/pieces/LICENSE` with the full BSD-3 text, and state the election in
-`THIRD_PARTY_NOTICES.md` and a `/credits` route — *"multi-licensed under GFDL
-1.2+, CC BY-SA 3.0, BSD 3-clause and GPLv2+; used here under the BSD 3-clause
-license."* Recording **which** option was elected is what makes the choice
-defensible later, and it is the step people skip.
+Ship `public/pieces/LICENSE.txt` with the full BSD-3 text, and state the
+election in `THIRD_PARTY_NOTICES.md` and a `/credits` route — *"multi-licensed
+under GFDL 1.2+, CC BY-SA 3.0, BSD 3-clause and GPLv2+; used here under the BSD
+3-clause license."* Recording **which** option was elected is what makes the
+choice defensible later, and it is the step people skip.
+
+**The `.txt` is load-bearing, and was not the original name.** srvx's static
+handler cannot serve an extensionless file, so `public/pieces/LICENSE` 404'd on
+the deployed service (`docs/learnings/deployment.md`). Ticket 06's review
+declined this rename because a download is not a failure — true only while the
+file was reachable, which on Cloud Run it was not. A licence pointer that 404s
+is a BSD §2 problem, so the extension stays.
 
 BSD §3 forbids using Burnett's name to promote the app. Crediting him on a
 notices page is required; "Chess pieces by Cburnett!" on the landing page as an

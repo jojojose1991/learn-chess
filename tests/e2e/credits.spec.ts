@@ -19,11 +19,11 @@ test("names the licence election, which is what makes the choice defensible", as
   await expect(page.getByText("Colin M.L. Burnett")).toBeVisible()
   await expect(
     page.getByRole("link", { name: "BSD 3-clause licence text" })
-  ).toHaveAttribute("href", "/pieces/LICENSE")
+  ).toHaveAttribute("href", "/pieces/LICENSE.txt")
 })
 
 test("serves the full licence text alongside the art", async ({ request }) => {
-  const licence = await request.get("/pieces/LICENSE")
+  const licence = await request.get("/pieces/LICENSE.txt")
 
   expect(licence.ok()).toBe(true)
   expect(await licence.text()).toContain(

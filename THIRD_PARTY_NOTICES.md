@@ -5,7 +5,7 @@
 Copyright (c) Colin M.L. Burnett (Wikimedia Commons user
 [Cburnett](https://en.wikipedia.org/wiki/User:Cburnett)).
 
-Used under the 3-clause BSD License. Full text: [`/pieces/LICENSE`](public/pieces/LICENSE).
+Used under the 3-clause BSD License. Full text: [`/pieces/LICENSE.txt`](public/pieces/LICENSE.txt).
 
 Source: <https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces>
 
