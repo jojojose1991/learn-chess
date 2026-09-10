@@ -10,13 +10,21 @@
 export type SeenFrom = "white" | "black"
 
 /** What a Scan read, and how much of it a Coach has to check. */
+/** A placement with nothing standing on it, which is never a real read. */
+export const NO_PIECES = "8/8/8/8/8/8/8/8"
+
 export type ScanRead = {
   /** The FEN placement field, and only that: an image says nothing about the rest. */
   placement: string
   /**
-   * The tiles were classified confidently — never that the Position is right.
-   * A board read from Black's side is reliable and mirrored, which is why a
-   * Scan always produces a draft for a person to check.
+   * The read is one to trust — never that the Position is right. A board read
+   * from Black's side is reliable and mirrored, which is why a Scan always
+   * produces a draft for a person to check.
+   *
+   * More than the worst tile's confidence: an automatic read must also have
+   * been found at more than one scale, because a grid found one square off is
+   * classified at 0.94 and no other scale agrees with it. On the corner path,
+   * where there is only ever one look, it is the confidence floor alone.
    */
   reliable: boolean
   meanConfidence: number

@@ -37,11 +37,15 @@ Sets are just directories. `book/` is photographs of printed puzzle books;
 
 `strategies.ts` says why there are two of them.
 
-- A **Reader** takes a photograph and returns a placement. `full` is what
-  ships; `s500` is that shrunk to a 500 px long edge; `c500` adds a contrast
-  stretch; `vote` keeps the placement the most rungs of the ladder agree on.
+- A **Reader** takes a photograph and returns a placement. `vote` is what
+  ships, imported from `src/lib/scan/ladder.ts`: it keeps the placement the
+  most rungs of the ladder agree on. `full` is the whole frame, which is what
+  shipped before it; `s500` is that shrunk to a 500 px long edge; `c500` adds
+  a contrast stretch; `c-vote` stretches the frame and then votes.
 - A **Sider** takes a placement and returns the side the board was drawn from.
-  `pawns` is what ships. `kings` is the candidate.
+  `kings` is what ships, imported from `src/lib/scan/service.ts`. `pawns` is
+  fenshot's own, retired, kept so the comparison that retired it stays
+  readable.
 
 Add one by adding it to the array in `strategies.ts`. Nothing else changes —
 the runner scores whatever is in there, and `results/` records it by name, so

@@ -4,8 +4,6 @@ import {
   CONFIDENCE_FLOOR,
   extractTiles,
   probsToPlacement,
-  recognizeGray,
-  resolveOrientation,
   rgbaToGray,
 } from "@scoriiu/fenshot"
 import * as ort from "onnxruntime-node"
@@ -13,10 +11,13 @@ import * as ort from "onnxruntime-node"
 import { getCoach } from "@/lib/auth"
 
 import { decode } from "./decode"
+import { readByVote } from "./ladder"
 import { upright } from "./orientation"
 import { WARP_SIZE, warpToSquare } from "./warp"
 
 import type { BoardCorners, GrayImage } from "@scoriiu/fenshot"
+import { NO_PIECES } from "./rules"
+
 import type { Quad, ScanRead, SeenFrom } from "./rules"
 
 /**
@@ -24,10 +25,10 @@ import type { Quad, ScanRead, SeenFrom } from "./rules"
  * classifier runs here and never as wasm in a Coach's browser (ADR-0003).
  *
  * We use fenshot's detector and its classifier, and never its
- * `resolveOrientation` as an applied transform (ADR-0002): it reads which side
- * a board was seen from out of pawn advancement, and a composed mate-in-N has
- * its pawns deep in the other side's half by design. What leaves here is what
- * the classifier saw.
+ * `resolveOrientation` at all (ADR-0002): it reads which side a board was seen
+ * from out of pawn advancement, and a composed mate-in-N has its pawns deep in
+ * the other side's half by design. What leaves here is what the classifier
+ * saw, with which side it was seen from as a suggestion beside it.
  *
  * The image is held for the life of the call and written nowhere.
  */
@@ -46,28 +47,49 @@ export type ScanOutcome =
         | "bad_corners"
     }
 
-/** How many pawns a side make pawn advancement worth reading at all. */
-const PAWNS_FOR_A_SUGGESTION = 3
+/** The first rank of the near half, counting from the top of the picture. */
+const NEAR_HALF = 4
 
 /**
- * Which side the board was seen from, or null when nothing may be said.
+ * Which side the board was seen from, or null when nothing may be said: the
+ * side whose king stands in the near half is the side it was drawn from.
  *
- * The heuristic compares how far each side's pawns have advanced, so it needs
- * pawns: with fewer than three a side it took an already-perfect mate-in-1
- * read and rotated it 180°, costing ten squares (ADR-0002). It also answers
- * "white" when it means "I cannot tell", which is the other reason the guard
- * is here and not left to the caller.
+ * A king is on every board and pawns are not, which is the whole argument.
+ * fenshot's own `resolveOrientation` compares how far each side's pawns have
+ * advanced, and that declines on exactly the composed endgames this app is
+ * for — it read 2 of 4 photographs of a book and this read 4 (ADR-0002,
+ * docs/learnings/board-recognition.md). A suggestion either way: it pre-sets
+ * a control a Coach can change and is never applied here.
+ *
+ * It guesses, and it can guess wrong. The kings say nothing when the attacking
+ * king has crossed the middle: White's king on the 6th with Black's driven
+ * back to the 4th is read from White's side and the same ranks are what a
+ * board seen from Black's side with both kings at home produces. That is
+ * ordinary mate-in-N geometry, and it is a confident wrong answer rather than
+ * a decline — where the retired pawn heuristic declined on a pawnless board,
+ * this one answers. Four photographs cannot see that band; New Puzzle rotates
+ * on it, so one tap on the orientation control is the whole cost, and
+ * `docs/TRACKER.md` carries it.
  */
 export function seenFrom(placement: string): SeenFrom | null {
-  const pawns = (side: string) =>
-    [...placement].filter((piece) => piece === side).length
-  if (
-    pawns("P") < PAWNS_FOR_A_SUGGESTION ||
-    pawns("p") < PAWNS_FOR_A_SUGGESTION
-  ) {
-    return null
+  const ranks = placement.split("/")
+  // Exactly one of each, because a misread board can carry two of a colour
+  // and the first one found would answer confidently for both. Declining is
+  // the whole contract of being able to return null.
+  const rankOf = (king: string) => {
+    const on = ranks.flatMap((rank, index) =>
+      [...rank].filter((piece) => piece === king).map(() => index)
+    )
+    return on.length === 1 ? on[0] : -1
   }
-  return resolveOrientation(placement).orientation
+
+  const white = rankOf("K")
+  const black = rankOf("k")
+  if (white < 0 || black < 0) return null
+  if (white >= NEAR_HALF && black < NEAR_HALF) return "white"
+  if (black >= NEAR_HALF && white < NEAR_HALF) return "black"
+  // Both kings in one half, which says nothing at all.
+  return null
 }
 
 /**
@@ -106,17 +128,25 @@ export async function scan(
   )
   const read = quad
     ? await fromCorners(gray, quad)
-    : await recognizeGray(gray, (corners) => classify(gray, corners))
+    : await readByVote(gray, classify)
   if (read === "bad_corners") return { ok: false, failure: "bad_corners" }
-  if (!read) return { ok: false, failure: "no_board" }
+
+  // One refusal for both paths. An empty square classifies at about 0.95, so
+  // sixty-four of them are a confident read of a board nobody meant: four
+  // corners round a patch of tablecloth on one path, and a photograph of five
+  // pieces that came back `8/8/8/8/8/8/8/8` at 0.807 on the other, because
+  // `recognizeGray`'s own mask-and-rescan gives up after `MAX_SCAN_PASSES` and
+  // returns the last candidate anyway (docs/learnings/board-recognition.md).
+  // It is the one wrong answer no confidence measure can catch.
+  if (!read || read.placement === NO_PIECES) {
+    return { ok: false, failure: "no_board" }
+  }
 
   return {
     ok: true,
     scan: {
       placement: read.placement,
-      // Ours to say, on fenshot's floor: the corner path has no detector to
-      // have worked it out on the way past, so both paths answer it here.
-      reliable: read.minConfidence >= CONFIDENCE_FLOOR,
+      reliable: read.reliable,
       meanConfidence: read.meanConfidence,
       minConfidence: read.minConfidence,
       seenFrom: seenFrom(read.placement),
@@ -125,11 +155,14 @@ export async function scan(
 }
 
 /** Sixty-four empty squares, which is never the board anybody meant. */
-const NO_PIECES = "8/8/8/8/8/8/8/8"
-
 /**
- * The board those four corners bound, read as one square image — `null` where
- * there was no board in them, the same answer the detector gives.
+ * The board those four corners bound, read as one square image.
+ *
+ * Reliability here is the confidence floor and nothing else: there is no
+ * second scale to agree with, because a Coach put these corners on one
+ * picture. Minimum confidence collapses from 0.92 to 0.35 at a tenth of a
+ * tile of slop, well before accuracy does, which is what makes it a warning
+ * about the handles (docs/learnings/board-recognition.md).
  *
  * ponytail: no `snapCorners` arbitration. It corrects a quarter-tile detector
  * error and there is no detector here; add it if a real photograph ever comes
@@ -148,11 +181,7 @@ async function fromCorners(gray: GrayImage, quad: Quad) {
     y1: WARP_SIZE,
   })
 
-  // An empty square classifies at 0.95, so four corners round a patch of
-  // tablecloth come back as an empty board the confidence floor is happy
-  // with — the one wrong answer it cannot catch. `recognizeGray` refuses an
-  // empty read on the other path; this is the same refusal.
-  return read.placement === NO_PIECES ? null : read
+  return { ...read, reliable: read.minConfidence >= CONFIDENCE_FLOOR }
 }
 
 /**

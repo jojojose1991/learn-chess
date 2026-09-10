@@ -4,7 +4,11 @@ import { useEffect, useState } from "react"
 import { CornerPicker } from "@/components/corner-picker"
 import { PuzzleEditor } from "@/components/puzzle-editor"
 import { Label } from "@/components/ui/label"
-import { completeFen, withPlacementRotated } from "@/lib/chess/rules"
+import {
+  completeFen,
+  withPlacementRotated,
+  withSideToMove,
+} from "@/lib/chess/rules"
 import { log } from "@/lib/log"
 import { savePuzzle } from "@/lib/puzzles"
 import { GOAL_N_MIN } from "@/lib/puzzles/rules"
@@ -155,10 +159,19 @@ function NewPuzzle() {
   // Turning the board round is the one transform a Scan may need, and this
   // control is what makes it: read from Black's side, the placement is
   // mirrored, and a mirrored placement is not a Position anyone can play.
+  //
+  // Side to move follows it, as a convention and not a read: a book prints
+  // "White to play and mate in two" in the caption beside the diagram, so it
+  // is not in the pixels at all (docs/learnings/board-recognition.md) — and a
+  // diagram is drawn from the side that is to play. Confirm & Edit's own
+  // control is where a Coach says otherwise, as it is for every square.
+  // Only the Black branch says anything: `completeFen` already leaves White
+  // to move, so stamping "w" over it would be a no-op with a second read of
+  // `seenFrom` to pay for it.
   const scanned =
     placement &&
     (seenFrom === "black"
-      ? withPlacementRotated(placement)
+      ? withSideToMove(withPlacementRotated(placement), "b")
       : completeFen(placement))
 
   return (
@@ -255,7 +268,8 @@ function NewPuzzle() {
           </div>
           <p className="text-sm text-muted-foreground">
             Check every square before you save. Changing this turns the board
-            round and starts the draft again.
+            round, sets whose turn it is to that side, and starts the draft
+            again.
           </p>
         </fieldset>
       ) : null}

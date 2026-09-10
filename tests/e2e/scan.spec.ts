@@ -79,6 +79,15 @@ test("a board screenshotted from Black's side opens the right way up, with the c
   // how to undo it.
   await expect(page.getByRole("radio", { name: "Black's side" })).toBeChecked()
   await expectTheReadPosition(page)
+  // Drawn from Black's side, so Black is to play until the Coach says
+  // otherwise — and saying otherwise is one tap on the control below.
+  await expect(
+    page.getByRole("radio", { name: "Black", exact: true })
+  ).toBeChecked()
+  await page.getByRole("radio", { name: "White", exact: true }).check()
+  await expect(
+    page.getByRole("radio", { name: "White", exact: true })
+  ).toBeChecked()
 
   await page.getByRole("radio", { name: "White's side" }).check()
 

@@ -304,9 +304,27 @@ flip toggle, or skip it entirely when either side has fewer than ~3 pawns.
 | Model load, cold `InferenceSession.create`  | **65–83 ms** |
 | Warm warp + 64-tile inference (bypass path) | **4.4 ms**   |
 | Full pipeline, warm, 899×1599               | **129 ms**   |
+| One rung at 500 px, warm, 3000×4000 photo   | **22 ms**    |
+| The whole 3000×4000 frame, warm             | **1047 ms**  |
+| `readByVote`, nine rungs, same photo        | **417 ms**   |
 
 The detector dominates; the CNN is ~4 ms for all 64 tiles. Expect 2–5× slower
 under wasm in a browser. Warm the session on boot and nobody waits.
+
+**The ladder is cheaper than the frame it replaced**, which is the opposite of
+what nine reads sounds like: every rung is smaller than the picture, and the
+detector's cost goes with the pixels. Box-filtering nine times is in the 417 ms
+above. So the rung count is not the thing to trim for speed — and trimming it
+is not free either, because the `s*`/`c*` baselines in `eval/strategies.ts` are
+generated from `LADDER` and their result keys are what `eval/results/` is
+indexed by.
+
+**Reading the same pixels twice is not two scales agreeing.** `shrink` returns
+its input untouched for any rung larger than the picture, so a 860 px
+screenshot — every fixture in this repo — makes the top four rungs one picture
+read four times, and two of those alone would clear the agreement threshold.
+`readByVote` reads the distinct rung sizes only. A picture at or below the
+bottom rung gets one look and is honestly reported as having no agreement.
 
 ### Browser 4-corner warp, if it ever moves client-side
 
@@ -527,6 +545,35 @@ is unimplemented — and a printed diagram has no highlights to read. The
 expectation files carry `sideToMove: null` with a `sideToMoveFrom` saying why,
 and the eval scores nothing against it. It comes from the caption or from the
 Coach, and defaulting it to the orientation is a convention, not a read.
+
+### What shipped, and what it measured at
+
+The ladder vote is `src/lib/scan/ladder.ts` and the eval imports it, so
+`vote` is the incumbent rather than a copy of one. Per photograph, the whole
+frame against the vote:
+
+| Photograph      | `full`                            | `vote`                  |
+| --------------- | --------------------------------- | ----------------------- |
+| …164551136      | 42/64, **`8/8/8/8/8/8/8/8`**, reliable | 60/64, agree 1     |
+| …164710542      | 58/64, `8/7q/8/8/8/8/8/8`         | **64/64**, agree 3, reliable |
+| …164718546      | 60/64, `8/4q3/8/8/8/8/8/8`        | **64/64**, agree 4      |
+| …164949153      | **64/64**                         | **64/64**, agree 9, reliable |
+
+Three things this settles beyond the tables above.
+
+- **The empty read is the frame's, not one photograph's.** `full` reads
+  …164551136 as sixty-four empty squares at `reliable: true`, min 0.768, and
+  `s1600` reads …164718546 the same way at min 0.773. Two of four, both
+  endorsed. The refusal now sits above both paths in `scan()`.
+- **Stretching the whole frame before the ladder is worse than stretching each
+  rung**: 223/256 against `vote`'s 252, on the same four photographs. It is a
+  small-image tool, so the rung it is applied to is the whole of it. That
+  strategy is `c-vote` and not `vote-c`, which stretched per rung — a renamed
+  strategy rather than a regression of one.
+- **The vote costs about what one full-frame read costs.** 260–420 ms for nine
+  rungs against 200–2900 ms for the single 3000×4000 read, because the
+  detector's cost is superlinear in the frame and eight of the nine rungs are
+  under 800 px.
 
 ### What the classifier actually gets wrong
 

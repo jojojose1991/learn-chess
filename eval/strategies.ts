@@ -12,15 +12,14 @@
  * incumbent before it replaces one.
  */
 
-import { recognizeGray } from "@scoriiu/fenshot"
+import { recognizeGray, resolveOrientation } from "@scoriiu/fenshot"
 
+import { LADDER, readByVote, shrink } from "@/lib/scan/ladder"
 import { seenFrom } from "@/lib/scan/service"
 
-import type {
-  BoardCorners,
-  GrayImage,
-  RecognitionResult,
-} from "@scoriiu/fenshot"
+import type { Classify } from "@/lib/scan/ladder"
+
+import type { GrayImage } from "@scoriiu/fenshot"
 
 /** What one look at a photograph produced. */
 export type Read = {
@@ -47,26 +46,17 @@ export type Sider = {
   seenFrom: (placement: string) => "white" | "black" | null
 }
 
-/** The model's own input and output: 64 tiles in, a placement out. */
-export type Classify = (
-  image: GrayImage,
-  corners: BoardCorners
-) => Promise<RecognitionResult>
-
-/**
- * The long edges a reader is allowed to look at.
- *
- * The detector follows whole rows and columns and accepts a grid line within
- * five *pixels*, so a degree of roll smears one over `width · sin θ` — 52 px
- * at 3000 and 9 px at 500. Its rotation tolerance is therefore a property of
- * the image's size and not of the photograph, and downscaling is the only
- * deskew knob there is.
- */
-export const LADDER = [1600, 1200, 1000, 900, 800, 700, 600, 500, 400]
+export type { Classify }
 
 export function readers(classify: Classify): Array<Reader> {
   return [
-    // What ships today: the full frame, no preparation at all.
+    // The whole frame, no preparation at all — what shipped before the
+    // ladder, kept as the baseline every rung is read against.
+    //
+    // The `s*`/`c*` baselines below are generated from the incumbent's own
+    // `LADDER`, so trimming that array in `src/` rewrites this baseline set
+    // and the result keys `eval/results/` is indexed by. Trim it and the
+    // historical tables stop lining up.
     { name: "full", read: once(classify, (image) => image) },
 
     ...LADDER.map((size) => ({
@@ -78,42 +68,33 @@ export function readers(classify: Classify): Array<Reader> {
       read: once(classify, (image) => stretch(shrink(image, size))),
     })),
 
-    { name: "vote", read: voting(classify, (image) => image) },
-    { name: "vote-c", read: voting(classify, stretch) },
+    // The incumbent, imported rather than restated: an eval scoring its own
+    // copy stops measuring what ships the moment one of them is edited.
+    { name: "vote", read: (image) => readByVote(image, classify) },
+    // The same vote over a stretched frame — a different strategy from the
+    // retired `vote-c`, which stretched each rung after shrinking it, and
+    // named differently so the record does not read as a regression of one
+    // thing. Measured worse than `vote`: the stretch is a small-image tool.
+    { name: "c-vote", read: (image) => readByVote(stretch(image), classify) },
   ]
 }
 
 export const siders: Array<Sider> = [
-  // What ships today, imported rather than restated: an eval scoring its own
-  // copy of the incumbent stops measuring the incumbent the moment one of
-  // them is edited.
-  { name: "pawns", seenFrom },
-  // The candidate: the side whose king stands in the near half is the side
-  // the board was drawn from. A king is on every board, which is the whole
-  // argument — pawn advancement declines on exactly the composed endgames
-  // this app is for.
+  // What ships, imported rather than restated: an eval scoring its own copy
+  // of the incumbent stops measuring the incumbent the moment one of them is
+  // edited. The side whose king stands in the near half.
+  { name: "kings", seenFrom },
+  // The retired one, kept so the comparison that retired it stays readable:
+  // fenshot's own, which reads pawn advancement and so declines on exactly
+  // the composed endgames this app is for. `resolveOrientation` answers
+  // "white" when it means "I cannot tell", hence the guard.
   {
-    name: "kings",
+    name: "pawns",
     seenFrom: (placement) => {
-      const ranks = placement.split("/")
-      // Exactly one of each, because a misread board can carry two of a
-      // colour and `findIndex` would answer confidently off whichever came
-      // first. Declining is the whole contract of returning null.
-      const at = (king: string) => {
-        const on = ranks.flatMap((rank, index) =>
-          [...rank].filter((piece) => piece === king).map(() => index)
-        )
-        return on.length === 1 ? on[0] : -1
-      }
-      const white = at("K")
-      const black = at("k")
-      if (white < 0 || black < 0 || white === black) return null
-      // Ranks run 8 down to 1, so an index of 4 or more is the near half.
-      return white >= 4 && black < 4
-        ? "white"
-        : black >= 4 && white < 4
-          ? "black"
-          : null
+      const pawns = (side: string) =>
+        [...placement].filter((piece) => piece === side).length
+      if (pawns("P") < 3 || pawns("p") < 3) return null
+      return resolveOrientation(placement).orientation
     },
   },
 ]
@@ -127,70 +108,6 @@ function once(classify: Classify, prepare: (image: GrayImage) => GrayImage) {
     )
     return read ? { ...read, agreement: 1 } : null
   }
-}
-
-/**
- * A reader that looks at every rung of the ladder and keeps the placement the
- * most of them agree on, exactly.
- *
- * Agreement is a different signal from confidence and catches what confidence
- * cannot: a grid found one square off classifies every tile it does find at
- * 0.94 and calls itself reliable, and no other scale agrees with it. Ties go
- * to the higher minimum confidence, which is the only thing left to ask.
- */
-function voting(classify: Classify, prepare: (image: GrayImage) => GrayImage) {
-  return async (image: GrayImage) => {
-    const counts = new Map<string, { agreement: number; read: Read }>()
-    for (const size of LADDER) {
-      const prepared = prepare(shrink(image, size))
-      const read = await recognizeGray(prepared, (corners) =>
-        classify(prepared, corners)
-      )
-      if (!read) continue
-      const seen = counts.get(read.placement)
-      const agreement = (seen?.agreement ?? 0) + 1
-      counts.set(read.placement, {
-        agreement,
-        read:
-          seen && seen.read.minConfidence >= read.minConfidence
-            ? { ...seen.read, agreement }
-            : { ...read, agreement },
-      })
-    }
-    const ranked = [...counts.values()].sort(
-      (a, b) =>
-        b.agreement - a.agreement || b.read.minConfidence - a.read.minConfidence
-    )
-    return ranked.length ? ranked[0].read : null
-  }
-}
-
-/** Box-filtered down to a long edge of `max`, or the same image where it is already smaller. */
-export function shrink(image: GrayImage, max: number): GrayImage {
-  const scale = max / Math.max(image.width, image.height)
-  if (scale >= 1) return image
-
-  const width = Math.round(image.width * scale)
-  const height = Math.round(image.height * scale)
-  const data = new Float32Array(width * height)
-  const across = image.width / width
-  const down = image.height / height
-
-  for (let row = 0; row < height; row++) {
-    const top = Math.floor(row * down)
-    const bottom = Math.min(image.height, Math.ceil((row + 1) * down))
-    for (let column = 0; column < width; column++) {
-      const left = Math.floor(column * across)
-      const right = Math.min(image.width, Math.ceil((column + 1) * across))
-      let sum = 0
-      for (let y = top; y < bottom; y++) {
-        for (let x = left; x < right; x++)
-          sum += image.data[y * image.width + x]
-      }
-      data[row * width + column] = sum / ((bottom - top) * (right - left))
-    }
-  }
-  return { data, width, height }
 }
 
 /**

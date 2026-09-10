@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**29 of 31 resolved. One ticket is actionable right now: 31.**
+**30 of 31 resolved. Nothing is actionable yet.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -51,7 +51,7 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 | 28  | The board locators are copied into four e2e specs            | ✅ resolved     | —          |
 | 29  | An unreachable Goal saves silently                           | ✅ resolved     | —          |
 | 30  | The defender never answers a lost attempt                    | ✅ resolved     | —          |
-| 31  | The Scan reads a photograph                                  | 🟢 **ready**    | —          |
+| 31  | The Scan reads a photograph                                  | ✅ resolved     | —          |
 | 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16 ✅      |
 
 <!-- /tracker:tickets -->
@@ -125,6 +125,8 @@ already owed by code that shipped. Do not merge them.
 
 | The live revision's memory limit is unread: `deploy.yml` sets `--memory=1Gi`, but 16 closed without `gcloud` to confirm the running service has it | 23, which cannot start without reading the deployed service's own configuration | 16, `.github/workflows/deploy.yml` |
 | Cloud Logging is unverified: nothing has read a line back to confirm it arrives at the severity it was written at, and `LOG_LEVEL` is not among the four keys the Migrate step refuses a blank value for | 23, the next time `gcloud` is in hand against the deployed service | 16, `src/lib/log.ts`, `.github/workflows/deploy.yml` |
+| `seenFrom` guesses rather than declines when the attacking king has crossed the middle: White's king on the 6th with Black's on the 4th reads as Black's side, and New Puzzle rotates a perfect read 180° on it | `eval/images/` gains a photograph whose attacking king has crossed the middle, which is the first thing that can measure the band | 31, `src/lib/scan/service.ts`, ADR-0002 |
+| An automatic read that is right but unreliable is refused rather than opened: the vote's rule is agreement _and_ the floor, so two of the four book photographs read perfectly and still send the Coach to the corner handles | `eval/images/field/` gains photographs — enough to tune a threshold on something other than four images, which is the overfit 31 declined | 31, `src/routes/_coach/puzzles.new.tsx`, `src/lib/scan/ladder.ts` |
 `grep -rn "ponytail:" src scripts` is the code half of this list.
 
 ## Keeping this honest

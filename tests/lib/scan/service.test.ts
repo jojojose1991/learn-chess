@@ -112,6 +112,19 @@ describe("scanning an image of a board", () => {
     expect(outcome).toMatchObject({ ok: true, scan: { reliable: false } })
   })
 
+  it("refuses a board with nothing standing on it, because sixty-four empty squares is the one wrong answer every confidence measure is happy with", async () => {
+    const { scan } = await asCoach()
+
+    // An empty square classifies at about 0.95, so a bare grid comes back
+    // `8/8/8/8/8/8/8/8` above the floor and calls itself reliable — measured
+    // on a photograph of a board with five pieces in it
+    // (docs/learnings/board-recognition.md). `fromCorners` already refuses
+    // this; the automatic path has to say the same thing.
+    const outcome = await scan(supplying(bareGrid()), new Headers())
+
+    expect(outcome).toEqual({ ok: false, failure: "no_board" })
+  })
+
   it("refuses a Coach who is not signed in without reading their upload at all, so a stranger cannot spend the container's memory", async () => {
     const { scan } = await asCoach(null)
 
@@ -322,27 +335,72 @@ describe("what the classifier costs to install", () => {
 })
 
 /**
- * `resolveOrientation` infers which side a board was seen from by comparing
- * how far each side's pawns have advanced. Composed mate-in-N puzzles are
- * exactly the content that breaks it, so the suggestion is bounded here
- * (ADR-0002) and never applied.
+ * Which side a board was drawn from, read off the kings. Pawn advancement was
+ * the retired heuristic and it declines on exactly the composed endgames this
+ * app is for — a king is on every board (docs/learnings/board-recognition.md).
+ * A suggestion either way: it pre-sets a control and is never applied here
+ * (ADR-0002).
  */
 describe("which side the board was seen from", () => {
-  it("says Black for a board whose pawns are marching the wrong way, which is the one thing pixels can tell", () => {
-    expect(seenFrom(MIRRORED)).toBe("black")
+  it("says White when White's king stands in the near half, and Black for the mirror of the same board", () => {
     expect(seenFrom(POSITION)).toBe("white")
+    expect(seenFrom(MIRRORED)).toBe("black")
   })
 
-  it("says nothing at all when either side has fewer than three pawns, because a mate-in-1 with two pawns rotated a perfect read by 180 degrees", () => {
-    // The measured case: white's pawns on e7 and f6 are further advanced than
-    // black's on h5, so the heuristic calls an upright board flipped.
+  it("answers a composed endgame with no pawns on it, which is the content pawn advancement could not read", () => {
+    expect(seenFrom("4k3/8/8/8/8/8/8/4K2R")).toBe("white")
+  })
+
+  it("says nothing when a side does not have exactly one king, because a misread board carries two and either would answer confidently", () => {
+    expect(seenFrom("4k3/8/8/8/8/8/8/4K1K1")).toBeNull()
+    expect(seenFrom("4k3/8/8/8/8/8/8/8")).toBeNull()
+  })
+
+  it("puts the halves between the fourth and fifth ranks, which is the whole of what near means", () => {
+    // The kings either side of the boundary and nowhere near the edges: the
+    // only assertions that fail if the halves are drawn one rank out. Every
+    // other case here has them on the outer ranks, where a boundary off by
+    // one still answers the same thing.
+    expect(seenFrom("8/8/8/4k3/4K3/8/8/8")).toBe("white")
+    expect(seenFrom("8/8/8/4K3/4k3/8/8/8")).toBe("black")
+  })
+
+  it("says nothing when both kings stand in the same half, where which half they are in decides nothing", () => {
+    // The measured mate-in-1 whose deeply advanced white pawns had the
+    // retired heuristic call an upright board flipped.
     expect(seenFrom("4k3/4P3/4KP2/7p/8/8/8/8")).toBeNull()
   })
-
-  it("says nothing about a board with no pawns on it, where advancement is not a signal at all", () => {
-    expect(seenFrom("4k3/8/8/8/8/8/8/4K2R")).toBeNull()
-  })
 })
+
+/**
+ * Eight by eight squares of light and dark on a paper-coloured page, with
+ * nothing standing on them — drawn rather than photographed, because what the
+ * detector locks onto is evenly spaced gradient peaks and a bare grid is
+ * exactly that. It is the shape of the defect and not a picture of one board:
+ * a real photograph read empty too.
+ */
+function bareGrid() {
+  const side = 800
+  const tile = 80
+  const margin = (side - tile * 8) / 2
+  const page = new PNG({ width: side, height: side })
+  for (let y = 0; y < side; y++) {
+    for (let x = 0; x < side; x++) {
+      const file = Math.floor((x - margin) / tile)
+      const rank = Math.floor((y - margin) / tile)
+      const onTheBoard =
+        file >= 0 &&
+        file < 8 &&
+        rank >= 0 &&
+        rank < 8 &&
+        (file + rank) % 2 === 1
+      const at = (y * side + x) * 4
+      page.data.fill(onTheBoard ? 90 : 232, at, at + 3)
+      page.data[at + 3] = 255
+    }
+  }
+  return PNG.sync.write(page)
+}
 
 /**
  * A PNG that declares itself 1×1 and interlaced, with 300 MB of zeros

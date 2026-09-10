@@ -1,5 +1,5 @@
 {
-  "ran": "2026-09-10T08:42:04.536Z",
+  "ran": "2026-09-10T10:33:55.233Z",
   "photographs": [
     "book/PXL_20260908_164551136.MACRO_FOCUS.jpg",
     "book/PXL_20260908_164710542.jpg",
@@ -108,21 +108,21 @@
       "boards": 3,
       "found": 4
     },
-    "vote-c": {
-      "squares": 251,
+    "c-vote": {
+      "squares": 223,
       "boards": 3,
       "found": 4
     }
   },
   "siders": {
-    "pawns": {
-      "right": 2,
-      "declined": 2,
-      "wrong": 0
-    },
     "kings": {
       "right": 4,
       "declined": 0,
+      "wrong": 0
+    },
+    "pawns": {
+      "right": 2,
+      "declined": 2,
       "wrong": 0
     }
   }
