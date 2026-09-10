@@ -1,0 +1,129 @@
+{
+  "ran": "2026-09-10T08:42:04.536Z",
+  "photographs": [
+    "book/PXL_20260908_164551136.MACRO_FOCUS.jpg",
+    "book/PXL_20260908_164710542.jpg",
+    "book/PXL_20260908_164718546.MACRO_FOCUS.jpg",
+    "book/PXL_20260908_164949153.MACRO_FOCUS.jpg"
+  ],
+  "refused": [],
+  "readers": {
+    "full": {
+      "squares": 224,
+      "boards": 1,
+      "found": 4
+    },
+    "s1600": {
+      "squares": 155,
+      "boards": 1,
+      "found": 3
+    },
+    "s1200": {
+      "squares": 128,
+      "boards": 2,
+      "found": 2
+    },
+    "s1000": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "s900": {
+      "squares": 119,
+      "boards": 1,
+      "found": 2
+    },
+    "s800": {
+      "squares": 192,
+      "boards": 3,
+      "found": 3
+    },
+    "s700": {
+      "squares": 128,
+      "boards": 2,
+      "found": 2
+    },
+    "s600": {
+      "squares": 128,
+      "boards": 2,
+      "found": 2
+    },
+    "s500": {
+      "squares": 251,
+      "boards": 2,
+      "found": 4
+    },
+    "s400": {
+      "squares": 251,
+      "boards": 2,
+      "found": 4
+    },
+    "c1600": {
+      "squares": 180,
+      "boards": 0,
+      "found": 3
+    },
+    "c1200": {
+      "squares": 128,
+      "boards": 2,
+      "found": 2
+    },
+    "c1000": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c900": {
+      "squares": 119,
+      "boards": 1,
+      "found": 2
+    },
+    "c800": {
+      "squares": 192,
+      "boards": 3,
+      "found": 3
+    },
+    "c700": {
+      "squares": 128,
+      "boards": 2,
+      "found": 2
+    },
+    "c600": {
+      "squares": 128,
+      "boards": 2,
+      "found": 2
+    },
+    "c500": {
+      "squares": 254,
+      "boards": 3,
+      "found": 4
+    },
+    "c400": {
+      "squares": 250,
+      "boards": 2,
+      "found": 4
+    },
+    "vote": {
+      "squares": 252,
+      "boards": 3,
+      "found": 4
+    },
+    "vote-c": {
+      "squares": 251,
+      "boards": 3,
+      "found": 4
+    }
+  },
+  "siders": {
+    "pawns": {
+      "right": 2,
+      "declined": 2,
+      "wrong": 0
+    },
+    "kings": {
+      "right": 4,
+      "declined": 0,
+      "wrong": 0
+    }
+  }
+}

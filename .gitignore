@@ -24,3 +24,11 @@ blob-report
 
 # A worktree belongs outside the repo; this is where a tool puts one anyway.
 .claude/worktrees/
+
+# git-lfs writes these into the versioned hooks directory. `pnpm prepare`
+# installs them, so committing four vendored shims that refuse every commit
+# on a machine without git-lfs buys nothing.
+.githooks/post-checkout
+.githooks/post-commit
+.githooks/post-merge
+.githooks/pre-push

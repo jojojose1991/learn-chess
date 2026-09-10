@@ -1,0 +1,7 @@
+{
+  "placement": "8/4q3/3k4/8/3KP3/4N3/8/8",
+  "orientation": "white",
+  "sideToMove": null,
+  "sideToMoveFrom": "not in frame",
+  "notes": "The same position as PXL_20260908_164710542, framed close. Five pieces, so the pawn-advancement heuristic must decline to answer."
+}

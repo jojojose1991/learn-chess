@@ -22,9 +22,14 @@ pnpm db:generate  # drizzle-kit generate, after editing src/db/schema.ts
 pnpm db:migrate   # applies them over DATABASE_URL_UNPOOLED, not DATABASE_URL
 pnpm seed         # grants admin to SEED_ADMIN_USER, creating the Coach if new
 pnpm tracker      # rewrites docs/TRACKER.md's ticket table from the tickets
-pnpm prepare      # points git at .githooks; pnpm install runs it for you,
+pnpm prepare      # points git at .githooks and installs git-lfs' hooks there;
+                  # pnpm install runs it for you,
                   # so only a clone that has not installed yet is unhooked.
                   # A linked worktree inherits it from the shared .git/config
+
+pnpm eval         # the Scan eval over real photographs (eval/README.md);
+                  # `pnpm eval book` for one set. Never part of pnpm test — it
+                  # needs LFS images and reports a number, not a pass or fail
 
 docker compose up -d   # the e2e postgres, on 5433
 pnpm e2e:db            # migrate + seed the template, clone it
@@ -33,6 +38,11 @@ pnpm e2e               # playwright; provisions the clone itself
 
 `pnpm e2e` is deliberately not part of `pnpm test`: it needs a database and a
 running app, and the point of the unit suite is that it needs neither.
+
+**`git-lfs` is required**: `eval/images/**` are LFS objects and `pnpm prepare`
+wires its hooks in beside this repo's own. CI never fetches them
+(`actions/checkout` leaves LFS alone) and `.dockerignore` keeps them out of the
+image.
 
 **`db:migrate` and `seed` write to whatever `.env` points at, which is the live
 Neon database.** There is no local postgres for the app — the container on 5433

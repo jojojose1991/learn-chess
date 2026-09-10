@@ -1,0 +1,7 @@
+{
+  "placement": "8/4q3/3k4/8/3KP3/4N3/8/8",
+  "orientation": "white",
+  "sideToMove": null,
+  "sideToMoveFrom": "not in frame",
+  "notes": "Two boards in frame: the bottom half of the diagram above, then the whole one this expects. Shadow gradient down the right. The full-size read of this one is the empty board the detector reports as reliable."
+}

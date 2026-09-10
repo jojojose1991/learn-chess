@@ -13,3 +13,7 @@ coverage
 # into the image layer for anyone who pulls it.
 .env
 .env.*
+
+# Photographs for the Scan eval: LFS objects, megabytes each, and nothing the
+# server ever reads. `eval/` is measurement, not product.
+eval

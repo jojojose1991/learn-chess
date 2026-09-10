@@ -17,8 +17,9 @@
     "db:migrate": "drizzle-kit migrate",
     "e2e": "playwright test",
     "e2e:db": "tsx scripts/e2e-db.ts",
-    "prepare": "git config core.hooksPath .githooks",
-    "tracker": "tsx scripts/tracker.ts"
+    "prepare": "git config core.hooksPath .githooks && git lfs install --local --force",
+    "tracker": "tsx scripts/tracker.ts",
+    "eval": "tsx eval/run.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

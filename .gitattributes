@@ -1,0 +1,14 @@
+# Photographs for the Scan eval (eval/README.md): megabytes each, never
+# diffed, and a growing set. Their expectations sit beside them as JSON and
+# stay plain text, so a review reads what changed without fetching a pointer.
+#
+# Nothing in CI fetches these: `actions/checkout` leaves LFS alone unless
+# asked, and `eval/` is out of the Docker build context.
+# Case classes rather than lowercase patterns: an iPhone exports IMG_0001.JPG,
+# and on a case-sensitive filesystem a lowercase pattern matches none of it —
+# the photograph then enters history as a blob no later fix removes. This
+# clone's `core.ignorecase` hides that, which is why it is spelled out.
+eval/images/**/*.[jJ][pP][gG] filter=lfs diff=lfs merge=lfs -text
+eval/images/**/*.[jJ][pP][eE][gG] filter=lfs diff=lfs merge=lfs -text
+eval/images/**/*.[pP][nN][gG] filter=lfs diff=lfs merge=lfs -text
+eval/images/**/*.[hH][eE][iI][cC] filter=lfs diff=lfs merge=lfs -text

@@ -367,12 +367,12 @@ on an image that had never been seen before.
 Measured 2026-09-05 in this repo's own chromium, on a 40×10 JPEG carrying
 EXIF `Orientation = 6` (a quarter turn clockwise):
 
-| Read by                            | Says      |
-| ---------------------------------- | --------- |
-| `jpeg-js`, server side             | **40×10** |
-| chromium `naturalWidth × Height`   | **10×40** |
-| chromium, drawn                    | 10×40     |
-| chromium with `image-orientation: none`, drawn | 40×10 |
+| Read by                                                 | Says            |
+| ------------------------------------------------------- | --------------- |
+| `jpeg-js`, server side                                  | **40×10**       |
+| chromium `naturalWidth × Height`                        | **10×40**       |
+| chromium, drawn                                         | 10×40           |
+| chromium with `image-orientation: none`, drawn          | 40×10           |
 | chromium with `image-orientation: none`, `naturalWidth` | **still 10×40** |
 
 Three consequences, and the third is a trap.
@@ -389,7 +389,7 @@ Three consequences, and the third is a trap.
   of `Exif\0\0` is still in front of the TIFF header. Measured 23 bytes for a
   22-byte TIFF.
 - **`image-orientation: none` does not fix this and makes it worse.** It
-  changes what is *drawn* and leaves `naturalWidth` turned, so the picture on
+  changes what is _drawn_ and leaves `naturalWidth` turned, so the picture on
   screen and the number the corners are scaled by stop agreeing with each
   other as well as with the server. Do not reach for it.
 
@@ -432,3 +432,105 @@ read badly" are the same answer to a caller and want the same sentence. And
 `MAX_DETECT_DIM` is the library's browser path, not `recognizeGray`'s — an
 11 MP image is read at full size in 221 ms, so the cap on a Scan is memory
 (about 8 bytes a pixel) rather than time.
+
+## Photographs of a book, measured 2026-09-10
+
+The first real ones. Four phone shots (Pixel, 3000×4000, ~3.5 MB each) of a
+printed puzzle book: mid-grey squares on off-white paper, flat modern diagram
+art, coordinate labels printed _inside_ the edge squares, and a solid dark
+frame round each board. Shot close to flat-on, so there is almost no keystone —
+what there is instead is roll of a degree or two, paper grain, halftone, a
+shadow gradient, page bow, and in one frame two boards plus a patterned
+tablecloth.
+
+`pnpm eval` is the harness (`eval/README.md`): it decodes through the same
+`jpeg-js` and the same `upright` the service uses, runs every reader in
+`eval/strategies.ts`, and scores each read square by square against the
+expectation sitting beside each photograph. The photographs are in Git LFS,
+which CI never fetches; every run writes its numbers to `eval/results/`.
+
+### The detector's rotation tolerance is a function of image size, not of the photograph
+
+It follows whole rows and columns and accepts a grid line within **5 px**. A
+degree of roll smears that line over `width · sin θ` rows — **70 px across a
+4000 px frame, 9 px across a 500 px one**. So downscaling _is_ deskewing, and
+it is the only deskew knob there is.
+
+Totals over the four, 64 squares each, straight out of
+`eval/results/2026-09-10.json` — `full` is the whole 3000×4000 frame, every
+other row a long edge, and `c` is the same rung contrast-stretched:
+
+| Reader                             | Squares       | Perfect   | Board found |
+| ---------------------------------- | ------------- | --------- | ----------- |
+| **`full`** — what ships today      | 224/256       | **1/4**   | 4/4         |
+| `s1600` / `c1600`                  | 155 / 180     | 1 / 0     | 3/4         |
+| `s1200` / `c1200`                  | 128 / 128     | 2 / 2     | 2/4         |
+| `s800` / `c800`                    | 192 / 192     | 3 / 3     | 3/4         |
+| **`s500` / `c500`**                | 251 / **254** | 2 / **3** | **4/4**     |
+| `s400` / `c400`                    | 251 / 250     | 2 / 2     | 4/4         |
+| **`vote`** — modal over the ladder | **252**       | **3/4**   | **4/4**     |
+
+Time follows: the same photograph is **780 ms at full size and 16 ms at 500**.
+
+A 2nd/98th-percentile contrast stretch is worth three squares and a whole board
+at 500, and buys nothing from 1200 down to 600 — those `c` rungs score
+identically to their `s` twins. At 1600 it trades a perfect board for 25
+squares. It is a small-image tool.
+
+Every photograph in the set is 3000×4000, which is **exactly** `MAX_PIXELS`.
+The comparison is strict, so they pass — and a phone shooting anything larger
+is refused before a reader ever sees it.
+
+### `reliable` is anti-correlated with correctness on photographs
+
+The confidence floor is the wrong gate here, and twice it endorsed a wrong
+answer while flagging a right one:
+
+- Photo 2 at full size read **`8/8/8/8/8/8/8/8` at `reliable: true`, min
+  0.807** —
+  an empty board, confidently, from a picture with five pieces in it. `fromCorners`
+  refuses an all-empty read for exactly this reason; **`recognizeGray` does
+  not**, because its mask-and-rescan gives up after `MAX_SCAN_PASSES` and
+  returns the last candidate anyway. That is a live defect on the automatic path.
+- Photo 3 at 900 read a grid **one square off** — `5q2/4k3/8/4KP2/5N2/8/8/8`,
+  55/64 — at `reliable: true`, min 0.941. The same photo at 1200 and 700 read
+  the position exactly, at min 0.36 and 0.30, both flagged unreliable.
+
+**Agreement across independent downscales catches both**, and confidence
+catches neither: a grid found one square off is classified confidently and no
+other scale agrees with it. Modal placement over the ladder scored 252/256 and
+**3/4 perfect boards**, against 1/4 for what ships, and is the only reader that
+both finds a board in all four and never endorses a wrong one.
+
+### Which king is in the near half beats which pawns are further up
+
+Orientation is scored against the placement a _person_ read, so that a wrong
+answer is the heuristic's and never the detector's:
+
+| Sider                                           | Right   | Declined | Wrong |
+| ----------------------------------------------- | ------- | -------- | ----- |
+| `pawns` — `resolveOrientation`, guarded (today) | 2/4     | 2/4      | 0     |
+| `kings` — whose king stands on ranks 1–4        | **4/4** | 0        | 0     |
+
+A king is on every board and pawns are not, which is the whole of it: pawn
+advancement declines on exactly the composed endgames this app is for. All four
+photographs are drawn from White's side, though, so `kings` is untested against
+a Black-perspective diagram — it stays a suggestion behind the visible toggle
+either way (ADR-0002).
+
+### Side to move is not in the diagram
+
+A book prints "White to play and mate in two" in the caption _beside_ the
+board, not inside it. No reader can recover it, `resolveOrientation` does not
+claim to, and fenshot's own issue #1 for inferring it from last-move highlights
+is unimplemented — and a printed diagram has no highlights to read. The
+expectation files carry `sideToMove: null` with a `sideToMoveFrom` saying why,
+and the eval scores nothing against it. It comes from the caption or from the
+Coach, and defaulting it to the orientation is a convention, not a read.
+
+### What the classifier actually gets wrong
+
+Only one photograph never came back perfect, and its best read was 62/64. The
+misses are black pieces on dark squares in the far rank — a king read as empty,
+a knight read as a bishop. Nothing here suggests the classifier is the limit;
+on the other three it is the grid that fails or nothing does.

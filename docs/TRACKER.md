@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**28 of 30 resolved. One ticket is actionable right now: 16.**
+**28 of 31 resolved. Two tickets are actionable right now: 16 and 31.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -51,6 +51,7 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 | 29  | An unreachable Goal saves silently                           | ✅ resolved     | —            |
 | 30  | The defender never answers a lost attempt                    | ✅ resolved     | —            |
 | 16  | Deploy to Cloud Run                                          | 🟢 **ready**    | 13 ✅, 15 ✅ |
+| 31  | The Scan reads a photograph                                  | 🟢 **ready**    | —            |
 | 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16           |
 
 <!-- /tracker:tickets -->
@@ -119,7 +120,8 @@ already owed by code that shipped. Do not merge them.
 | `tests/routes/api/scan.test.ts` times out at vitest's 5 s default under a loaded machine — it loads the real ONNX classifier, and passes alone and in a quiet full run                                               | 16, where the suite runs somewhere with a known CPU budget                                                                                                      | 14, `tests/routes/api/scan.test.ts`                             |
 | Nothing holds the loupe's _rendering_. Its arithmetic has tests, but it is `aria-hidden`, so no test can name the element without reaching for a class and deleting the markup leaves the suite green                | 16, where all seven screens are walked at three widths on the deployed URL                                                                                      | 15, `src/components/corner-picker.tsx`                          |
 | Every Scan test re-imports the service under `resetModules`, so each pays its own `InferenceSession.create`; the two files carry a 15 s ceiling to absorb it and would not notice the session being rebuilt per call | 16, where the suite is timed somewhere other than a laptop running three builds                                                                                 | 15, `tests/lib/scan/service.test.ts`                            |
-| No photograph has ever been scanned: 15's keystone fixture is a browser rendering, so glare, paper grain, shadow gradient and halftone stay unmeasured on every path                                                 | 16, the first deployment a Coach can point a phone at                                                                                                           | 15, `docs/learnings/board-recognition.md`                       |
+| `MAX_PIXELS` is 12 MP and every photograph in the eval set is exactly 12 MP, so a phone shooting any larger refuses before a reader sees it                                                                          | 31, or the first Coach whose upload is refused for its size                                                                                                     | `docs/learnings/board-recognition.md`, `src/lib/scan/decode.ts` |
+| `src/lib/scan/decode.ts` has no test of its own: the magic-byte dispatch, the interlaced-PNG refusal and the pixel ceiling are covered a layer up through `scan()`                                                   | a change to the decoder that `service.test.ts` would not see                                                                                                    | `tests/lib/scan/service.test.ts`                                |
 
 `grep -rn "ponytail:" src scripts` is the code half of this list.
 
