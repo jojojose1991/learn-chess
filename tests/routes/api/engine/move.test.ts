@@ -130,3 +130,75 @@ describe("the engine route", () => {
     })
   })
 })
+
+/**
+ * That a body is counted and capped is `tests/lib/http.test.ts`; that this
+ * route is wired to it, and what a caller over the cap is told, is here.
+ */
+describe("the size of a body the engine route will hold", () => {
+  /** A body far past the cap, carrying a Position that is otherwise perfect. */
+  const oversized = JSON.stringify({ fen: START, padding: "x".repeat(4_096) })
+
+  it("refuses a body past the cap even when the Position in it is legal, so a Coach's container is not asked to hold one", async () => {
+    vi.stubEnv("STOCKFISH_PATH", "/nonexistent/stockfish")
+
+    const response = await post(oversized)
+
+    expect(response.status).toBe(413)
+    await expect(response.json()).resolves.toEqual({
+      error: "The body is too large. A Position is one line of text.",
+    })
+  })
+
+  /**
+   * The ticket's criterion is that an oversized body is refused *without
+   * being parsed*, and the engine is the only witness to that from out here:
+   * a cap applied after the search would answer 413 just the same.
+   */
+  it("never asks the engine for a move it refused the body of, so an oversized caller buys no CPU", async () => {
+    const engine = fakeEngine(`say("bestmove e2e4")`)
+    vi.stubEnv("STOCKFISH_PATH", engine)
+
+    await post(oversized)
+
+    expect(commandsSent(engine)).toEqual([])
+  })
+
+  it("answers 400 to a POST with no body at all, so nothing that sent nothing is told it sent too much", async () => {
+    vi.stubEnv("STOCKFISH_PATH", "/nonexistent/stockfish")
+
+    const response = await POST({
+      request: new Request("http://localhost:3000/api/engine/move", {
+        method: "POST",
+      }),
+    })
+
+    expect(response.status).toBe(400)
+  })
+
+  /**
+   * A caller who hangs up mid-body makes the read itself throw, which is not
+   * one of the engine's outcomes. It still owes the one error shape rather
+   * than a rejected promise for the framework to answer however it likes.
+   */
+  it("keeps the one error envelope when the body dies mid-read, so a caller who hangs up gets an answer and not a framework page", async () => {
+    vi.stubEnv("STOCKFISH_PATH", "/nonexistent/stockfish")
+
+    const response = await POST({
+      request: new Request("http://localhost:3000/api/engine/move", {
+        method: "POST",
+        body: new ReadableStream({
+          start(controller) {
+            controller.error(new Error("ECONNRESET"))
+          },
+        }),
+        duplex: "half",
+      } as RequestInit & { duplex: "half" }),
+    })
+
+    expect(response.status).toBe(500)
+    await expect(response.json()).resolves.toEqual({
+      error: "The engine could not answer.",
+    })
+  })
+})

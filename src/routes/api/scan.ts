@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
+import { readBounded } from "@/lib/http"
 import { log } from "@/lib/log"
 import { scan } from "@/lib/scan/service"
 
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/api/scan")({
           // asking — a thunk rather than bytes, so an upload from a stranger
           // costs no memory at all.
           const outcome = await scan(
-            () => readImage(request),
+            () => readBounded(request, MAX_UPLOAD_BYTES),
             request.headers,
             corners
           )
@@ -98,27 +99,6 @@ function quadFrom(corners: string | null): Quad | "malformed" | undefined {
  */
 const MAX_MEGABYTES = 12
 const MAX_UPLOAD_BYTES = MAX_MEGABYTES * 1024 * 1024
-
-/**
- * The body, counted as it arrives, or `"too_large"` past the cap.
- *
- * Counted rather than buffered whole: `arrayBuffer()` reads everything before
- * anyone can object, and `content-length` is the caller's own claim — so an
- * upload with neither an honest length nor an end would be held in the
- * container's memory in full.
- */
-async function readImage(request: Request): Promise<Uint8Array | "too_large"> {
-  if (!request.body) return new Uint8Array()
-
-  const chunks: Array<Uint8Array> = []
-  let size = 0
-  for await (const chunk of request.body as unknown as AsyncIterable<Uint8Array>) {
-    size += chunk.byteLength
-    if (size > MAX_UPLOAD_BYTES) return "too_large"
-    chunks.push(chunk)
-  }
-  return Buffer.concat(chunks)
-}
 
 /** What a thrown thing has to say, with its frames if it brought any. */
 const stack = (failure: unknown) =>

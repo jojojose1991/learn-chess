@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**30 of 31 resolved. Nothing is actionable yet.**
+**31 of 31 resolved. Nothing is actionable yet.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -20,39 +20,39 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 
 <!-- tracker:tickets -->
 
-| #   | Ticket                                                       | Status          | Blocked by |
-| --- | ------------------------------------------------------------ | --------------- | ---------- |
-| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved     | —          |
-| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved     | —          |
-| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved     | —          |
-| 04  | Invite-only sign-in                                          | ✅ resolved     | —          |
-| 05  | Library reads real Puzzles                                   | ✅ resolved     | —          |
-| 06  | The board renders a Position                                 | ✅ resolved     | —          |
-| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved     | —          |
-| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved     | —          |
-| 09  | Play a Puzzle, local versus local                            | ✅ resolved     | —          |
-| 10  | Solved / Not this time                                       | ✅ resolved     | —          |
-| 11  | Puzzle Links                                                 | ✅ resolved     | —          |
-| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved     | —          |
-| 13  | The engine defends, and Hint                                 | ✅ resolved     | —          |
-| 14  | Scan a clean screenshot                                      | ✅ resolved     | —          |
-| 15  | The four-corner warp on the unreliable path                  | ✅ resolved     | —          |
-| 16  | Deploy to Cloud Run                                          | ✅ resolved     | —          |
-| 17  | Does a rejected Position need to say more than one sentence? | ✅ resolved     | —          |
-| 18  | Admin: the accounts screen                                   | ✅ resolved     | —          |
-| 19  | Logging, in development and in production                    | ✅ resolved     | —          |
-| 20  | A Coach picks their board theme                              | ✅ resolved     | —          |
-| 21  | A Library row says what the Puzzle is                        | ✅ resolved     | —          |
-| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved     | —          |
-| 24  | The engine's failures are visible somewhere                  | ✅ resolved     | —          |
-| 25  | The accounts DTO spreads its row                             | ✅ resolved     | —          |
-| 26  | The e2e suites each carry their own sign-in                  | ✅ resolved     | —          |
-| 27  | `issue-files.md` counts the tickets, and gets it wrong       | ✅ resolved     | —          |
-| 28  | The board locators are copied into four e2e specs            | ✅ resolved     | —          |
-| 29  | An unreachable Goal saves silently                           | ✅ resolved     | —          |
-| 30  | The defender never answers a lost attempt                    | ✅ resolved     | —          |
-| 31  | The Scan reads a photograph                                  | ✅ resolved     | —          |
-| 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16 ✅      |
+| #   | Ticket                                                       | Status      | Blocked by |
+| --- | ------------------------------------------------------------ | ----------- | ---------- |
+| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved | —          |
+| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved | —          |
+| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved | —          |
+| 04  | Invite-only sign-in                                          | ✅ resolved | —          |
+| 05  | Library reads real Puzzles                                   | ✅ resolved | —          |
+| 06  | The board renders a Position                                 | ✅ resolved | —          |
+| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved | —          |
+| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved | —          |
+| 09  | Play a Puzzle, local versus local                            | ✅ resolved | —          |
+| 10  | Solved / Not this time                                       | ✅ resolved | —          |
+| 11  | Puzzle Links                                                 | ✅ resolved | —          |
+| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved | —          |
+| 13  | The engine defends, and Hint                                 | ✅ resolved | —          |
+| 14  | Scan a clean screenshot                                      | ✅ resolved | —          |
+| 15  | The four-corner warp on the unreliable path                  | ✅ resolved | —          |
+| 16  | Deploy to Cloud Run                                          | ✅ resolved | —          |
+| 17  | Does a rejected Position need to say more than one sentence? | ✅ resolved | —          |
+| 18  | Admin: the accounts screen                                   | ✅ resolved | —          |
+| 19  | Logging, in development and in production                    | ✅ resolved | —          |
+| 20  | A Coach picks their board theme                              | ✅ resolved | —          |
+| 21  | A Library row says what the Puzzle is                        | ✅ resolved | —          |
+| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved | —          |
+| 23  | What stops a stranger holding the engine open?               | ✅ resolved | —          |
+| 24  | The engine's failures are visible somewhere                  | ✅ resolved | —          |
+| 25  | The accounts DTO spreads its row                             | ✅ resolved | —          |
+| 26  | The e2e suites each carry their own sign-in                  | ✅ resolved | —          |
+| 27  | `issue-files.md` counts the tickets, and gets it wrong       | ✅ resolved | —          |
+| 28  | The board locators are copied into four e2e specs            | ✅ resolved | —          |
+| 29  | An unreachable Goal saves silently                           | ✅ resolved | —          |
+| 30  | The defender never answers a lost attempt                    | ✅ resolved | —          |
+| 31  | The Scan reads a photograph                                  | ✅ resolved | —          |
 
 <!-- /tracker:tickets -->
 
@@ -85,7 +85,9 @@ already owed by code that shipped. Do not merge them.
 | A failed handshake's kill and the line it now logs are untested, and eight queued searches each wait out the 5 s startup                                                                                             | the startup budget becomes reachable in a test                                                                                                                  | 12, 24, `src/lib/engine/service.ts`                             |
 | The browser branch of `log`'s floor is untested: `import.meta.env.PROD` needs a jsdom file, and the log tests are node-only                                                                                          | 16, where the prod build is what ships                                                                                                                          | 19, `src/lib/log.ts`                                            |
 | The engine request has no client-side timeout, so a connection that stalls past the server's own 504 leaves the board locked until Rewind or Reset                                                                   | 11 or 16, where a Puzzle Link is played over a network we do not control                                                                                        | 13, `src/components/play-puzzle.tsx`                            |
-| The engine route has no rate limit and no body-size cap; an 8-deep queue is the ceiling                                                                                                                              | a Puzzle Link is live in production (11, 16)                                                                                                                    | Ticket 23                                                       |
+| The engine route has no rate limit: 23 built the body cap and put the limit at Cloud Armor, which needs a load balancer this service has not got                                                                     | the deployed service's billed engine CPU exceeds what three Coaches demonstrating can account for                                                               | 23, ADR-0007                                                    |
+| `MAX_WAITING` is 8 against a `--concurrency=4`, so the queue's 503 cannot be reached in production and a fifth caller meets the platform's rejection instead of ours                                                 | `--concurrency` above 8 in `deploy.yml`, or a second engine per instance                                                                                        | 23, ADR-0007, `src/lib/engine/service.ts`                       |
+| Whether Cloud Run appends or prepends the client IP to a caller's own `X-Forwarded-For` is unread, so neither end of that header sits inside a trust boundary                                                        | a rate limit is written inside the container rather than in front of it                                                                                         | 23, ADR-0007                                                    |
 | No `ucinewgame`, so one engine's table carries between Positions                                                                                                                                                     | a Puzzle's defence must be reproducible                                                                                                                         | 12                                                              |
 | The Stockfish tarball and its checksum are pinned in two places — `Dockerfile` and `.github/actions/stockfish` — and go stale together                                                                               | Stockfish 19, or a CVE in 18                                                                                                                                    | 12, `Dockerfile`                                                |
 | The Stockfish URL and its checksum are pinned by hand                                                                                                                                                                | Stockfish 19, or a CVE in 18                                                                                                                                    | 12, `Dockerfile`                                                |
@@ -115,7 +117,7 @@ already owed by code that shipped. Do not merge them.
 | `src/assets/*.svg` is outside prettier, eslint and typecheck                                                                                                                                                         | a second asset                                                                                                                                                  | `package.json`                                                  |
 | The checker mark is under 3:1 and leans on the words beside it                                                                                                                                                       | the sidebar goes `collapsible="icon"`                                                                                                                           | ADR-0005, `src/components/checker-mark.tsx`                     |
 | The two-open-links behaviour of a Puzzle Link — which one `order by created_at desc limit 1` shows a Coach, and that revoking ends every one of them                                                                 | 16, where a real network makes two racing mints a thing rather than a theory                                                                                    | 11, `src/db/repositories/puzzle-links.ts`                       |
-| Nothing throttles guesses at `/p/<slug>`: 40 bits and no rate limit on the one route a stranger reaches without a session                                                                                            | 23, where this product's ceiling on an unauthenticated route is decided                                                                                         | 11, Ticket 23                                                   |
+| Nothing throttles guesses at `/p/<slug>`: 40 bits and no rate limit on the one route a stranger reaches without a session                                                                                            | the same load balancer the engine route's rate limit waits on — 23 decided nothing unauthenticated is throttled inside the container                            | 11, ADR-0007                                                    |
 | A mint and a revoke drop keyboard focus to `<body>` when the button that was pressed unmounts; both now announce themselves, neither restores focus                                                                  | 16, where the deployed screens are checked at all three widths                                                                                                  | 11, `src/components/puzzle-share.tsx`                           |
 | `tests/routes/api/scan.test.ts` times out at vitest's 5 s default under a loaded machine — it loads the real ONNX classifier, and passes alone and in a quiet full run                                               | 16, where the suite runs somewhere with a known CPU budget                                                                                                      | 14, `tests/routes/api/scan.test.ts`                             |
 | Nothing holds the loupe's _rendering_. Its arithmetic has tests, but it is `aria-hidden`, so no test can name the element without reaching for a class and deleting the markup leaves the suite green                | 16, where all seven screens are walked at three widths on the deployed URL                                                                                      | 15, `src/components/corner-picker.tsx`                          |
@@ -123,8 +125,8 @@ already owed by code that shipped. Do not merge them.
 | `MAX_PIXELS` is 12 MP and every photograph in the eval set is exactly 12 MP, so a phone shooting any larger refuses before a reader sees it                                                                          | 31, or the first Coach whose upload is refused for its size                                                                                                     | `docs/learnings/board-recognition.md`, `src/lib/scan/decode.ts` |
 | `src/lib/scan/decode.ts` has no test of its own: the magic-byte dispatch, the interlaced-PNG refusal and the pixel ceiling are covered a layer up through `scan()`                                                   | a change to the decoder that `service.test.ts` would not see                                                                                                    | `tests/lib/scan/service.test.ts`                                |
 
-| The live revision's memory limit is unread: `deploy.yml` sets `--memory=1Gi`, but 16 closed without `gcloud` to confirm the running service has it | 23, which cannot start without reading the deployed service's own configuration | 16, `.github/workflows/deploy.yml` |
-| Cloud Logging is unverified: nothing has read a line back to confirm it arrives at the severity it was written at, and `LOG_LEVEL` is not among the four keys the Migrate step refuses a blank value for | 23, the next time `gcloud` is in hand against the deployed service | 16, `src/lib/log.ts`, `.github/workflows/deploy.yml` |
+| The live revision's memory limit is unread: `deploy.yml` sets `--memory=1Gi`, but 16 and 23 both closed without `gcloud` to confirm the running service has it | `gcloud` on the machine a session runs on — ADR-0007 sizes the body cap against 1 GiB and assumes it | 16, 23, `.github/workflows/deploy.yml` |
+| Cloud Logging is unverified: nothing has read a line back to confirm it arrives at the severity it was written at, and `LOG_LEVEL` is not among the four keys the Migrate step refuses a blank value for | `gcloud` on the machine a session runs on; 23 closed without it | 16, `src/lib/log.ts`, `.github/workflows/deploy.yml` |
 | `seenFrom` guesses rather than declines when the attacking king has crossed the middle: White's king on the 6th with Black's on the 4th reads as Black's side, and New Puzzle rotates a perfect read 180° on it | `eval/images/` gains a photograph whose attacking king has crossed the middle, which is the first thing that can measure the band | 31, `src/lib/scan/service.ts`, ADR-0002 |
 | An automatic read that is right but unreliable is refused rather than opened: the vote's rule is agreement _and_ the floor, so two of the four book photographs read perfectly and still send the Coach to the corner handles | `eval/images/field/` gains photographs — enough to tune a threshold on something other than four images, which is the overfit 31 declined | 31, `src/routes/_coach/puzzles.new.tsx`, `src/lib/scan/ladder.ts` |
 `grep -rn "ponytail:" src scripts` is the code half of this list.

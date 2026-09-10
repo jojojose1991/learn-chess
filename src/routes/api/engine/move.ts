@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 
 import { bestMove } from "@/lib/engine/service"
+import { readBounded } from "@/lib/http"
 
 /**
  * The move the engine would play in a Position — an action, not a resource:
@@ -11,12 +12,21 @@ export const Route = createFileRoute("/api/engine/move")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const fen = await readFen(request)
-        if (fen === null) {
-          return fail(400, 'The body must be JSON, as { "fen": "…" }.')
-        }
-
         try {
+          // Inside the try, because a caller who hangs up mid-body makes the
+          // read itself throw and that is owed the same envelope as the rest.
+          const body = await readBounded(request, MAX_BODY_BYTES)
+          if (body === "too_large") {
+            return fail(
+              413,
+              "The body is too large. A Position is one line of text."
+            )
+          }
+          const fen = readFen(body)
+          if (fen === null) {
+            return fail(400, 'The body must be JSON, as { "fen": "…" }.')
+          }
+
           // No think time from the body: the route is unauthenticated, so a
           // budget from outside is CPU anyone with a Puzzle Link could buy.
           const outcome = await bestMove(fen)
@@ -45,8 +55,9 @@ export const Route = createFileRoute("/api/engine/move")({
           }
         } catch {
           // Every way the engine can fail is an outcome above, so anything
-          // thrown is a bug in here — which still owes the caller the one
-          // error shape, and no claim about a cause nobody has established.
+          // thrown is a bug in here or a caller who hung up mid-body. Either
+          // still owes the caller the one error shape, and no claim about a
+          // cause nobody has established.
           return fail(500, "The engine could not answer.")
         }
       },
@@ -54,11 +65,17 @@ export const Route = createFileRoute("/api/engine/move")({
   },
 })
 
+/**
+ * A kibibyte, which is an order of magnitude past a FEN and the object around
+ * it. The platform's own ceiling is not this route's — ADR-0007.
+ */
+const MAX_BODY_BYTES = 1_024
+
 /** The one field this route reads, or `null` if the body has not got it. */
-async function readFen(request: Request): Promise<string | null> {
+function readFen(body: Uint8Array): string | null {
   try {
-    const body: unknown = await request.json()
-    const fen = (body as { fen?: unknown } | null)?.fen
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(body))
+    const fen = (parsed as { fen?: unknown } | null)?.fen
     return typeof fen === "string" ? fen : null
   } catch {
     return null
