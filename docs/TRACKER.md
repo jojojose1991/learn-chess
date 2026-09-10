@@ -7,7 +7,7 @@ status and pointers and never a second copy of a ticket's detail.
 
 <!-- tracker:count -->
 
-**28 of 31 resolved. Two tickets are actionable right now: 16 and 31.**
+**29 of 31 resolved. One ticket is actionable right now: 31.**
 <!-- /tracker:count -->
 
 ## Tickets
@@ -20,39 +20,39 @@ from `**Status:**`, the blockers from the first sentence of `**Blocked by:**`.
 
 <!-- tracker:tickets -->
 
-| #   | Ticket                                                       | Status          | Blocked by   |
-| --- | ------------------------------------------------------------ | --------------- | ------------ |
-| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved     | —            |
-| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved     | —            |
-| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved     | —            |
-| 04  | Invite-only sign-in                                          | ✅ resolved     | —            |
-| 05  | Library reads real Puzzles                                   | ✅ resolved     | —            |
-| 06  | The board renders a Position                                 | ✅ resolved     | —            |
-| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved     | —            |
-| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved     | —            |
-| 09  | Play a Puzzle, local versus local                            | ✅ resolved     | —            |
-| 10  | Solved / Not this time                                       | ✅ resolved     | —            |
-| 11  | Puzzle Links                                                 | ✅ resolved     | —            |
-| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved     | —            |
-| 13  | The engine defends, and Hint                                 | ✅ resolved     | —            |
-| 14  | Scan a clean screenshot                                      | ✅ resolved     | —            |
-| 15  | The four-corner warp on the unreliable path                  | ✅ resolved     | —            |
-| 17  | Does a rejected Position need to say more than one sentence? | ✅ resolved     | —            |
-| 18  | Admin: the accounts screen                                   | ✅ resolved     | —            |
-| 19  | Logging, in development and in production                    | ✅ resolved     | —            |
-| 20  | A Coach picks their board theme                              | ✅ resolved     | —            |
-| 21  | A Library row says what the Puzzle is                        | ✅ resolved     | —            |
-| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved     | —            |
-| 24  | The engine's failures are visible somewhere                  | ✅ resolved     | —            |
-| 25  | The accounts DTO spreads its row                             | ✅ resolved     | —            |
-| 26  | The e2e suites each carry their own sign-in                  | ✅ resolved     | —            |
-| 27  | `issue-files.md` counts the tickets, and gets it wrong       | ✅ resolved     | —            |
-| 28  | The board locators are copied into four e2e specs            | ✅ resolved     | —            |
-| 29  | An unreachable Goal saves silently                           | ✅ resolved     | —            |
-| 30  | The defender never answers a lost attempt                    | ✅ resolved     | —            |
-| 16  | Deploy to Cloud Run                                          | 🟢 **ready**    | 13 ✅, 15 ✅ |
-| 31  | The Scan reads a photograph                                  | 🟢 **ready**    | —            |
-| 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16           |
+| #   | Ticket                                                       | Status          | Blocked by |
+| --- | ------------------------------------------------------------ | --------------- | ---------- |
+| 01  | Chess rules core: validate, legal targets, apply move        | ✅ resolved     | —          |
+| 02  | Illegal-move explanations and Goal evaluation                | ✅ resolved     | —          |
+| 03  | Neon and Drizzle: schema, first migration, seed Coach        | ✅ resolved     | —          |
+| 04  | Invite-only sign-in                                          | ✅ resolved     | —          |
+| 05  | Library reads real Puzzles                                   | ✅ resolved     | —          |
+| 06  | The board renders a Position                                 | ✅ resolved     | —          |
+| 07  | Tap-tap moves, Guidance, and the promotion picker            | ✅ resolved     | —          |
+| 08  | Confirm & Edit, saving a Puzzle to the Library               | ✅ resolved     | —          |
+| 09  | Play a Puzzle, local versus local                            | ✅ resolved     | —          |
+| 10  | Solved / Not this time                                       | ✅ resolved     | —          |
+| 11  | Puzzle Links                                                 | ✅ resolved     | —          |
+| 12  | Stockfish over UCI behind an engine route                    | ✅ resolved     | —          |
+| 13  | The engine defends, and Hint                                 | ✅ resolved     | —          |
+| 14  | Scan a clean screenshot                                      | ✅ resolved     | —          |
+| 15  | The four-corner warp on the unreliable path                  | ✅ resolved     | —          |
+| 16  | Deploy to Cloud Run                                          | ✅ resolved     | —          |
+| 17  | Does a rejected Position need to say more than one sentence? | ✅ resolved     | —          |
+| 18  | Admin: the accounts screen                                   | ✅ resolved     | —          |
+| 19  | Logging, in development and in production                    | ✅ resolved     | —          |
+| 20  | A Coach picks their board theme                              | ✅ resolved     | —          |
+| 21  | A Library row says what the Puzzle is                        | ✅ resolved     | —          |
+| 22  | `/admin` scrolls sideways on a phone                         | ✅ resolved     | —          |
+| 24  | The engine's failures are visible somewhere                  | ✅ resolved     | —          |
+| 25  | The accounts DTO spreads its row                             | ✅ resolved     | —          |
+| 26  | The e2e suites each carry their own sign-in                  | ✅ resolved     | —          |
+| 27  | `issue-files.md` counts the tickets, and gets it wrong       | ✅ resolved     | —          |
+| 28  | The board locators are copied into four e2e specs            | ✅ resolved     | —          |
+| 29  | An unreachable Goal saves silently                           | ✅ resolved     | —          |
+| 30  | The defender never answers a lost attempt                    | ✅ resolved     | —          |
+| 31  | The Scan reads a photograph                                  | 🟢 **ready**    | —          |
+| 23  | What stops a stranger holding the engine open?               | ❓ needs-triage | 16 ✅      |
 
 <!-- /tracker:tickets -->
 
@@ -123,6 +123,8 @@ already owed by code that shipped. Do not merge them.
 | `MAX_PIXELS` is 12 MP and every photograph in the eval set is exactly 12 MP, so a phone shooting any larger refuses before a reader sees it                                                                          | 31, or the first Coach whose upload is refused for its size                                                                                                     | `docs/learnings/board-recognition.md`, `src/lib/scan/decode.ts` |
 | `src/lib/scan/decode.ts` has no test of its own: the magic-byte dispatch, the interlaced-PNG refusal and the pixel ceiling are covered a layer up through `scan()`                                                   | a change to the decoder that `service.test.ts` would not see                                                                                                    | `tests/lib/scan/service.test.ts`                                |
 
+| The live revision's memory limit is unread: `deploy.yml` sets `--memory=1Gi`, but 16 closed without `gcloud` to confirm the running service has it | 23, which cannot start without reading the deployed service's own configuration | 16, `.github/workflows/deploy.yml` |
+| Cloud Logging is unverified: nothing has read a line back to confirm it arrives at the severity it was written at, and `LOG_LEVEL` is not among the four keys the Migrate step refuses a blank value for | 23, the next time `gcloud` is in hand against the deployed service | 16, `src/lib/log.ts`, `.github/workflows/deploy.yml` |
 `grep -rn "ponytail:" src scripts` is the code half of this list.
 
 ## Keeping this honest
