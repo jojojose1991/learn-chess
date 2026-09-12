@@ -1,0 +1,126 @@
+{
+  "ran": "2026-09-12T03:18:36.295Z",
+  "photographs": [
+    "field/WhatsApp Image 2026-09-12 at 08.22.03.jpeg"
+  ],
+  "refused": [],
+  "readers": {
+    "full": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "s1600": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "s1200": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "s1000": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "s900": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "s800": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "s700": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "s600": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "s500": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "s400": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "c1600": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c1200": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c1000": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c900": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c800": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c700": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c600": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c500": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "c400": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    },
+    "vote": {
+      "squares": 56,
+      "boards": 0,
+      "found": 1
+    },
+    "c-vote": {
+      "squares": 64,
+      "boards": 1,
+      "found": 1
+    }
+  },
+  "siders": {
+    "kings": {
+      "right": 0,
+      "declined": 0,
+      "wrong": 1
+    },
+    "pawns": {
+      "right": 0,
+      "declined": 1,
+      "wrong": 0
+    }
+  }
+}
